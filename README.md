@@ -1,10 +1,23 @@
-# DNSHop
+# DNS Hop
+
+<div align="center">
+  <img src="DNSHopLogo.png" alt="DNS Hop Logo" width="200"/>
+</div>
+
+<div align="center">
+  <a href="docs/images/dns-hop-dashboard.png"><img src="docs/images/dns-hop-dashboard.png" alt="DNS Hop Dashboard" width="800"/></a>
+</div>
+
+<div align="center">
+  <a href="https://github.com/center2055/DNS-Hop/releases/download/v1.0.0/DNS-Hop-Setup-v1.0.0.exe">
+    <img src="https://img.shields.io/badge/Download-Windows%20Installer-blue?style=for-the-badge&logo=github" alt="Download Windows Installer"/>
+  </a>
+  <a href="https://github.com/center2055/DNS-Hop/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Latest%20Release-blue?style=for-the-badge&logo=github" alt="Download Latest Release"/>
+  </a>
+</div>
 
 Modern DNS benchmarking utility (GRC-inspired) built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
-
-## Screenshot
-
-![DNS Hop Dashboard](docs/images/dns-hop-dashboard.png)
 
 ## Phase 1 - Setup and MVVM scaffold
 
