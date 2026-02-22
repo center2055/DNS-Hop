@@ -1,0 +1,919 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:DNSHop.App.Controls"
+        xmlns:converters="using:DNSHop.App.Converters"
+        x:Class="DNSHop.App.Views.MainWindow"
+        mc:Ignorable="d"
+        d:DesignWidth="1440"
+        d:DesignHeight="900"
+        Width="1360"
+        Height="900"
+        MinWidth="1100"
+        MinHeight="720"
+        Icon="/Assets/DNSHopLogoText.ico"
+        Background="{DynamicResource PageBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
+        TransparencyLevelHint="None"
+        ExtendClientAreaToDecorationsHint="False"
+        SystemDecorations="Full"
+        Title="DNS Hop - Modern DNS Benchmark">
+
+  <Window.Resources>
+    <converters:StatusToBrushConverter x:Key="StatusToBrushConverter" />
+    <StreamGeometry x:Key="AppCheckGlyph">M5.5 10.586 1.707 6.793A1 1 0 0 0 .293 8.207l4.5 4.5a1 1 0 0 0 1.414 0l11-11A1 1 0 0 0 15.793.293L5.5 10.586Z</StreamGeometry>
+
+    <SolidColorBrush x:Key="PageBackgroundBrush" Color="#FF162339" />
+    <SolidColorBrush x:Key="ShellCardBrush" Color="#FF223350" />
+    <SolidColorBrush x:Key="ControlsCardBrush" Color="#FF1F304B" />
+    <SolidColorBrush x:Key="ContentPanelBrush" Color="#FF1D2E49" />
+    <SolidColorBrush x:Key="CardBrush" Color="#FF253A5A" />
+    <SolidColorBrush x:Key="CardBorderBrush" Color="#FF50668A" />
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFEAF2FF" />
+    <SolidColorBrush x:Key="MutedTextBrush" Color="#FFD9E7FF" />
+    <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#FF2A3B5C" />
+    <SolidColorBrush x:Key="ButtonBorderBrush" Color="#FF50668A" />
+    <SolidColorBrush x:Key="ButtonHoverBackgroundBrush" Color="#FF324A74" />
+    <SolidColorBrush x:Key="ButtonHoverBorderBrush" Color="#FF6D88B5" />
+    <SolidColorBrush x:Key="ButtonPressedBackgroundBrush" Color="#FF223554" />
+    <SolidColorBrush x:Key="ButtonPressedBorderBrush" Color="#FF7D9ECC" />
+    <SolidColorBrush x:Key="ButtonDisabledBackgroundBrush" Color="#FF253651" />
+    <SolidColorBrush x:Key="ButtonDisabledBorderBrush" Color="#FF3E577A" />
+    <SolidColorBrush x:Key="ButtonDisabledForegroundBrush" Color="#FFAFC3E0" />
+    <SolidColorBrush x:Key="ButtonAccentBackgroundBrush" Color="#FF3C90FF" />
+    <SolidColorBrush x:Key="ButtonAccentBorderBrush" Color="#FF3C90FF" />
+    <SolidColorBrush x:Key="ButtonAccentHoverBackgroundBrush" Color="#FF5CA6FF" />
+    <SolidColorBrush x:Key="ButtonAccentHoverBorderBrush" Color="#FF5CA6FF" />
+    <SolidColorBrush x:Key="ButtonAccentPressedBackgroundBrush" Color="#FF327AE0" />
+    <SolidColorBrush x:Key="ButtonAccentPressedBorderBrush" Color="#FF327AE0" />
+    <SolidColorBrush x:Key="ButtonAccentForegroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FF2B3D5F" />
+    <SolidColorBrush x:Key="InputBorderBrush" Color="#FF4E658B" />
+    <SolidColorBrush x:Key="InputForegroundBrush" Color="#FFEAF2FF" />
+    <SolidColorBrush x:Key="ProgressTrackBrush" Color="#FF1A2942" />
+    <SolidColorBrush x:Key="ProgressFillBrush" Color="#FF3C90FF" />
+    <SolidColorBrush x:Key="ResponseBarBackgroundBrush" Color="#FF1A2538" />
+    <SolidColorBrush x:Key="ResponseBarTextBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ResponseBarNoDataBackgroundBrush" Color="#FF24395A" />
+    <SolidColorBrush x:Key="ResponseBarNoDataTextBrush" Color="#FFBFD0EA" />
+    <SolidColorBrush x:Key="ResponseBarBorderBrush" Color="#FF3F587D" />
+    <SolidColorBrush x:Key="DataGridSelectedRowBackgroundBrush" Color="#FF2F4E76" />
+    <SolidColorBrush x:Key="DataGridSelectedRowBorderBrush" Color="#FF6B8FBC" />
+    <SolidColorBrush x:Key="CheckBoxBoxBorderBrush" Color="#FF8A95A8" />
+    <SolidColorBrush x:Key="CheckBoxBoxBorderHoverBrush" Color="#FFA1AABC" />
+    <SolidColorBrush x:Key="CheckBoxBoxBackgroundBrush" Color="#FF303744" />
+    <SolidColorBrush x:Key="CheckBoxCheckFillBrush" Color="#FF3C90FF" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphBrush" Color="#FFFFFFFF" />
+
+    <ControlTheme x:Key="DnsHopCheckBoxTheme" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="IsThreeState" Value="False" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="MinWidth" Value="30" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid ColumnDefinitions="24,*"
+                ColumnSpacing="10"
+                VerticalAlignment="Center"
+                Background="Transparent">
+            <Border x:Name="Box"
+                    Width="24"
+                    Height="24"
+                    IsHitTestVisible="False"
+                    VerticalAlignment="Center"
+                    CornerRadius="7"
+                    BorderThickness="2"
+                    BorderBrush="{DynamicResource CheckBoxBoxBorderBrush}"
+                    Background="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+            <Path x:Name="Glyph"
+                  Width="11"
+                  Height="11"
+                  IsHitTestVisible="False"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Fill="{DynamicResource CheckBoxCheckGlyphBrush}"
+                  Data="{StaticResource AppCheckGlyph}"
+                  Stretch="Uniform"
+                  Opacity="0" />
+            <ContentPresenter Grid.Column="1"
+                              VerticalAlignment="Center"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ Border#Box">
+        <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderHoverBrush}" />
+      </Style>
+      <Style Selector="^:checked /template/ Border#Box">
+        <Setter Property="Background" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      </Style>
+      <Style Selector="^:checked /template/ Path#Glyph">
+        <Setter Property="Opacity" Value="1" />
+      </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="DnsHopButtonTheme" TargetType="Button">
+      <Setter Property="CornerRadius" Value="999" />
+      <Setter Property="BorderThickness" Value="1.2" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border x:Name="Root"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}">
+            <ContentPresenter Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+  </Window.Resources>
+
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+      <Setter Property="Opacity" Value="0.9" />
+    </Style>
+
+    <Style Selector="Button">
+      <Setter Property="Theme" Value="{StaticResource DnsHopButtonTheme}" />
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="Padding" Value="18,10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="14.5" />
+      <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.13" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.13" />
+          <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+        </Transitions>
+      </Setter>
+    </Style>
+
+    <Style Selector="Button:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}" />
+    </Style>
+
+    <Style Selector="Button:pressed">
+      <Setter Property="Background" Value="{DynamicResource ButtonPressedBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonPressedBorderBrush}" />
+    </Style>
+
+    <Style Selector="Button:disabled">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Foreground" Value="{DynamicResource ButtonDisabledForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ButtonDisabledBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonDisabledBorderBrush}" />
+    </Style>
+
+    <Style Selector="Button.accent">
+      <Setter Property="Background" Value="{DynamicResource ButtonAccentBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonAccentBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ButtonAccentForegroundBrush}" />
+    </Style>
+
+    <Style Selector="Button.accent:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ButtonAccentHoverBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonAccentHoverBorderBrush}" />
+    </Style>
+
+    <Style Selector="Button.accent:pressed">
+      <Setter Property="Background" Value="{DynamicResource ButtonAccentPressedBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonAccentPressedBorderBrush}" />
+    </Style>
+
+    <Style Selector="Button /template/ Border#Root">
+      <Setter Property="CornerRadius" Value="999" />
+    </Style>
+
+    <Style Selector="Button /template/ Border">
+      <Setter Property="CornerRadius" Value="999" />
+    </Style>
+
+    <Style Selector="ProgressBar">
+      <Setter Property="Foreground" Value="{DynamicResource ProgressFillBrush}" />
+    </Style>
+
+    <Style Selector="TextBox, NumericUpDown, ComboBox">
+      <Setter Property="Foreground" Value="{DynamicResource InputForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox">
+      <Setter Property="Theme" Value="{StaticResource DnsHopCheckBoxTheme}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+
+    <Style Selector="CheckBox /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox:pointerover /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderHoverBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox:checked /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox:checked /template/ Path#Glyph">
+      <Setter Property="Fill" Value="{DynamicResource CheckBoxCheckGlyphBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox:disabled">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox:disabled /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox:checked:disabled /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox:checked:disabled /template/ Path#Glyph">
+      <Setter Property="Fill" Value="{DynamicResource CheckBoxCheckGlyphBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck">
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Padding" Value="8,0,0,0" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid ColumnDefinitions="24,*"
+                ColumnSpacing="10"
+                VerticalAlignment="Center"
+                Background="Transparent">
+            <Border x:Name="Box"
+                    Width="24"
+                    Height="24"
+                    IsHitTestVisible="False"
+                    VerticalAlignment="Center"
+                    CornerRadius="7"
+                    BorderThickness="2"
+                    BorderBrush="{DynamicResource CheckBoxBoxBorderBrush}"
+                    Background="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+            <Path x:Name="Glyph"
+                  Width="11"
+                  Height="11"
+                  IsHitTestVisible="False"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Fill="{DynamicResource CheckBoxCheckGlyphBrush}"
+                  Data="{StaticResource AppCheckGlyph}"
+                  Stretch="Uniform"
+                  Opacity="0" />
+            <ContentPresenter Grid.Column="1"
+                              VerticalAlignment="Center"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+
+    <Style Selector="CheckBox.appCheck /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck:pointerover /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderHoverBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck:checked /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck:checked /template/ Path#Glyph">
+      <Setter Property="Fill" Value="{DynamicResource CheckBoxCheckGlyphBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck.readonlyCheck">
+      <Setter Property="IsEnabled" Value="True" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Cursor" Value="Arrow" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="DataGrid CheckBox">
+      <!-- Keep read-only grid toggles visible by avoiding disabled rendering. -->
+      <Setter Property="Theme" Value="{StaticResource DnsHopCheckBoxTheme}" />
+      <Setter Property="IsEnabled" Value="True" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="MinWidth" Value="18" />
+      <Setter Property="MinHeight" Value="18" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="DataGrid CheckBox /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBoxBorderBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="DataGrid CheckBox:checked /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="DataGrid CheckBox:checked /template/ Path#Glyph">
+      <Setter Property="Fill" Value="{DynamicResource CheckBoxCheckGlyphBrush}" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="6,7" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+
+    <Style Selector="DataGridColumnHeader TextBlock">
+      <Setter Property="TextTrimming" Value="None" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="MaxLines" Value="2" />
+    </Style>
+
+    <Style Selector="DataGridRow:selected">
+      <Setter Property="Background" Value="{DynamicResource DataGridSelectedRowBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DataGridSelectedRowBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="DataGridRow:selected DataGridCell">
+      <Setter Property="Background" Value="{DynamicResource DataGridSelectedRowBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DataGridSelectedRowBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="DataGrid#NameserverGrid ScrollBar[Orientation=Horizontal]">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="DataGrid#NameserverGrid /template/ ScrollBar[Orientation=Horizontal]">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="DataGrid#TabularDataGrid DataGridColumnHeader TextBlock">
+      <Setter Property="TextTrimming" Value="None" />
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="MaxLines" Value="1" />
+    </Style>
+
+    <Style Selector="TabControl">
+      <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    </Style>
+
+    <Style Selector="TabItem">
+      <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
+    </Style>
+
+    <Style Selector="TabItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}" />
+    </Style>
+
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="#FFFFFFFF" />
+      <Setter Property="Background" Value="#FF3C90FF" />
+      <Setter Property="BorderBrush" Value="#FF3C90FF" />
+    </Style>
+
+    <Style Selector="TabItem /template/ Border">
+      <Setter Property="CornerRadius" Value="14" />
+    </Style>
+  </Window.Styles>
+
+  <Grid>
+    <Border Background="{DynamicResource PageBackgroundBrush}" />
+
+    <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+      <Border Grid.Row="0"
+              Padding="14"
+              CornerRadius="12"
+              Background="{DynamicResource ShellCardBrush}">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="18">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Border Width="54" Height="54" CornerRadius="10" ClipToBounds="True" Background="{DynamicResource PageBackgroundBrush}">
+                <Image Source="/Assets/DNSHopMark.png"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+              </Border>
+
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock FontSize="20" FontWeight="SemiBold" Text="DNS Hop Dashboard" />
+                <TextBlock Classes="muted" Margin="0,4,0,0" Text="{Binding StatusMessage}" />
+
+                <StackPanel Margin="0,8,0,0"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            IsVisible="{Binding IsServerListLoading}">
+                  <ProgressBar Width="120"
+                               Height="4"
+                               IsIndeterminate="True"
+                               Minimum="0"
+                               Maximum="100"
+                               Background="{DynamicResource ProgressTrackBrush}" />
+                  <TextBlock Classes="muted" Text="Loading resolver list..." />
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+
+            <ProgressBar Margin="0,10,0,0"
+                         Height="8"
+                         Minimum="0"
+                         Maximum="100"
+                         Background="{DynamicResource ProgressTrackBrush}"
+                         Value="{Binding PercentCompleted}" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+            <TextBlock Classes="muted" HorizontalAlignment="Center" Text="Remaining" />
+            <TextBlock HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Text="{Binding QueriesRemaining}" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+            <TextBlock Classes="muted" HorizontalAlignment="Center" Text="Completed" />
+            <TextBlock HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Text="{Binding PercentCompletedText}" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+            <TextBlock Classes="muted" HorizontalAlignment="Center" Text="Elapsed" />
+            <TextBlock HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Text="{Binding Elapsed}" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+            <TextBlock Classes="muted" HorizontalAlignment="Center" Text="Theme" />
+            <ComboBox Width="118"
+                      ItemsSource="{Binding AvailableThemes}"
+                      SelectedItem="{Binding SelectedTheme, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Grid.Row="1"
+              Padding="12"
+              CornerRadius="12"
+              Background="{DynamicResource ControlsCardBrush}">
+        <StackPanel Spacing="8">
+          <WrapPanel Orientation="Horizontal">
+            <Button Margin="0,0,12,10" Content="Refresh List" Command="{Binding LoadServersCommand}" />
+            <Button Margin="0,0,12,10" Classes="accent" Content="Start Benchmark" Command="{Binding StartBenchmarkCommand}" />
+            <Button Margin="0,0,12,10" Content="Cancel" Command="{Binding CancelBenchmarkCommand}" />
+            <Button Margin="0,0,12,10" Content="Export CSV" Command="{Binding ExportCsvCommand}" />
+            <Button Margin="0,0,12,10" Content="Export JSON" Command="{Binding ExportJsonCommand}" />
+            <Button Margin="0,0,12,10" Content="Copy Chart PNG" Command="{Binding CopyChartPngToClipboardCommand}" />
+          </WrapPanel>
+
+          <Border Padding="12"
+                  CornerRadius="10"
+                  Background="{DynamicResource CardBrush}"
+                  BorderBrush="{DynamicResource CardBorderBrush}"
+                  BorderThickness="1">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+              <Grid ColumnDefinitions="Auto,110,Auto,94,Auto,94,Auto,*"
+                    ColumnSpacing="10"
+                    VerticalAlignment="Center">
+                <TextBlock Grid.Column="0" Classes="muted" VerticalAlignment="Center" Text="Timeout (ms)" />
+                <NumericUpDown Grid.Column="1"
+                               Width="110"
+                               Minimum="250"
+                               Maximum="10000"
+                               Increment="250"
+                               Value="{Binding TimeoutMilliseconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center" Text="Concurrency" />
+                <NumericUpDown Grid.Column="3"
+                               Width="94"
+                               Minimum="1"
+                               Maximum="64"
+                               Increment="1"
+                               Value="{Binding ConcurrencyLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" Text="Attempts" />
+                <NumericUpDown Grid.Column="5"
+                               Width="94"
+                               Minimum="1"
+                               Maximum="5"
+                               Increment="1"
+                               Value="{Binding AttemptsPerProbe, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <CheckBox Grid.Column="6"
+                          Classes="appCheck"
+                          Margin="8,0,0,0"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Center"
+                          Content="Auto-update public list on load"
+                          IsChecked="{Binding AutoUpdateListOnStartup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </Grid>
+
+              <Grid Grid.Row="1"
+                    ColumnDefinitions="Auto,160,Auto,220,Auto,104,*"
+                    ColumnSpacing="10"
+                    VerticalAlignment="Center">
+                <TextBlock Grid.Column="0" Classes="muted" VerticalAlignment="Center" Text="Proxy" />
+                <ComboBox Grid.Column="1"
+                          Width="160"
+                          ItemsSource="{Binding AvailableProxyTypes}"
+                          SelectedItem="{Binding SelectedProxyType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center" Text="Host" />
+                <TextBox Grid.Column="3"
+                         Width="220"
+                         Watermark="proxy.local"
+                         Text="{Binding ProxyHost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" Text="Port" />
+                <NumericUpDown Grid.Column="5"
+                               Width="104"
+                               Minimum="1"
+                               Maximum="65535"
+                               Increment="1"
+                               Value="{Binding ProxyPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              </Grid>
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="2"
+              CornerRadius="12"
+              Background="{DynamicResource ContentPanelBrush}" />
+
+      <TabControl Grid.Row="2"
+                  Margin="4"
+                  Background="{DynamicResource ContentPanelBrush}">
+        <TabItem Header="Introduction">
+          <ScrollViewer Margin="12">
+            <StackPanel Spacing="14">
+              <TextBlock FontSize="22" FontWeight="SemiBold" Text="How DNS Hop Benchmarks DNS" />
+              <TextBlock FontSize="15"
+                         LineHeight="24"
+                         TextWrapping="Wrap"
+                         Text="DNS Hop measures resolver speed and reliability across traditional DNS and encrypted DNS endpoints. Results are split into three timing probes and reliability checks." />
+
+              <Grid Margin="14,0,14,0"
+                    ColumnDefinitions="*,*,*,*"
+                    ColumnSpacing="12"
+                    HorizontalAlignment="Stretch">
+                <Border Grid.Column="0" Padding="12" CornerRadius="10" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Cached Probe" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="Queries google.com to estimate best-case response time when records are already cached." />
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Padding="12" CornerRadius="10" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Uncached Probe" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="Queries randomized GUID.com names to force recursion and capture uncached lookup latency." />
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Padding="12" CornerRadius="10" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="DotCom Probe" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="Queries com NS records to compare root/TLD resolution behavior across providers." />
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="3" Padding="12" CornerRadius="10" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Reliability Checks" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="Detects dead servers, NXDOMAIN redirectors, and DNSSEC support to find dependable resolvers." />
+                  </StackPanel>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Nameservers">
+          <Grid Margin="8" RowDefinitions="Auto,*" RowSpacing="8">
+            <TextBox Watermark="Filter by endpoint, provider, or protocol"
+                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+
+            <DataGrid Grid.Row="1"
+                      x:Name="NameserverGrid"
+                      AutoGenerateColumns="False"
+                      SelectionMode="Single"
+                      CanUserSortColumns="True"
+                      CanUserResizeColumns="True"
+                      CanUserReorderColumns="False"
+                      RowHeight="44"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="All"
+                      IsReadOnly="True"
+                      ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ItemsSource="{Binding DisplayedServers}"
+                      PointerPressed="NameserverGrid_OnPointerPressed"
+                      SelectedItem="{Binding SelectedServer}">
+              <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Endpoint" SortMemberPath="Endpoint" Width="2.35*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Endpoint}" TextTrimming="None" ToolTip.Tip="{Binding Endpoint}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Provider" SortMemberPath="Provider" Width="1.75*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Provider}" TextTrimming="None" ToolTip.Tip="{Binding Provider}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Protocol" SortMemberPath="Protocol" Width="0.95*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Protocol}" TextTrimming="None" ToolTip.Tip="{Binding Protocol}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Status" SortMemberPath="StatusLabel" Width="1.0*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Ellipse Width="12"
+                                 Height="12"
+                                 Fill="{Binding Status, Converter={StaticResource StatusToBrushConverter}}"
+                                 VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding StatusLabel}" VerticalAlignment="Center" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Response Bars" SortMemberPath="AverageMilliseconds" Width="2.85*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <controls:ResponseBarsControl Height="34"
+                                                    Margin="0,1"
+                                                    CachedMilliseconds="{Binding CachedMilliseconds}"
+                                                    UncachedMilliseconds="{Binding UncachedMilliseconds}"
+                                                    DotComMilliseconds="{Binding DotComMilliseconds}"
+                                                    AverageMilliseconds="{Binding AverageMilliseconds}"
+                                                    ThemeToken="{Binding DataContext.SelectedTheme, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    MaximumValue="{Binding DataContext.ChartScaleMaximum, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CachedMaximumValue="{Binding CachedScaleMaximum}"
+                                                    UncachedMaximumValue="{Binding UncachedScaleMaximum}"
+                                                    DotComMaximumValue="{Binding DotComScaleMaximum}"
+                                                    ToolTip.Tip="{Binding ProbeSummary}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Binding="{Binding AverageMilliseconds, StringFormat='{}{0:0.0} ms'}"
+                                    SortMemberPath="AverageMilliseconds"
+                                    Header="Average"
+                                    Width="0.98*" />
+                <DataGridTemplateColumn Header="Hijack" SortMemberPath="RedirectsNxDomain" Width="0.72*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding RedirectsNxDomain}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="DNSSEC" SortMemberPath="SupportsDnssec" Width="0.7*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding SupportsDnssec}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Side" SortMemberPath="IsSidelined" Width="0.7*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding IsSidelined}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+
+              <DataGrid.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Remove"
+                            Command="{Binding #NameserverGrid.DataContext.RemoveSelectedCommand}"
+                            CommandParameter="{Binding #NameserverGrid.SelectedItem}" />
+                  <MenuItem Header="Sideline / Restore"
+                            Command="{Binding #NameserverGrid.DataContext.SidelineSelectedCommand}"
+                            CommandParameter="{Binding #NameserverGrid.SelectedItem}" />
+                  <MenuItem Header="Pin to Top / Unpin"
+                            Command="{Binding #NameserverGrid.DataContext.PinSelectedCommand}"
+                            CommandParameter="{Binding #NameserverGrid.SelectedItem}" />
+                  <Separator />
+                  <MenuItem Header="Remove Dead Servers"
+                            Command="{Binding #NameserverGrid.DataContext.RemoveDeadCommand}" />
+                  <MenuItem Header="Remove Non-DNSSEC"
+                            Command="{Binding #NameserverGrid.DataContext.RemoveNonDnssecCommand}" />
+                  <MenuItem Header="Remove Redirecting"
+                            Command="{Binding #NameserverGrid.DataContext.RemoveRedirectingCommand}" />
+                  <Separator />
+                  <MenuItem Header="Copy IP Address"
+                            Command="{Binding #NameserverGrid.DataContext.CopyIpAddressCommand}"
+                            CommandParameter="{Binding #NameserverGrid.SelectedItem}" />
+                  <Separator />
+                  <MenuItem Header="Sort by Best Performance"
+                            Command="{Binding #NameserverGrid.DataContext.SortByBestPerformanceCommand}" />
+                  <MenuItem Header="Sort by Cached"
+                            Command="{Binding #NameserverGrid.DataContext.SortByCachedCommand}" />
+                  <MenuItem Header="Sort by Uncached"
+                            Command="{Binding #NameserverGrid.DataContext.SortByUncachedCommand}" />
+                </ContextMenu>
+              </DataGrid.ContextMenu>
+            </DataGrid>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Tabular Data">
+          <DataGrid x:Name="TabularDataGrid"
+                    Margin="8"
+                    AutoGenerateColumns="False"
+                    SelectionMode="Single"
+                    CanUserSortColumns="True"
+                    CanUserResizeColumns="True"
+                    CanUserReorderColumns="False"
+                    RowHeight="42"
+                    GridLinesVisibility="Horizontal"
+                    IsReadOnly="True"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ItemsSource="{Binding DisplayedServers}">
+            <DataGrid.Columns>
+              <DataGridTemplateColumn Header="Endpoint" SortMemberPath="Endpoint" Width="220">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Endpoint}" TextTrimming="None" ToolTip.Tip="{Binding Endpoint}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Provider" SortMemberPath="Provider" Width="170">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Provider}" TextTrimming="None" ToolTip.Tip="{Binding Provider}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Protocol" SortMemberPath="Protocol" Width="110">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Protocol}" TextTrimming="None" ToolTip.Tip="{Binding Protocol}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Binding="{Binding CachedMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="CachedMilliseconds" Header="Cached" Width="110" />
+              <DataGridTextColumn Binding="{Binding UncachedMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="UncachedMilliseconds" Header="Uncached" Width="120" />
+              <DataGridTextColumn Binding="{Binding DotComMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="DotComMilliseconds" Header="DotCom" Width="110" />
+              <DataGridTextColumn Binding="{Binding AverageMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="AverageMilliseconds" Header="Average" Width="110" />
+              <DataGridTemplateColumn Header="Status" SortMemberPath="StatusLabel" Width="120">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding StatusLabel}" TextTrimming="None" ToolTip.Tip="{Binding StatusLabel}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="DNSSEC" SortMemberPath="SupportsDnssec" Width="88">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding SupportsDnssec}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Hijack" SortMemberPath="RedirectsNxDomain" Width="88">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding RedirectsNxDomain}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Binding="{Binding SuccessfulQueries}" SortMemberPath="SuccessfulQueries" Header="OK" Width="80" />
+              <DataGridTextColumn Binding="{Binding FailedQueries}" SortMemberPath="FailedQueries" Header="Fail" Width="80" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </TabItem>
+
+        <TabItem Header="Conclusions">
+          <ScrollViewer Margin="12">
+            <StackPanel Spacing="12">
+              <Border Padding="12"
+                      CornerRadius="10"
+                      Background="{DynamicResource CardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="4">
+                  <TextBlock FontSize="22" FontWeight="SemiBold" Text="Recommendations" />
+                  <TextBlock Classes="muted"
+                             Text="Primary/secondary endpoint picks and policy guidance from the latest benchmark run." />
+                </StackPanel>
+              </Border>
+
+              <Border Padding="12"
+                      CornerRadius="10"
+                      Background="{DynamicResource ControlsCardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <TextBlock FontSize="16"
+                           LineHeight="30"
+                           TextWrapping="Wrap"
+                           Text="{Binding ConclusionText}" />
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+
+      <Border Grid.RowSpan="3"
+              IsVisible="{Binding IsServerListLoading}"
+              Background="{DynamicResource PageBackgroundBrush}"
+              Opacity="0.78"
+              ZIndex="60">
+        <Border Width="460"
+                MaxWidth="520"
+                Padding="16"
+                CornerRadius="12"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                Background="{DynamicResource ShellCardBrush}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Opacity="1">
+          <StackPanel Spacing="10">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Loading DNS endpoints..." />
+            <TextBlock Classes="muted"
+                       TextWrapping="Wrap"
+                       Text="Fetching resolver list and preparing benchmark tabs and tables." />
+            <ProgressBar Height="8"
+                         Minimum="0"
+                         Maximum="100"
+                         IsIndeterminate="True"
+                         Background="{DynamicResource ProgressTrackBrush}" />
+          </StackPanel>
+        </Border>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>
+
+
+
