@@ -2,6 +2,10 @@
 
 Modern DNS benchmarking utility (GRC-inspired) built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
 
+## Screenshot
+
+![DNS Hop Dashboard](docs/images/dns-hop-dashboard.png)
+
 ## Phase 1 - Setup and MVVM scaffold
 
 ```powershell
