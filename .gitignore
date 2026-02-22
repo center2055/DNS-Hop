@@ -1,0 +1,8 @@
+bin/
+obj/
+artifacts/
+installer/output/
+.vs/
+*.user
+*.suo
+*.pdb
