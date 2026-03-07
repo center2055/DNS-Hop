@@ -26,6 +26,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ExportService _exportService;
     private readonly AppSettingsService _appSettingsService;
     private readonly SystemDnsSwitchService _systemDnsSwitchService;
+    private readonly CurrentDnsStatusService _currentDnsStatusService;
 
     private CancellationTokenSource? _benchmarkCts;
     private CancellationTokenSource? _remoteRefreshCts;
@@ -43,7 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase
         RecommendationService recommendationService,
         ExportService exportService,
         AppSettingsService appSettingsService,
-        SystemDnsSwitchService systemDnsSwitchService)
+        SystemDnsSwitchService systemDnsSwitchService,
+        CurrentDnsStatusService currentDnsStatusService)
     {
         _dnsBenchmarkService = dnsBenchmarkService;
         _dnsServerListService = dnsServerListService;
@@ -51,6 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _exportService = exportService;
         _appSettingsService = appSettingsService;
         _systemDnsSwitchService = systemDnsSwitchService;
+        _currentDnsStatusService = currentDnsStatusService;
 
         IntroductionText =
             "DNS Hop benchmarks DNS resolver performance across classic UDP/TCP DNS, " +
@@ -75,11 +78,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Startup flow: load list immediately so the UI is ready for one-click benchmarking.
         _ = LoadServersAsync();
+        _ = RefreshCurrentDnsStatusAsync();
     }
 
     public BulkObservableCollection<DnsServerResultViewModel> Servers { get; } = [];
 
     public BulkObservableCollection<DnsServerResultViewModel> DisplayedServers { get; } = [];
+
+    public BulkObservableCollection<CurrentDnsAdapterViewModel> CurrentDnsAdapters { get; } = [];
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ApplySelectedDnsCommand))]
@@ -98,10 +104,27 @@ public partial class MainWindowViewModel : ViewModelBase
     private string statusMessage = "Ready.";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCurrentDnsStatusCommand))]
+    private bool isCurrentDnsStatusRefreshing;
+
+    [ObservableProperty]
     private string introductionText = string.Empty;
 
     [ObservableProperty]
     private string conclusionText = string.Empty;
+
+    [ObservableProperty]
+    private string currentDnsResolverName = "Detecting...";
+
+    [ObservableProperty]
+    private string currentDnsResolverAddress = "Detecting...";
+
+    [ObservableProperty]
+    private string currentDnsActiveInterfaces = "Detecting...";
+
+    [ObservableProperty]
+    private string currentDnsResolverNote =
+        "Windows can prefer IPv6 DNS when it is present. Browsers with Secure DNS / DoH can bypass the system resolver.";
 
     [ObservableProperty]
     private int queriesRemaining;
@@ -165,6 +188,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public string PercentCompletedText => $"{PercentCompleted:0.0}%";
 
     private bool CanApplySelectedDns => !IsBenchmarkRunning && SelectedServer is not null;
+
+    private bool CanRefreshCurrentDnsStatus => !IsCurrentDnsStatusRefreshing;
 
     private bool CanStartBenchmark => !IsBenchmarkRunning && Servers.Count > 0;
 
@@ -494,6 +519,44 @@ public partial class MainWindowViewModel : ViewModelBase
         StatusMessage = result.Success
             ? result.Message
             : $"DNS switch failed. {result.Message}";
+
+        await RefreshCurrentDnsStatusAsync().ConfigureAwait(true);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRefreshCurrentDnsStatus))]
+    private async Task RefreshCurrentDnsStatusAsync()
+    {
+        if (IsCurrentDnsStatusRefreshing)
+        {
+            return;
+        }
+
+        IsCurrentDnsStatusRefreshing = true;
+
+        try
+        {
+            var snapshot = await _currentDnsStatusService
+                .GetSnapshotAsync(CancellationToken.None)
+                .ConfigureAwait(true);
+
+            CurrentDnsResolverName = snapshot.ResolverName;
+            CurrentDnsResolverAddress = snapshot.ResolverAddress;
+            CurrentDnsActiveInterfaces = snapshot.ActiveInterfaces;
+            CurrentDnsResolverNote = snapshot.ResolverNote;
+            CurrentDnsAdapters.ReplaceRange(snapshot.Adapters);
+        }
+        catch (Exception ex)
+        {
+            CurrentDnsResolverName = "Unavailable";
+            CurrentDnsResolverAddress = "Unavailable";
+            CurrentDnsActiveInterfaces = "Unavailable";
+            CurrentDnsResolverNote = $"DNS status refresh failed: {ex.Message}";
+            CurrentDnsAdapters.Clear();
+        }
+        finally
+        {
+            IsCurrentDnsStatusRefreshing = false;
+        }
     }
 
     [RelayCommand]

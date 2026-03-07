@@ -862,6 +862,83 @@
           </DataGrid>
         </TabItem>
 
+        <TabItem Header="What's My DNS">
+          <Grid Margin="12" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+            <WrapPanel Orientation="Horizontal">
+              <Button Content="Refresh DNS Status"
+                      Command="{Binding RefreshCurrentDnsStatusCommand}" />
+            </WrapPanel>
+
+            <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="12">
+              <Border Grid.Column="0"
+                      Padding="12"
+                      CornerRadius="10"
+                      Background="{DynamicResource CardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="6">
+                  <TextBlock FontSize="16" FontWeight="SemiBold" Text="Windows Resolver" />
+                  <TextBlock FontSize="14" Text="{Binding CurrentDnsResolverName}" />
+                  <TextBlock Classes="muted" Text="{Binding CurrentDnsResolverAddress}" />
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="1"
+                      Padding="12"
+                      CornerRadius="10"
+                      Background="{DynamicResource CardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="6">
+                  <TextBlock FontSize="16" FontWeight="SemiBold" Text="Active Route" />
+                  <TextBlock FontSize="14"
+                             TextWrapping="Wrap"
+                             Text="{Binding CurrentDnsActiveInterfaces}" />
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="2"
+                      Padding="12"
+                      CornerRadius="10"
+                      Background="{DynamicResource CardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="6">
+                  <TextBlock FontSize="16" FontWeight="SemiBold" Text="Important" />
+                  <TextBlock Classes="muted"
+                             FontSize="13.5"
+                             TextWrapping="Wrap"
+                             Text="{Binding CurrentDnsResolverNote}" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <DataGrid Grid.Row="2"
+                      AutoGenerateColumns="False"
+                      SelectionMode="Single"
+                      CanUserSortColumns="True"
+                      CanUserResizeColumns="True"
+                      CanUserReorderColumns="False"
+                      RowHeight="42"
+                      GridLinesVisibility="Horizontal"
+                      IsReadOnly="True"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ItemsSource="{Binding CurrentDnsAdapters}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding InterfaceName}" Header="Interface" Width="190" />
+                <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="105" />
+                <DataGridTextColumn Binding="{Binding TrafficRole}" Header="Traffic" Width="110" />
+                <DataGridTextColumn Binding="{Binding GatewaySummary}" Header="Gateway" Width="180" />
+                <DataGridTextColumn Binding="{Binding Ipv4Mode}" Header="IPv4 Mode" Width="95" />
+                <DataGridTextColumn Binding="{Binding Ipv4Servers}" Header="IPv4 DNS" Width="230" />
+                <DataGridTextColumn Binding="{Binding Ipv6Mode}" Header="IPv6 Mode" Width="95" />
+                <DataGridTextColumn Binding="{Binding Ipv6Servers}" Header="IPv6 DNS" Width="280" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Grid>
+        </TabItem>
+
         <TabItem Header="Conclusions">
           <ScrollViewer Margin="12">
             <StackPanel Spacing="12">
@@ -923,6 +1000,5 @@
     </Grid>
   </Grid>
 </Window>
-
 
 

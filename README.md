@@ -32,6 +32,8 @@ DNS switching and benchmarking are simple utilities. They should not be locked b
 - Flags redirecting resolvers, dead servers, and DNSSEC support.
 - Lets you filter, pin, sideline, export, and compare endpoints quickly.
 - Applies the selected classic DNS resolver to your active Windows adapters with one click.
+- Handles IPv4 and IPv6 DNS preference so Windows does not keep using the old family.
+- Includes a `What's My DNS` diagnostics tab that shows the current Windows resolver and per-adapter DNS state.
 - Supports light and dark mode with the same dashboard workflow.
 
 ## One-click switching
@@ -39,6 +41,7 @@ DNS switching and benchmarking are simple utilities. They should not be locked b
 - Select a resolver in the `Nameservers` or `Tabular Data` grid.
 - Click `Use Selected DNS`.
 - Windows will prompt for elevation only when the DNS change is applied.
+- DNS Hop updates the active adapter family that matches the selected resolver and clears the opposite family so Windows does not silently keep using an old IPv6 or IPv4 DNS server.
 
 Current limitation:
 

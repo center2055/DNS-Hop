@@ -1,4 +1,5 @@
 using Avalonia;
+using DNSHop.App.Services;
 using System;
 
 namespace DNSHop.App;
@@ -6,9 +7,15 @@ namespace DNSHop.App;
 internal static class Program
 {
     [STAThread]
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
+        if (SystemDnsSwitchService.TryHandleCommandLine(args, out int exitCode))
+        {
+            return exitCode;
+        }
+
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        return 0;
     }
 
     // Avalonia and Suki bootstrap.
