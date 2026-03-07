@@ -11,8 +11,8 @@
 </div>
 
 <div align="center">
-  <a href="https://github.com/center2055/DNS-Hop/releases/download/v1.0.0/DNS-Hop-Setup-v1.0.0.exe">
-    <img src="https://img.shields.io/badge/Windows%20Installer-v1.0.0-2f81f7?style=for-the-badge&logo=github" alt="Windows Installer"/>
+  <a href="https://github.com/center2055/DNS-Hop/releases/download/v1.1/DNS-Hop-Setup-v1.1.exe">
+    <img src="https://img.shields.io/badge/Windows%20Installer-v1.1-2f81f7?style=for-the-badge&logo=github" alt="Windows Installer"/>
   </a>
   <a href="https://github.com/center2055/DNS-Hop/releases/latest">
     <img src="https://img.shields.io/badge/Latest%20Release-GitHub-1f6feb?style=for-the-badge&logo=github" alt="Latest Release"/>
