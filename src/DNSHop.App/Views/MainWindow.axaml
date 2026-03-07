@@ -507,6 +507,10 @@
         <StackPanel Spacing="8">
           <WrapPanel Orientation="Horizontal">
             <Button Margin="0,0,12,10" Content="Refresh List" Command="{Binding LoadServersCommand}" />
+            <Button Margin="0,0,12,10"
+                    Content="Use Selected DNS"
+                    Command="{Binding ApplySelectedDnsCommand}"
+                    ToolTip.Tip="Applies the selected classic DNS endpoint to active Windows adapters." />
             <Button Margin="0,0,12,10" Classes="accent" Content="Start Benchmark" Command="{Binding StartBenchmarkCommand}" />
             <Button Margin="0,0,12,10" Content="Cancel" Command="{Binding CancelBenchmarkCommand}" />
             <Button Margin="0,0,12,10" Content="Export CSV" Command="{Binding ExportCsvCommand}" />
@@ -762,6 +766,9 @@
                   <MenuItem Header="Pin to Top / Unpin"
                             Command="{Binding #NameserverGrid.DataContext.PinSelectedCommand}"
                             CommandParameter="{Binding #NameserverGrid.SelectedItem}" />
+                  <MenuItem Header="Use as System DNS"
+                            Command="{Binding #NameserverGrid.DataContext.ApplySelectedDnsCommand}"
+                            CommandParameter="{Binding #NameserverGrid.SelectedItem}" />
                   <Separator />
                   <MenuItem Header="Remove Dead Servers"
                             Command="{Binding #NameserverGrid.DataContext.RemoveDeadCommand}" />
@@ -799,7 +806,9 @@
                     IsReadOnly="True"
                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                    ItemsSource="{Binding DisplayedServers}">
+                    ItemsSource="{Binding DisplayedServers}"
+                    PointerPressed="NameserverGrid_OnPointerPressed"
+                    SelectedItem="{Binding SelectedServer}">
             <DataGrid.Columns>
               <DataGridTemplateColumn Header="Endpoint" SortMemberPath="Endpoint" Width="220">
                 <DataGridTemplateColumn.CellTemplate>

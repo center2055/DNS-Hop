@@ -5,7 +5,9 @@
 </div>
 
 <div align="center">
-  <a href="docs/images/dns-hop-dashboard.png"><img src="docs/images/dns-hop-dashboard.png" alt="DNS Hop Dashboard" width="800"/></a>
+  <a href="docs/images/dns-hop-dashboard.png">
+    <img src="docs/images/dns-hop-dashboard.png" alt="DNS Hop Dashboard" width="900"/>
+  </a>
 </div>
 
 <div align="center">
@@ -17,121 +19,60 @@
   </a>
 </div>
 
-Modern DNS benchmarking utility (GRC-inspired) built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
+DNS Hop is a fast Windows DNS benchmark and switching tool for people who want clear numbers, one-click system changes, and no paywall for basic resolver testing.
 
-## Phase 1 - Setup and MVVM scaffold
+## Why this exists
 
-```powershell
-# From repository root
-New-Item -ItemType Directory -Path DNSHop -Force
-cd DNSHop
+DNS switching and benchmarking are simple utilities. They should not be locked behind a $10 upsell just to compare resolvers and apply a better one. DNS Hop exists to give that workflow away for free, with a cleaner modern UI and support for both classic and encrypted DNS testing.
 
-dotnet new sln -n DNSHop
+## What it does
 
-dotnet new avalonia.mvvm -n DNSHop.App -o src/DNSHop.App
+- Benchmarks classic DNS, DoH, and DoT endpoints.
+- Measures cached, uncached, and `.com` lookup latency.
+- Flags redirecting resolvers, dead servers, and DNSSEC support.
+- Lets you filter, pin, sideline, export, and compare endpoints quickly.
+- Applies the selected classic DNS resolver to your active Windows adapters with one click.
+- Supports light and dark mode with the same dashboard workflow.
 
-dotnet sln DNSHop.sln add src/DNSHop.App/DNSHop.App.csproj
+## One-click switching
 
-dotnet add src/DNSHop.App/DNSHop.App.csproj package SukiUI
-dotnet add src/DNSHop.App/DNSHop.App.csproj package DnsClient
-dotnet add src/DNSHop.App/DNSHop.App.csproj package CsvHelper
-dotnet add src/DNSHop.App/DNSHop.App.csproj package Avalonia.Controls.DataGrid
-```
+- Select a resolver in the `Nameservers` or `Tabular Data` grid.
+- Click `Use Selected DNS`.
+- Windows will prompt for elevation only when the DNS change is applied.
 
-Scaffolded MVVM core:
+Current limitation:
 
-- `src/DNSHop.App/ViewModels/MainWindowViewModel.cs`
-- `src/DNSHop.App/ViewModels/DnsServerResultViewModel.cs`
-- `src/DNSHop.App/Models/*.cs`
-- `src/DNSHop.App/Views/MainWindow.axaml`
+- System DNS switching currently applies classic UDP/TCP DNS endpoints on port `53`.
+- DoH and DoT entries are still benchmarked and compared, but they are not pushed into Windows network adapter settings by this button.
 
-## Phase 2 - DNS benchmarking engine
+## Stack
 
-Core benchmarking service:
+- C# 12
+- .NET 8
+- Avalonia UI
+- SukiUI
+- MVVM Community Toolkit
+- DnsClient.NET
 
-- `src/DNSHop.App/Services/DnsBenchmarkService.cs`
-
-Features implemented:
-
-- Concurrent benchmarking with `Task.WhenAll` + `SemaphoreSlim` concurrency cap.
-- Cached probe: `google.com`.
-- Uncached probe: randomized `Guid.com`.
-- DotCom probe: `com` NS.
-- Reliability probes:
-  - Redirecting/NXDOMAIN hijack check: randomized `.invalid` query.
-  - DNSSEC validation check: `dnssec-failed.org` (SERVFAIL expected for validating resolvers).
-- Protocol support:
-  - Standard UDP/TCP DNS via `DnsClient.NET`.
-  - DoH via RFC 8484 wire-format POST.
-  - DoT via TLS-wrapped DNS with length-prefixed wire format.
-
-## Phase 3 - Avalonia + SukiUI UI/UX
-
-Main shell:
-
-- `src/DNSHop.App/Views/MainWindow.axaml` using `SukiWindow`.
-- `src/DNSHop.App/App.axaml` with `SukiTheme` for light/dark theme switching.
-
-Views included:
-
-- Introduction
-- Nameservers (main DataGrid + context menu)
-- Tabular Data
-- Conclusions
-
-UI features:
-
-- Dashboard with queries remaining, completion %, elapsed time.
-- Filterable/sortable nameserver list.
-- Context-menu actions:
-  - Remove / Sideline / Pin to Top
-  - Remove Dead / Non-DNSSEC / Redirecting
-  - Copy IP
-  - Sort by Best / Cached / Uncached
-- Custom response-time visual bars:
-  - `src/DNSHop.App/Controls/ResponseBarsControl.cs`
-
-## Phase 4 - Export and installer packaging
-
-Export services:
-
-- `src/DNSHop.App/Services/ExportService.cs`
-
-Supported exports:
-
-- CSV
-- JSON
-- PNG chart snapshot copied to clipboard
-
-Installer assets:
-
-- `installer/DNSHop.iss`
-- `publish-win-x64.ps1`
-
-### Publish command
-
-```powershell
-dotnet publish src/DNSHop.App/DNSHop.App.csproj `
-  -c Release `
-  -r win-x64 `
-  --self-contained true `
-  /p:PublishSingleFile=true `
-  /p:PublishTrimmed=true `
-  /p:TrimMode=partial `
-  /p:IncludeNativeLibrariesForSelfExtract=true `
-  -o artifacts/publish-win-x64
-```
-
-### Build + run locally
+## Local build
 
 ```powershell
 dotnet restore
-dotnet build DNSHop.sln
+dotnet build DNSHop.sln -c Release
 dotnet run --project src/DNSHop.App/DNSHop.App.csproj
 ```
 
+## Publish EXE
+
+```powershell
+./publish-win-x64.ps1
+```
+
+Output:
+
+- `artifacts/publish-win-x64/DNSHop.App.exe`
+
 ## Notes
 
-- On startup, the app can merge built-in resolvers with a public list feed.
-- Export files are written to: `Documents\DNSHop\Exports`.
-
+- Exported files are written to `Documents\\DNSHop\\Exports`.
+- On startup, DNS Hop can merge the bundled resolver list with the public feed.
