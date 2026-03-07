@@ -29,6 +29,7 @@ public partial class App : Application
             var recommendationService = new RecommendationService();
             var exportService = new ExportService();
             var appSettingsService = new AppSettingsService();
+            var systemDnsSwitchService = new SystemDnsSwitchService();
 
             desktop.MainWindow = new MainWindow
             {
@@ -37,7 +38,8 @@ public partial class App : Application
                     serverListService,
                     recommendationService,
                     exportService,
-                    appSettingsService),
+                    appSettingsService,
+                    systemDnsSwitchService),
             };
         }
 

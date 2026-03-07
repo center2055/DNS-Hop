@@ -25,6 +25,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly RecommendationService _recommendationService;
     private readonly ExportService _exportService;
     private readonly AppSettingsService _appSettingsService;
+    private readonly SystemDnsSwitchService _systemDnsSwitchService;
 
     private CancellationTokenSource? _benchmarkCts;
     private CancellationTokenSource? _remoteRefreshCts;
@@ -41,13 +42,15 @@ public partial class MainWindowViewModel : ViewModelBase
         DnsServerListService dnsServerListService,
         RecommendationService recommendationService,
         ExportService exportService,
-        AppSettingsService appSettingsService)
+        AppSettingsService appSettingsService,
+        SystemDnsSwitchService systemDnsSwitchService)
     {
         _dnsBenchmarkService = dnsBenchmarkService;
         _dnsServerListService = dnsServerListService;
         _recommendationService = recommendationService;
         _exportService = exportService;
         _appSettingsService = appSettingsService;
+        _systemDnsSwitchService = systemDnsSwitchService;
 
         IntroductionText =
             "DNS Hop benchmarks DNS resolver performance across classic UDP/TCP DNS, " +
@@ -79,11 +82,13 @@ public partial class MainWindowViewModel : ViewModelBase
     public BulkObservableCollection<DnsServerResultViewModel> DisplayedServers { get; } = [];
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ApplySelectedDnsCommand))]
     private DnsServerResultViewModel? selectedServer;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartBenchmarkCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelBenchmarkCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ApplySelectedDnsCommand))]
     private bool isBenchmarkRunning;
 
     [ObservableProperty]
@@ -158,6 +163,8 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public string PercentCompletedText => $"{PercentCompleted:0.0}%";
+
+    private bool CanApplySelectedDns => !IsBenchmarkRunning && SelectedServer is not null;
 
     private bool CanStartBenchmark => !IsBenchmarkRunning && Servers.Count > 0;
 
@@ -459,6 +466,34 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             StatusMessage = $"Clipboard copy failed ({ex.GetType().Name}): {ex.Message}";
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanApplySelectedDns))]
+    private async Task ApplySelectedDnsAsync(DnsServerResultViewModel? targetServer)
+    {
+        var target = targetServer ?? SelectedServer;
+
+        if (target is null)
+        {
+            StatusMessage = "Select a DNS endpoint first.";
+            return;
+        }
+
+        if (_systemDnsSwitchService.TryGetUnsupportedReason(target.Server) is { } reason)
+        {
+            StatusMessage = reason;
+            return;
+        }
+
+        StatusMessage = $"Applying {target.Endpoint} as system DNS...";
+
+        var result = await _systemDnsSwitchService
+            .ApplyAsync(target.Server, CancellationToken.None)
+            .ConfigureAwait(true);
+
+        StatusMessage = result.Success
+            ? result.Message
+            : $"DNS switch failed. {result.Message}";
     }
 
     [RelayCommand]
