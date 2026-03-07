@@ -1,9 +1,9 @@
 #define AppName "DNS Hop"
-#define AppVersion "1.0.7"
+#define AppVersion "1.1"
 #define AppPublisher "DNS Hop"
 #define AppExeName "DNSHop.App.exe"
 #define AppIconFile "..\src\DNSHop.App\Assets\DNSHopLogoText.ico"
-#define PublishDir "..\artifacts\publish-win-x64"
+#define PublishDir "..\artifacts\publish-win-x64-release"
 
 [Setup]
 AppId={{D54F1A90-443A-43F5-AD3F-B9FF36AC7A87}
@@ -14,7 +14,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=.\output
-OutputBaseFilename=DNS-Hop-Setup-1.0.7
+OutputBaseFilename=DNS-Hop-Setup-v1.1
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
