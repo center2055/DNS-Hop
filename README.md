@@ -1,81 +1,139 @@
-# DNS Hop
+# DNSHop
 
-<div align="center">
-  <img src="DNSHopLogo.png" alt="DNS Hop Logo" width="200"/>
-</div>
+Modern DNS benchmarking utility (GRC-inspired) built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
 
-<div align="center">
-  <a href="docs/images/dns-hop-dashboard.png">
-    <img src="docs/images/dns-hop-dashboard.png" alt="DNS Hop Dashboard" width="900"/>
-  </a>
-</div>
+## Phase 1 - Setup and MVVM scaffold
 
-<div align="center">
-  <a href="https://github.com/center2055/DNS-Hop/releases/download/v1.1/DNS-Hop-Setup-v1.1.exe">
-    <img src="https://img.shields.io/badge/Windows%20Installer-v1.1-2f81f7?style=for-the-badge&logo=github" alt="Windows Installer"/>
-  </a>
-  <a href="https://github.com/center2055/DNS-Hop/releases/latest">
-    <img src="https://img.shields.io/badge/Latest%20Release-GitHub-1f6feb?style=for-the-badge&logo=github" alt="Latest Release"/>
-  </a>
-</div>
+```powershell
+# From repository root
+New-Item -ItemType Directory -Path DNSHop -Force
+cd DNSHop
 
-DNS Hop is a fast Windows DNS benchmark and switching tool for people who want clear numbers, one-click system changes, and no paywall for basic resolver testing.
+dotnet new sln -n DNSHop
 
-## Why this exists
+dotnet new avalonia.mvvm -n DNSHop.App -o src/DNSHop.App
 
-DNS switching and benchmarking are simple utilities. They should not be locked behind a $10 upsell just to compare resolvers and apply a better one. DNS Hop exists to give that workflow away for free, with a cleaner modern UI and support for both classic and encrypted DNS testing.
+dotnet sln DNSHop.sln add src/DNSHop.App/DNSHop.App.csproj
 
-## What it does
+dotnet add src/DNSHop.App/DNSHop.App.csproj package SukiUI
+dotnet add src/DNSHop.App/DNSHop.App.csproj package DnsClient
+dotnet add src/DNSHop.App/DNSHop.App.csproj package CsvHelper
+dotnet add src/DNSHop.App/DNSHop.App.csproj package Avalonia.Controls.DataGrid
+```
 
-- Benchmarks classic DNS, DoH, and DoT endpoints.
-- Measures cached, uncached, and `.com` lookup latency.
-- Flags redirecting resolvers, dead servers, and DNSSEC support.
-- Lets you filter, pin, sideline, export, and compare endpoints quickly.
-- Applies the selected classic DNS resolver to your active Windows adapters with one click.
-- Handles IPv4 and IPv6 DNS preference so Windows does not keep using the old family.
-- Includes a `What's My DNS` diagnostics tab that shows the current Windows resolver and per-adapter DNS state.
-- Supports light and dark mode with the same dashboard workflow.
+Scaffolded MVVM core:
 
-## One-click switching
+- `src/DNSHop.App/ViewModels/MainWindowViewModel.cs`
+- `src/DNSHop.App/ViewModels/DnsServerResultViewModel.cs`
+- `src/DNSHop.App/Models/*.cs`
+- `src/DNSHop.App/Views/MainWindow.axaml`
 
-- Select a resolver in the `Nameservers` or `Tabular Data` grid.
-- Click `Use Selected DNS`.
-- Windows will prompt for elevation only when the DNS change is applied.
-- DNS Hop updates the active adapter family that matches the selected resolver and clears the opposite family so Windows does not silently keep using an old IPv6 or IPv4 DNS server.
+## Phase 2 - DNS benchmarking engine
 
-Current limitation:
+Core benchmarking service:
 
-- System DNS switching currently applies classic UDP/TCP DNS endpoints on port `53`.
-- DoH and DoT entries are still benchmarked and compared, but they are not pushed into Windows network adapter settings by this button.
+- `src/DNSHop.App/Services/DnsBenchmarkService.cs`
 
-## Stack
+Features implemented:
 
-- C# 12
-- .NET 8
-- Avalonia UI
-- SukiUI
-- MVVM Community Toolkit
-- DnsClient.NET
+- Concurrent benchmarking with `Task.WhenAll` + `SemaphoreSlim` concurrency cap.
+- Cached probe: `google.com`.
+- Uncached probe: randomized `Guid.com`.
+- DotCom probe: `com` NS.
+- Reliability probes:
+  - Redirecting/NXDOMAIN hijack check: randomized `.invalid` query.
+  - DNSSEC validation check: `dnssec-failed.org` (SERVFAIL expected for validating resolvers).
+- Protocol support:
+  - Standard UDP/TCP DNS via `DnsClient.NET`.
+  - DoH via RFC 8484 wire-format POST.
+  - DoT via TLS-wrapped DNS with length-prefixed wire format.
 
-## Local build
+## Phase 3 - Avalonia + SukiUI UI/UX
+
+Main shell:
+
+- `src/DNSHop.App/Views/MainWindow.axaml` using `SukiWindow`.
+- `src/DNSHop.App/App.axaml` with `SukiTheme` for light/dark theme switching.
+
+Views included:
+
+- Introduction
+- Nameservers (main DataGrid + context menu)
+- Tabular Data
+- Conclusions
+
+UI features:
+
+- Dashboard with queries remaining, completion %, elapsed time.
+- Filterable/sortable nameserver list.
+- Context-menu actions:
+  - Remove / Sideline / Pin to Top
+  - Remove Dead / Non-DNSSEC / Redirecting
+  - Copy IP
+  - Sort by Best / Cached / Uncached
+- Custom response-time visual bars:
+  - `src/DNSHop.App/Controls/ResponseBarsControl.cs`
+
+## Phase 4 - Export and installer packaging
+
+Export services:
+
+- `src/DNSHop.App/Services/ExportService.cs`
+
+Supported exports:
+
+- CSV
+- JSON
+- PNG chart snapshot copied to clipboard
+
+Installer assets:
+
+- `installer/DNSHop.iss`
+- `publish-win-x64.ps1`
+- `publish-linux-x64.sh`
+
+### Publish commands
+
+```powershell
+dotnet publish src/DNSHop.App/DNSHop.App.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained true `
+  /p:PublishSingleFile=true `
+  /p:PublishTrimmed=true `
+  /p:TrimMode=partial `
+  /p:IncludeNativeLibrariesForSelfExtract=true `
+  -o artifacts/publish-win-x64
+```
+
+```bash
+dotnet publish src/DNSHop.App/DNSHop.App.csproj \
+  -c Release \
+  -r linux-x64 \
+  --self-contained true \
+  /p:PublishSingleFile=true \
+  /p:IncludeNativeLibrariesForSelfExtract=true \
+  -o artifacts/publish-linux-x64
+```
+
+### Build + run locally
 
 ```powershell
 dotnet restore
-dotnet build DNSHop.sln -c Release
+dotnet build DNSHop.sln
 dotnet run --project src/DNSHop.App/DNSHop.App.csproj
 ```
 
-## Publish EXE
+### Linux / WSL notes
 
-```powershell
-./publish-win-x64.ps1
-```
-
-Output:
-
-- `artifacts/publish-win-x64/DNSHop.App.exe`
+- DNS Hop now builds and publishes for Linux (`linux-x64`) in addition to Windows.
+- System DNS switching on Linux supports classic UDP/TCP DNS endpoints with direct IP addresses.
+- On standard Linux, DNS Hop first tries NetworkManager or `systemd-resolved`; if neither is available it falls back to writing `/etc/resolv.conf`.
+- On WSL, DNS Hop writes `/etc/resolv.conf`. For changes to survive a WSL restart, `/etc/wsl.conf` needs `[network] generateResolvConf=false`.
+- WSL testing requires WSLg for the GUI. The published `artifacts/publish-linux-x64/DNSHop.App` binary is self-contained and does not require the .NET runtime inside WSL.
 
 ## Notes
 
-- Exported files are written to `Documents\\DNSHop\\Exports`.
-- On startup, DNS Hop can merge the bundled resolver list with the public feed.
+- On startup, the app can merge built-in resolvers with a public list feed.
+- Export files are written to: `Documents\DNSHop\Exports`.
+

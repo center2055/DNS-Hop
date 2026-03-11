@@ -1,5 +1,6 @@
 using DNSHop.App.Models;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -17,6 +18,8 @@ internal sealed class SystemDnsSwitchService
 {
     private const string ApplyCommandName = "--apply-system-dns";
     private const string ResultPathArgumentName = "--result-file";
+    private const string LinuxResolvConfPath = "/etc/resolv.conf";
+    private const string LinuxResolvConfBackupPath = "/etc/resolv.conf.dnshop.bak";
 
     public bool CanApply(DnsServerDefinition? server)
         => TryGetUnsupportedReason(server) is null;
@@ -28,9 +31,9 @@ internal sealed class SystemDnsSwitchService
             return "Select a DNS endpoint first.";
         }
 
-        if (!OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux())
         {
-            return "System DNS switching is currently supported on Windows only.";
+            return "System DNS switching currently supports Windows and Linux only.";
         }
 
         if (server.Protocol != DnsProtocol.UdpTcp)
@@ -43,7 +46,7 @@ internal sealed class SystemDnsSwitchService
             return "System DNS switching currently supports classic DNS endpoints on port 53 only.";
         }
 
-        if (!IPAddress.TryParse(server.AddressOrHost, out var parsedAddress))
+        if (!IPAddress.TryParse(server.AddressOrHost, out IPAddress? parsedAddress))
         {
             return "The selected DNS endpoint does not expose a direct IP address.";
         }
@@ -63,32 +66,58 @@ internal sealed class SystemDnsSwitchService
             return SystemDnsSwitchResult.Failure(reason);
         }
 
-        string? executablePath = GetCurrentExecutablePath();
-        if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
+        return OperatingSystem.IsWindows()
+            ? await ApplyOnWindowsAsync(server, cancellationToken).ConfigureAwait(false)
+            : await ApplyOnLinuxAsync(server, cancellationToken).ConfigureAwait(false);
+    }
+
+    public static bool TryHandleCommandLine(string[] args, out int exitCode)
+    {
+        exitCode = 0;
+
+        if (args.Length == 0 || !string.Equals(args[0], ApplyCommandName, StringComparison.OrdinalIgnoreCase))
         {
-            return SystemDnsSwitchResult.Failure("Unable to locate the DNS Hop executable for elevation.");
+            return false;
         }
 
-        string resultPath = Path.Combine(
-            Path.GetTempPath(),
-            $"dnshop-system-dns-{Guid.NewGuid():N}.result");
+        string? dnsServer = null;
+        string? resultPath = null;
+
+        for (int index = 1; index < args.Length; index++)
+        {
+            string current = args[index];
+
+            if (dnsServer is null && !current.StartsWith("--", StringComparison.Ordinal))
+            {
+                dnsServer = current;
+                continue;
+            }
+
+            if (string.Equals(current, ResultPathArgumentName, StringComparison.OrdinalIgnoreCase)
+                && index + 1 < args.Length)
+            {
+                resultPath = args[++index];
+            }
+        }
+
+        SystemDnsSwitchResult result = ApplyInElevatedProcess(dnsServer, resultPath);
+        exitCode = result.Success ? 0 : 1;
+        return true;
+    }
+
+    private async Task<SystemDnsSwitchResult> ApplyOnWindowsAsync(DnsServerDefinition server, CancellationToken cancellationToken)
+    {
+        string resultPath = BuildResultPath();
 
         try
         {
-            string arguments =
-                $"{ApplyCommandName} {QuoteArgument(server.AddressOrHost)} {ResultPathArgumentName} {QuoteArgument(resultPath)}";
-
-            var startInfo = new ProcessStartInfo
+            ProcessStartInfo? startInfo = TryCreateWindowsElevationStartInfo(server.AddressOrHost, resultPath);
+            if (startInfo is null)
             {
-                FileName = executablePath,
-                Arguments = arguments,
-                UseShellExecute = true,
-                Verb = "runas",
-                WindowStyle = ProcessWindowStyle.Hidden,
-            };
+                return SystemDnsSwitchResult.Failure("Unable to locate the DNS Hop executable for elevation.");
+            }
 
-            using var process = Process.Start(startInfo);
-
+            using Process? process = Process.Start(startInfo);
             if (process is null)
             {
                 return SystemDnsSwitchResult.Failure("Unable to start the Windows DNS switch command.");
@@ -123,38 +152,160 @@ internal sealed class SystemDnsSwitchService
         }
     }
 
-    public static bool TryHandleCommandLine(string[] args, out int exitCode)
+    private async Task<SystemDnsSwitchResult> ApplyOnLinuxAsync(DnsServerDefinition server, CancellationToken cancellationToken)
     {
-        exitCode = 0;
+        string resultPath = BuildResultPath();
 
-        if (args.Length == 0 || !string.Equals(args[0], ApplyCommandName, StringComparison.OrdinalIgnoreCase))
+        try
         {
-            return false;
-        }
-
-        string? dnsServer = null;
-        string? resultPath = null;
-
-        for (int index = 1; index < args.Length; index++)
-        {
-            string current = args[index];
-
-            if (dnsServer is null && !current.StartsWith("--", StringComparison.Ordinal))
+            ProcessStartInfo? startInfo = TryCreateLinuxElevationStartInfo(server.AddressOrHost, resultPath);
+            if (startInfo is null)
             {
-                dnsServer = current;
-                continue;
+                return SystemDnsSwitchResult.Failure(
+                    "No supported Linux elevation tool was found. Install sudo or pkexec, or start DNS Hop as root.");
             }
 
-            if (string.Equals(current, ResultPathArgumentName, StringComparison.OrdinalIgnoreCase)
-                && index + 1 < args.Length)
+            using Process? process = Process.Start(startInfo);
+            if (process is null)
             {
-                resultPath = args[++index];
+                return SystemDnsSwitchResult.Failure("Unable to start the Linux DNS switch command.");
             }
+
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            if (File.Exists(resultPath))
+            {
+                return await ReadResultAsync(resultPath, cancellationToken).ConfigureAwait(false);
+            }
+
+            return process.ExitCode == 0
+                ? SystemDnsSwitchResult.Succeeded($"Applied {server.AddressOrHost}.")
+                : PlatformEnvironment.IsWsl()
+                    ? SystemDnsSwitchResult.Failure("Linux rejected the DNS change. In WSL, start DNS Hop from a terminal so sudo can prompt for your password.")
+                    : SystemDnsSwitchResult.Failure("Linux rejected the DNS change. If no desktop privilege prompt is available, start DNS Hop from a terminal or run it as root.");
+        }
+        catch (OperationCanceledException)
+        {
+            return SystemDnsSwitchResult.Failure("DNS switch canceled.");
+        }
+        catch (Exception ex)
+        {
+            return SystemDnsSwitchResult.Failure($"DNS switch failed: {ex.Message}");
+        }
+        finally
+        {
+            TryDelete(resultPath);
+        }
+    }
+
+    private static string BuildResultPath()
+        => Path.Combine(
+            Path.GetTempPath(),
+            $"dnshop-system-dns-{Guid.NewGuid():N}.result");
+
+    private static ProcessStartInfo? TryCreateWindowsElevationStartInfo(string dnsServer, string resultPath)
+    {
+        SelfInvocationCommand? invocation = ProcessCommand.TryCreateSelfInvocation(
+        [
+            ApplyCommandName,
+            dnsServer,
+            ResultPathArgumentName,
+            resultPath,
+        ]);
+
+        if (invocation is null)
+        {
+            return null;
         }
 
-        var result = ApplyInElevatedProcess(dnsServer, resultPath);
-        exitCode = result.Success ? 0 : 1;
-        return true;
+        return new ProcessStartInfo
+        {
+            FileName = invocation.FileName,
+            Arguments = string.Join(" ", invocation.Arguments.Select(QuoteArgument)),
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = Environment.CurrentDirectory,
+        };
+    }
+
+    private static ProcessStartInfo? TryCreateLinuxElevationStartInfo(string dnsServer, string resultPath)
+    {
+        SelfInvocationCommand? invocation = ProcessCommand.TryCreateSelfInvocation(
+        [
+            ApplyCommandName,
+            dnsServer,
+            ResultPathArgumentName,
+            resultPath,
+        ]);
+
+        if (invocation is null)
+        {
+            return null;
+        }
+
+        if (IsRunningAsRoot())
+        {
+            return CreateProcessStartInfo(invocation.FileName, invocation.Arguments);
+        }
+
+        if (PlatformEnvironment.IsWsl() && ProcessCommand.Exists("sudo"))
+        {
+            return CreateLinuxWrapperStartInfo("sudo", invocation);
+        }
+
+        if (ProcessCommand.Exists("pkexec"))
+        {
+            return CreateLinuxWrapperStartInfo("pkexec", invocation);
+        }
+
+        if (ProcessCommand.Exists("sudo"))
+        {
+            return CreateLinuxWrapperStartInfo("sudo", invocation);
+        }
+
+        if (ProcessCommand.Exists("doas"))
+        {
+            return CreateLinuxWrapperStartInfo("doas", invocation);
+        }
+
+        return null;
+    }
+
+    private static ProcessStartInfo CreateLinuxWrapperStartInfo(string wrapperCommand, SelfInvocationCommand invocation)
+    {
+        IEnumerable<string> arguments = wrapperCommand is "sudo" or "doas"
+            ? new[] { "--", invocation.FileName }.Concat(invocation.Arguments)
+            : new[] { invocation.FileName }.Concat(invocation.Arguments);
+
+        return CreateProcessStartInfo(wrapperCommand, arguments);
+    }
+
+    private static ProcessStartInfo CreateProcessStartInfo(string fileName, IEnumerable<string> arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            UseShellExecute = false,
+            RedirectStandardInput = false,
+            RedirectStandardOutput = false,
+            RedirectStandardError = false,
+            CreateNoWindow = true,
+            WorkingDirectory = Environment.CurrentDirectory,
+        };
+
+        foreach (string argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        return startInfo;
+    }
+
+    private static bool IsRunningAsRoot()
+    {
+        ProcessCommandResult result = ProcessCommand.Run("id", "-u");
+        return result.Success && string.Equals(result.Output.Trim(), "0", StringComparison.Ordinal);
     }
 
     private static SystemDnsSwitchResult ApplyInElevatedProcess(string? dnsServer, string? resultPath)
@@ -163,7 +314,11 @@ internal sealed class SystemDnsSwitchService
 
         try
         {
-            result = ApplyToWindowsAdapters(dnsServer);
+            result = OperatingSystem.IsWindows()
+                ? ApplyToWindowsAdapters(dnsServer)
+                : OperatingSystem.IsLinux()
+                    ? ApplyToLinux(dnsServer)
+                    : SystemDnsSwitchResult.Failure("System DNS switching is not supported on this platform.");
         }
         catch (Exception ex)
         {
@@ -187,7 +342,7 @@ internal sealed class SystemDnsSwitchService
 
     private static SystemDnsSwitchResult ApplyToWindowsAdapters(string? dnsServer)
     {
-        if (string.IsNullOrWhiteSpace(dnsServer) || !IPAddress.TryParse(dnsServer, out var parsedAddress))
+        if (string.IsNullOrWhiteSpace(dnsServer) || !IPAddress.TryParse(dnsServer, out IPAddress? parsedAddress))
         {
             return SystemDnsSwitchResult.Failure("The selected DNS endpoint is not a valid IP address.");
         }
@@ -210,19 +365,31 @@ internal sealed class SystemDnsSwitchService
             {
                 TryClearDnsFamily("ipv6", target);
 
-                var setIpv4Result = RunCommand(
+                ProcessCommandResult setIpv4Result = ProcessCommand.Run(
                     "netsh.exe",
-                    $"interface ipv4 set dnsservers name={QuoteArgument(target)} source=static address={dnsServer} register=primary validate=no");
+                    "interface",
+                    "ipv4",
+                    "set",
+                    "dnsservers",
+                    $"name={target}",
+                    "source=static",
+                    $"address={dnsServer}",
+                    "register=primary",
+                    "validate=no");
 
                 if (!setIpv4Result.Success)
                 {
                     return SystemDnsSwitchResult.Failure(
-                        $"Failed to set IPv4 DNS on {target}: {setIpv4Result.Message}");
+                        $"Failed to set IPv4 DNS on {target}: {setIpv4Result.CombinedOutput}");
                 }
 
-                var verifyIpv4Result = RunCommand(
+                ProcessCommandResult verifyIpv4Result = ProcessCommand.Run(
                     "netsh.exe",
-                    $"interface ipv4 show dnsservers name={QuoteArgument(target)}");
+                    "interface",
+                    "ipv4",
+                    "show",
+                    "dnsservers",
+                    $"name={target}");
 
                 if (!verifyIpv4Result.Output.Contains(dnsServer, StringComparison.OrdinalIgnoreCase))
                 {
@@ -234,19 +401,30 @@ internal sealed class SystemDnsSwitchService
             {
                 TryClearDnsFamily("ipv4", target);
 
-                var setIpv6Result = RunCommand(
+                ProcessCommandResult setIpv6Result = ProcessCommand.Run(
                     "netsh.exe",
-                    $"interface ipv6 set dnsservers name={QuoteArgument(target)} source=static address={dnsServer} validate=no");
+                    "interface",
+                    "ipv6",
+                    "set",
+                    "dnsservers",
+                    $"name={target}",
+                    "source=static",
+                    $"address={dnsServer}",
+                    "validate=no");
 
                 if (!setIpv6Result.Success)
                 {
                     return SystemDnsSwitchResult.Failure(
-                        $"Failed to set IPv6 DNS on {target}: {setIpv6Result.Message}");
+                        $"Failed to set IPv6 DNS on {target}: {setIpv6Result.CombinedOutput}");
                 }
 
-                var verifyIpv6Result = RunCommand(
+                ProcessCommandResult verifyIpv6Result = ProcessCommand.Run(
                     "netsh.exe",
-                    $"interface ipv6 show dnsservers name={QuoteArgument(target)}");
+                    "interface",
+                    "ipv6",
+                    "show",
+                    "dnsservers",
+                    $"name={target}");
 
                 if (!verifyIpv6Result.Output.Contains(dnsServer, StringComparison.OrdinalIgnoreCase))
                 {
@@ -256,13 +434,212 @@ internal sealed class SystemDnsSwitchService
             }
         }
 
-        RunCommand("ipconfig.exe", "/flushdns");
+        ProcessCommand.Run("ipconfig.exe", "/flushdns");
 
         string effectiveResolver = CurrentDnsStatusService.ReadEffectiveResolverSummary();
         string targetList = string.Join(", ", targets);
 
         return SystemDnsSwitchResult.Succeeded(
             $"Applied {dnsServer} to {targetList}. Current Windows resolver: {effectiveResolver}.");
+    }
+
+    private static SystemDnsSwitchResult ApplyToLinux(string? dnsServer)
+    {
+        if (string.IsNullOrWhiteSpace(dnsServer) || !IPAddress.TryParse(dnsServer, out IPAddress? parsedAddress))
+        {
+            return SystemDnsSwitchResult.Failure("The selected DNS endpoint is not a valid IP address.");
+        }
+
+        if (parsedAddress.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
+        {
+            return SystemDnsSwitchResult.Failure("Only IPv4 and IPv6 DNS servers can be applied.");
+        }
+
+        if (PlatformEnvironment.IsWsl())
+        {
+            return ApplyToLinuxResolvConf(dnsServer, isWsl: true);
+        }
+
+        string[] targets = FindTargetInterfaces(parsedAddress.AddressFamily).ToArray();
+
+        SystemDnsSwitchResult? networkManagerResult = TryApplyWithNetworkManager(dnsServer, parsedAddress.AddressFamily, targets);
+        if (networkManagerResult is { Success: true })
+        {
+            return networkManagerResult;
+        }
+
+        SystemDnsSwitchResult? resolvectlResult = TryApplyWithResolvectl(dnsServer, targets);
+        if (resolvectlResult is { Success: true })
+        {
+            return resolvectlResult;
+        }
+
+        SystemDnsSwitchResult resolvConfResult = ApplyToLinuxResolvConf(dnsServer, isWsl: false);
+        if (resolvConfResult.Success)
+        {
+            return resolvConfResult;
+        }
+
+        if (networkManagerResult is { Success: false })
+        {
+            return networkManagerResult;
+        }
+
+        return resolvectlResult is { Success: false }
+            ? resolvectlResult
+            : resolvConfResult;
+    }
+
+    private static SystemDnsSwitchResult? TryApplyWithNetworkManager(
+        string dnsServer,
+        AddressFamily family,
+        string[] targets)
+    {
+        if (targets.Length == 0 || !ProcessCommand.Exists("nmcli"))
+        {
+            return null;
+        }
+
+        var appliedTargets = new List<string>();
+
+        foreach (string target in targets)
+        {
+            ProcessCommandResult connectionResult = ProcessCommand.Run(
+                "nmcli",
+                "-g",
+                "GENERAL.CONNECTION",
+                "device",
+                "show",
+                target);
+
+            string connectionName = connectionResult.Output.Trim();
+            if (!connectionResult.Success
+                || string.IsNullOrWhiteSpace(connectionName)
+                || string.Equals(connectionName, "--", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string dnsProperty = family == AddressFamily.InterNetwork ? "ipv4.dns" : "ipv6.dns";
+            string ignoreAutoProperty = family == AddressFamily.InterNetwork ? "ipv4.ignore-auto-dns" : "ipv6.ignore-auto-dns";
+            string verifyProperty = family == AddressFamily.InterNetwork ? "IP4.DNS" : "IP6.DNS";
+
+            ProcessCommandResult modifyResult = ProcessCommand.Run(
+                "nmcli",
+                "connection",
+                "modify",
+                connectionName,
+                ignoreAutoProperty,
+                "yes",
+                dnsProperty,
+                dnsServer);
+
+            if (!modifyResult.Success)
+            {
+                return SystemDnsSwitchResult.Failure(
+                    $"NetworkManager rejected {target}: {modifyResult.CombinedOutput}");
+            }
+
+            ProcessCommandResult reapplyResult = ProcessCommand.Run("nmcli", "device", "reapply", target);
+            if (!reapplyResult.Success)
+            {
+                ProcessCommandResult reconnectResult = ProcessCommand.Run("nmcli", "connection", "up", connectionName);
+                if (!reconnectResult.Success)
+                {
+                    return SystemDnsSwitchResult.Failure(
+                        $"NetworkManager could not reapply {target}: {reconnectResult.CombinedOutput}");
+                }
+            }
+
+            ProcessCommandResult verifyResult = ProcessCommand.Run(
+                "nmcli",
+                "-g",
+                verifyProperty,
+                "device",
+                "show",
+                target);
+
+            if (!verifyResult.Output.Contains(dnsServer, StringComparison.OrdinalIgnoreCase))
+            {
+                return SystemDnsSwitchResult.Failure(
+                    $"NetworkManager did not confirm {dnsServer} on {target}.");
+            }
+
+            appliedTargets.Add(target);
+        }
+
+        if (appliedTargets.Count == 0)
+        {
+            return null;
+        }
+
+        TryFlushLinuxDnsCaches();
+
+        string effectiveResolver = CurrentDnsStatusService.ReadEffectiveResolverSummary();
+        return SystemDnsSwitchResult.Succeeded(
+            $"Applied {dnsServer} via NetworkManager on {string.Join(", ", appliedTargets)}. Current Linux resolver: {effectiveResolver}.");
+    }
+
+    private static SystemDnsSwitchResult? TryApplyWithResolvectl(string dnsServer, string[] targets)
+    {
+        if (targets.Length == 0 || !ProcessCommand.Exists("resolvectl"))
+        {
+            return null;
+        }
+
+        foreach (string target in targets)
+        {
+            ProcessCommandResult applyResult = ProcessCommand.Run("resolvectl", "dns", target, dnsServer);
+            if (!applyResult.Success)
+            {
+                return SystemDnsSwitchResult.Failure(
+                    $"systemd-resolved rejected {target}: {applyResult.CombinedOutput}");
+            }
+
+            ProcessCommandResult verifyResult = ProcessCommand.Run("resolvectl", "status", target);
+            if (!verifyResult.Output.Contains(dnsServer, StringComparison.OrdinalIgnoreCase))
+            {
+                return SystemDnsSwitchResult.Failure(
+                    $"systemd-resolved did not confirm {dnsServer} on {target}.");
+            }
+        }
+
+        TryFlushLinuxDnsCaches();
+
+        string effectiveResolver = CurrentDnsStatusService.ReadEffectiveResolverSummary();
+        return SystemDnsSwitchResult.Succeeded(
+            $"Applied {dnsServer} via systemd-resolved on {string.Join(", ", targets)}. Current Linux resolver: {effectiveResolver}.");
+    }
+
+    private static SystemDnsSwitchResult ApplyToLinuxResolvConf(string dnsServer, bool isWsl)
+    {
+        try
+        {
+            BackupLinuxResolvConf();
+            ReplaceLinuxResolvConf(dnsServer, isWsl);
+            TryFlushLinuxDnsCaches();
+
+            bool confirmed = CurrentDnsStatusService
+                .ReadLinuxResolversFromResolvConf()
+                .Any(address => string.Equals(address.ToString(), dnsServer, StringComparison.OrdinalIgnoreCase));
+
+            if (!confirmed)
+            {
+                return SystemDnsSwitchResult.Failure($"Linux did not confirm {dnsServer} in {LinuxResolvConfPath}.");
+            }
+
+            string effectiveResolver = CurrentDnsStatusService.ReadEffectiveResolverSummary();
+            string wslNote = isWsl && PlatformEnvironment.WslGeneratesResolvConf()
+                ? " WSL may regenerate /etc/resolv.conf on restart until /etc/wsl.conf sets generateResolvConf=false."
+                : string.Empty;
+
+            return SystemDnsSwitchResult.Succeeded(
+                $"Applied {dnsServer} via {LinuxResolvConfPath}. Current Linux resolver: {effectiveResolver}.{wslNote}");
+        }
+        catch (Exception ex)
+        {
+            return SystemDnsSwitchResult.Failure($"Failed to write {LinuxResolvConfPath}: {ex.Message}");
+        }
     }
 
     private static string[] FindTargetInterfaces(AddressFamily selectedFamily)
@@ -272,7 +649,7 @@ internal sealed class SystemDnsSwitchService
                 networkInterface.OperationalStatus == OperationalStatus.Up
                 && networkInterface.NetworkInterfaceType is not NetworkInterfaceType.Loopback
                 and not NetworkInterfaceType.Tunnel)
-            .Where(networkInterface => HasUsableGateway(networkInterface))
+            .Where(HasUsableGateway)
             .Where(networkInterface => HasAddressFamily(networkInterface, selectedFamily))
             .Select(static networkInterface => networkInterface.Name)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -300,45 +677,31 @@ internal sealed class SystemDnsSwitchService
 
     private static void TryClearDnsFamily(string family, string interfaceName)
     {
-        var clearResult = RunCommand(
+        ProcessCommandResult clearResult = ProcessCommand.Run(
             "netsh.exe",
-            $"interface {family} set dnsservers name={QuoteArgument(interfaceName)} source=static address=none validate=no");
+            "interface",
+            family,
+            "set",
+            "dnsservers",
+            $"name={interfaceName}",
+            "source=static",
+            "address=none",
+            "validate=no");
 
         if (clearResult.Success)
         {
             return;
         }
 
-        RunCommand(
+        ProcessCommand.Run(
             "netsh.exe",
-            $"interface {family} delete dnsservers name={QuoteArgument(interfaceName)} all validate=no");
-    }
-
-    private static CommandResult RunCommand(string fileName, string arguments)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = fileName,
-            Arguments = arguments,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-        };
-
-        using var process = new Process { StartInfo = startInfo };
-        process.Start();
-
-        string stdout = process.StandardOutput.ReadToEnd();
-        string stderr = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-
-        string message = string.IsNullOrWhiteSpace(stderr) ? stdout : stderr;
-
-        return new CommandResult(
-            process.ExitCode == 0,
-            stdout,
-            NormalizeMessage(message));
+            "interface",
+            family,
+            "delete",
+            "dnsservers",
+            $"name={interfaceName}",
+            "all",
+            "validate=no");
     }
 
     private static async Task<SystemDnsSwitchResult> ReadResultAsync(string resultPath, CancellationToken cancellationToken)
@@ -347,7 +710,7 @@ internal sealed class SystemDnsSwitchService
 
         if (lines.Length == 0)
         {
-            return SystemDnsSwitchResult.Failure("Windows returned an empty DNS switch response.");
+            return SystemDnsSwitchResult.Failure("The elevated DNS helper returned an empty response.");
         }
 
         bool success = string.Equals(lines[0], "success", StringComparison.OrdinalIgnoreCase);
@@ -355,7 +718,7 @@ internal sealed class SystemDnsSwitchService
             ? lines[1]
             : success
                 ? "DNS switch applied."
-                : "Windows rejected the DNS change.";
+                : "The operating system rejected the DNS change.";
 
         return success
             ? SystemDnsSwitchResult.Succeeded(message)
@@ -379,23 +742,83 @@ internal sealed class SystemDnsSwitchService
             Encoding.UTF8);
     }
 
-    private static string? GetCurrentExecutablePath()
-        => Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
-
     private static string QuoteArgument(string value)
         => "\"" + value.Replace("\"", "\\\"", StringComparison.Ordinal) + "\"";
 
-    private static string NormalizeMessage(string? rawMessage)
+    private static void BackupLinuxResolvConf()
     {
-        if (string.IsNullOrWhiteSpace(rawMessage))
+        if (File.Exists(LinuxResolvConfBackupPath))
         {
-            return "The command finished without output.";
+            return;
         }
 
-        return string.Join(
-            " ",
-            rawMessage
-                .Split([Environment.NewLine, "\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        if (!Path.Exists(LinuxResolvConfPath))
+        {
+            return;
+        }
+
+        File.WriteAllText(LinuxResolvConfBackupPath, File.ReadAllText(LinuxResolvConfPath), Encoding.UTF8);
+    }
+
+    private static void ReplaceLinuxResolvConf(string dnsServer, bool isWsl)
+    {
+        var resolvConfInfo = new FileInfo(LinuxResolvConfPath);
+        if (resolvConfInfo.LinkTarget is not null)
+        {
+            resolvConfInfo.Delete();
+        }
+
+        File.WriteAllText(LinuxResolvConfPath, BuildLinuxResolvConfContents(dnsServer, isWsl), Encoding.UTF8);
+
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        try
+        {
+            File.SetUnixFileMode(
+                LinuxResolvConfPath,
+                UnixFileMode.UserRead
+                | UnixFileMode.UserWrite
+                | UnixFileMode.GroupRead
+                | UnixFileMode.OtherRead);
+        }
+        catch
+        {
+            // Permission normalization is best-effort only.
+        }
+    }
+
+    private static string BuildLinuxResolvConfContents(string dnsServer, bool isWsl)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("# Managed by DNS Hop.");
+        builder.AppendLine($"# Updated {DateTimeOffset.UtcNow:O}");
+        builder.AppendLine($"nameserver {dnsServer}");
+        builder.AppendLine("options timeout:2 attempts:2 rotate");
+
+        if (isWsl)
+        {
+            builder.AppendLine("# WSL note: persistence across restarts requires /etc/wsl.conf");
+            builder.AppendLine("# with [network] generateResolvConf=false.");
+        }
+
+        return builder.ToString();
+    }
+
+    private static void TryFlushLinuxDnsCaches()
+    {
+        if (ProcessCommand.Exists("resolvectl"))
+        {
+            ProcessCommand.Run("resolvectl", "flush-caches");
+            return;
+        }
+
+        if (ProcessCommand.Exists("systemd-resolve"))
+        {
+            ProcessCommand.Run("systemd-resolve", "--flush-caches");
+        }
     }
 
     private static void TryDelete(string path)
@@ -412,8 +835,6 @@ internal sealed class SystemDnsSwitchService
             // Best effort only for temp response files.
         }
     }
-
-    private readonly record struct CommandResult(bool Success, string Output, string Message);
 }
 
 internal sealed record SystemDnsSwitchResult(bool Success, string Message)
