@@ -124,7 +124,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string currentDnsResolverNote =
-        "Windows can prefer IPv6 DNS when it is present. Browsers with Secure DNS / DoH can bypass the system resolver.";
+        "System resolver details are loading. Browsers with Secure DNS / DoH can bypass the system resolver.";
 
     [ObservableProperty]
     private int queriesRemaining;

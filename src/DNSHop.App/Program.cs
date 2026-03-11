@@ -20,14 +20,22 @@ internal static class Program
 
     // Avalonia and Suki bootstrap.
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    {
+        var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .With(new Win32PlatformOptions
+            .WithInterFont()
+            .LogToTrace();
+
+        if (OperatingSystem.IsWindows())
+        {
+            builder = builder.With(new Win32PlatformOptions
             {
                 // Force classic composition path to avoid glass/transparency artifacts on some Win11 setups.
                 CompositionMode = [Win32CompositionMode.RedirectionSurface],
-            })
-            .WithInterFont()
-            .LogToTrace();
+            });
+        }
+
+        return builder;
+    }
 }
 
