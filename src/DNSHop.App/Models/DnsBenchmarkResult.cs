@@ -13,6 +13,12 @@ public sealed class DnsBenchmarkResult
 
     public double? DotComMilliseconds { get; init; }
 
+    public double? CachedStandardDeviationMilliseconds { get; init; }
+
+    public double? UncachedStandardDeviationMilliseconds { get; init; }
+
+    public double? DotComStandardDeviationMilliseconds { get; init; }
+
     public DnsServerStatus Status { get; init; }
 
     public bool SupportsDnssec { get; init; }
@@ -42,6 +48,31 @@ public sealed class DnsBenchmarkResult
 
             List<double> values = [CachedMilliseconds.Value, UncachedMilliseconds.Value, DotComMilliseconds.Value];
             return values.Average();
+        }
+    }
+
+    public double? MeanProbeStandardDeviationMilliseconds
+    {
+        get
+        {
+            List<double> values = [];
+
+            if (CachedStandardDeviationMilliseconds is double cached)
+            {
+                values.Add(cached);
+            }
+
+            if (UncachedStandardDeviationMilliseconds is double uncached)
+            {
+                values.Add(uncached);
+            }
+
+            if (DotComStandardDeviationMilliseconds is double dotCom)
+            {
+                values.Add(dotCom);
+            }
+
+            return values.Count == 0 ? null : values.Average();
         }
     }
 }

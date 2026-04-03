@@ -8,9 +8,11 @@ internal sealed class AppSettings
 
     public int ConcurrencyLimit { get; init; } = 8;
 
-    public int AttemptsPerProbe { get; init; } = 1;
+    public int AttemptsPerProbe { get; init; } = 3;
 
     public bool AutoUpdateListOnStartup { get; init; } = true;
+
+    public bool CheckForAppUpdatesOnStartup { get; init; } = true;
 
     public string OutboundProxyType { get; init; } = "None";
 

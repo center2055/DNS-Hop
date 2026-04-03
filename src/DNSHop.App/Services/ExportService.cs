@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using DNSHop.App.Models;
+using DNSHop.App.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,7 +45,7 @@ public sealed class ExportService
         await using var streamWriter = new StreamWriter(path, append: false, Encoding.UTF8);
 
         await streamWriter.WriteLineAsync(
-            "Endpoint,Provider,Protocol,Status,SupportsDnssec,RedirectsNxDomain,PoisoningConfidence,PoisoningEvidence,CachedMs,UncachedMs,DotComMs,AverageMs,SuccessfulQueries,FailedQueries,LastError");
+            "Endpoint,Provider,Protocol,Status,SupportsDnssec,RedirectsNxDomain,PoisoningConfidence,PoisoningEvidence,CachedMs,UncachedMs,DotComMs,AverageMs,CachedStdDevMs,UncachedStdDevMs,DotComStdDevMs,MeanProbeStdDevMs,SuccessfulQueries,FailedQueries,LastError");
 
         foreach (var row in rows)
         {
@@ -62,6 +63,10 @@ public sealed class ExportService
                 FormatNullableDouble(row.UncachedMs),
                 FormatNullableDouble(row.DotComMs),
                 FormatNullableDouble(row.AverageMs),
+                FormatNullableDouble(row.CachedStdDevMs),
+                FormatNullableDouble(row.UncachedStdDevMs),
+                FormatNullableDouble(row.DotComStdDevMs),
+                FormatNullableDouble(row.MeanProbeStdDevMs),
                 row.SuccessfulQueries.ToString(CultureInfo.InvariantCulture),
                 row.FailedQueries.ToString(CultureInfo.InvariantCulture),
                 EscapeCsv(row.LastError));
@@ -287,7 +292,7 @@ public sealed class ExportService
             double? summaryMilliseconds = ComputeChartSummaryMilliseconds(result);
             DrawText(
                 context,
-                summaryMilliseconds is null ? "n/a" : $"{summaryMilliseconds:0.0} ms",
+                UiValueFormatter.FormatMilliseconds(summaryMilliseconds),
                 new Point(width - 140, y + 6),
                 12,
                 FontWeight.SemiBold,
@@ -370,7 +375,7 @@ public sealed class ExportService
     {
         var formattedText = new FormattedText(
             text,
-            CultureInfo.InvariantCulture,
+            UiValueFormatter.DisplayCulture,
             FlowDirection.LeftToRight,
             new Typeface("Inter", FontStyle.Normal, weight),
             fontSize,

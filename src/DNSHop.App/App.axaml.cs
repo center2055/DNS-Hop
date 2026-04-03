@@ -29,6 +29,7 @@ public partial class App : Application
             var recommendationService = new RecommendationService();
             var exportService = new ExportService();
             var appSettingsService = new AppSettingsService();
+            var appReleaseService = new AppReleaseService();
             var systemDnsSwitchService = new SystemDnsSwitchService();
             var currentDnsStatusService = new CurrentDnsStatusService();
 
@@ -40,6 +41,7 @@ public partial class App : Application
                     recommendationService,
                     exportService,
                     appSettingsService,
+                    appReleaseService,
                     systemDnsSwitchService,
                     currentDnsStatusService),
             };

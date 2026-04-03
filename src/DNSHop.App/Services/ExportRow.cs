@@ -15,6 +15,10 @@ internal sealed record ExportRow(
     double? UncachedMs,
     double? DotComMs,
     double? AverageMs,
+    double? CachedStdDevMs,
+    double? UncachedStdDevMs,
+    double? DotComStdDevMs,
+    double? MeanProbeStdDevMs,
     int SuccessfulQueries,
     int FailedQueries,
     string? LastError)
@@ -34,6 +38,10 @@ internal sealed record ExportRow(
             result.UncachedMilliseconds,
             result.DotComMilliseconds,
             result.AverageMilliseconds,
+            result.CachedStandardDeviationMilliseconds,
+            result.UncachedStandardDeviationMilliseconds,
+            result.DotComStandardDeviationMilliseconds,
+            result.MeanProbeStandardDeviationMilliseconds,
             result.SuccessfulQueries,
             result.FailedQueries,
             result.LastError);

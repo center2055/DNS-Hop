@@ -728,14 +728,15 @@
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Binding="{Binding AverageMilliseconds, StringFormat='{}{0:0.0} ms'}"
+                <DataGridTextColumn Binding="{Binding AverageDisplay}"
                                     SortMemberPath="AverageMilliseconds"
                                     Header="Average"
                                     Width="0.98*" />
-                <DataGridTemplateColumn Header="Hijack" SortMemberPath="RedirectsNxDomain" Width="0.72*">
+                <DataGridTemplateColumn Header="Std Dev C/U/D" SortMemberPath="MeanProbeStandardDeviationMilliseconds" Width="1.25*">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
-                      <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding RedirectsNxDomain}" />
+                      <TextBlock Text="{Binding ProbeStandardDeviationDisplay}"
+                                 ToolTip.Tip="{Binding ProbeStandardDeviationSummary}" />
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -746,10 +747,15 @@
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Side" SortMemberPath="IsSidelined" Width="0.7*">
+                <DataGridTemplateColumn Header="Sidelined" SortMemberPath="IsSidelined" Width="0.9*">
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
-                      <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding IsSidelined}" />
+                      <CheckBox Classes="appCheck"
+                                IsChecked="{Binding IsSidelined, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsHitTestVisible="True"
+                                Focusable="False"
+                                Cursor="Hand"
+                                ToolTip.Tip="{Binding SidelinedSummary}" />
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -831,10 +837,18 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
-              <DataGridTextColumn Binding="{Binding CachedMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="CachedMilliseconds" Header="Cached" Width="110" />
-              <DataGridTextColumn Binding="{Binding UncachedMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="UncachedMilliseconds" Header="Uncached" Width="120" />
-              <DataGridTextColumn Binding="{Binding DotComMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="DotComMilliseconds" Header="DotCom" Width="110" />
-              <DataGridTextColumn Binding="{Binding AverageMilliseconds, StringFormat='{}{0:0.0}'}" SortMemberPath="AverageMilliseconds" Header="Average" Width="110" />
+              <DataGridTextColumn Binding="{Binding CachedDisplay}" SortMemberPath="CachedMilliseconds" Header="Cached" Width="110" />
+              <DataGridTextColumn Binding="{Binding UncachedDisplay}" SortMemberPath="UncachedMilliseconds" Header="Uncached" Width="120" />
+              <DataGridTextColumn Binding="{Binding DotComDisplay}" SortMemberPath="DotComMilliseconds" Header="DotCom" Width="110" />
+              <DataGridTextColumn Binding="{Binding AverageDisplay}" SortMemberPath="AverageMilliseconds" Header="Average" Width="110" />
+              <DataGridTemplateColumn Header="Std Dev C/U/D" SortMemberPath="MeanProbeStandardDeviationMilliseconds" Width="150">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding ProbeStandardDeviationDisplay}"
+                               ToolTip.Tip="{Binding ProbeStandardDeviationSummary}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTemplateColumn Header="Status" SortMemberPath="StatusLabel" Width="120">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
@@ -846,13 +860,6 @@
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding SupportsDnssec}" />
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="Hijack" SortMemberPath="RedirectsNxDomain" Width="88">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate>
-                    <CheckBox Classes="appCheck readonlyCheck" IsChecked="{Binding RedirectsNxDomain}" />
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
@@ -967,6 +974,182 @@
             </StackPanel>
           </ScrollViewer>
         </TabItem>
+
+        <TabItem Header="About">
+          <ScrollViewer Margin="12">
+            <StackPanel Spacing="12">
+              <Border Padding="18"
+                      CornerRadius="12"
+                      Background="{DynamicResource CardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="10" HorizontalAlignment="Center">
+                  <Border Width="82"
+                          Height="82"
+                          CornerRadius="16"
+                          ClipToBounds="True"
+                          Background="{DynamicResource PageBackgroundBrush}">
+                    <Image Source="/Assets/DNSHopMark.png"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+                  </Border>
+                  <TextBlock FontSize="24"
+                             FontWeight="SemiBold"
+                             HorizontalAlignment="Center"
+                             Text="DNS Hop" />
+                  <TextBlock Classes="muted"
+                             HorizontalAlignment="Center"
+                             Text="{Binding VersionText}" />
+                  <TextBlock Classes="muted"
+                             MaxWidth="620"
+                             TextAlignment="Center"
+                             TextWrapping="Wrap"
+                             Text="Modern DNS benchmark utility with GitHub-linked release history and startup update checks." />
+                </StackPanel>
+              </Border>
+
+              <Border Padding="16"
+                      CornerRadius="12"
+                      Background="{DynamicResource ControlsCardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="10">
+                  <TextBlock FontSize="18" FontWeight="SemiBold" Text="Links" />
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Margin="0,0,10,10" Content="GitHub" Command="{Binding OpenRepositoryCommand}" />
+                    <Button Margin="0,0,10,10" Content="Discord" Command="{Binding OpenDiscordCommand}" />
+                    <Button Margin="0,0,10,10" Content="Ko-Fi" Command="{Binding OpenKoFiCommand}" />
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Padding="16"
+                      CornerRadius="12"
+                      Background="{DynamicResource ControlsCardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="10">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="4">
+                      <TextBlock FontSize="18" FontWeight="SemiBold" Text="Updates" />
+                      <TextBlock Classes="muted"
+                                 Text="{Binding UpdateStatusText}"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Content="Check now"
+                            Command="{Binding RefreshAboutDataCommand}" />
+                  </Grid>
+
+                  <Border Padding="12"
+                          CornerRadius="10"
+                          Background="{DynamicResource CardBrush}"
+                          BorderBrush="{DynamicResource CardBorderBrush}"
+                          BorderThickness="1">
+                    <StackPanel Spacing="6">
+                      <TextBlock FontSize="16"
+                                 FontWeight="SemiBold"
+                                 Text="{Binding LatestReleaseTitle}" />
+                      <TextBlock Classes="muted"
+                                 Text="{Binding LatestReleaseSummaryText}"
+                                 TextWrapping="Wrap" />
+                      <TextBlock IsVisible="{Binding HasLatestReleaseNotesPreview}"
+                                 Text="{Binding LatestReleaseNotesPreview}"
+                                 TextWrapping="Wrap" />
+                      <WrapPanel Orientation="Horizontal">
+                        <Button Margin="0,0,10,0"
+                                Content="Open Latest Release"
+                                Command="{Binding OpenReleaseLinkCommand}"
+                                CommandParameter="{Binding LatestReleaseUrl}" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </Border>
+
+                  <CheckBox Classes="appCheck"
+                            Content="Check for app updates on launch"
+                            IsChecked="{Binding CheckForAppUpdatesOnStartup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </Border>
+
+              <Border Padding="16"
+                      CornerRadius="12"
+                      Background="{DynamicResource ControlsCardBrush}"
+                      BorderBrush="{DynamicResource CardBorderBrush}"
+                      BorderThickness="1">
+                <StackPanel Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="4">
+                      <TextBlock FontSize="18" FontWeight="SemiBold" Text="Changelog" />
+                      <TextBlock Classes="muted"
+                                 IsVisible="{Binding HasChangelogStatus}"
+                                 Text="{Binding ChangelogStatusText}"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Content="Refresh"
+                            Command="{Binding RefreshAboutDataCommand}" />
+                  </Grid>
+
+                  <ProgressBar Height="8"
+                               Minimum="0"
+                               Maximum="100"
+                               IsIndeterminate="True"
+                               IsVisible="{Binding IsRefreshingReleaseData}"
+                               Background="{DynamicResource ProgressTrackBrush}" />
+
+                  <ItemsControl ItemsSource="{Binding ChangelogEntries}"
+                                IsVisible="{Binding HasChangelogEntries}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Margin="0,0,0,8"
+                                Padding="12"
+                                CornerRadius="10"
+                                Background="{DynamicResource CardBrush}"
+                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                BorderThickness="1">
+                          <StackPanel Spacing="8">
+                            <TextBlock FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding DisplayTitle}"
+                                       TextWrapping="Wrap" />
+
+                            <WrapPanel Orientation="Horizontal">
+                              <TextBlock Classes="muted"
+                                         Margin="0,0,12,0"
+                                         FontSize="12"
+                                         Text="{Binding Tag}" />
+                              <TextBlock Classes="muted"
+                                         Margin="0,0,12,0"
+                                         FontSize="12"
+                                         Text="{Binding PublishedText}" />
+                              <Border Padding="8,3"
+                                      CornerRadius="999"
+                                      Background="{DynamicResource PageBackgroundBrush}">
+                                <TextBlock FontSize="12" Text="{Binding ReleaseType}" />
+                              </Border>
+                            </WrapPanel>
+
+                            <Expander Header="Notes">
+                              <StackPanel Margin="0,8,0,0" Spacing="8">
+                                <TextBlock Text="{Binding Notes}"
+                                           TextWrapping="Wrap" />
+                                <Button HorizontalAlignment="Left"
+                                        Content="Open Release"
+                                        Command="{Binding DataContext.OpenReleaseLinkCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding HtmlUrl}" />
+                              </StackPanel>
+                            </Expander>
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
       </TabControl>
 
       <Border Grid.RowSpan="3"
@@ -997,7 +1180,53 @@
           </StackPanel>
         </Border>
       </Border>
+
+      <Border Grid.RowSpan="3"
+              IsVisible="{Binding IsUpdatePromptVisible}"
+              Background="#A0142034"
+              ZIndex="70">
+        <Border Width="520"
+                MaxWidth="560"
+                Padding="18"
+                CornerRadius="12"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                Background="{DynamicResource ShellCardBrush}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+          <StackPanel Spacing="12">
+            <TextBlock FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="{Binding UpdatePromptTitle}" />
+            <TextBlock Classes="muted"
+                       Text="{Binding UpdatePromptMessage}"
+                       TextWrapping="Wrap" />
+
+            <Border IsVisible="{Binding HasUpdatePromptNotes}"
+                    Padding="12"
+                    CornerRadius="10"
+                    Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}"
+                    BorderThickness="1">
+              <TextBlock Text="{Binding UpdatePromptNotes}"
+                         TextWrapping="Wrap" />
+            </Border>
+
+            <WrapPanel Orientation="Horizontal">
+              <Button Margin="0,0,10,10"
+                      Classes="accent"
+                      Content="Yes"
+                      Command="{Binding AcceptUpdatePromptCommand}" />
+              <Button Margin="0,0,10,10"
+                      Content="No"
+                      Command="{Binding DismissUpdatePromptCommand}" />
+              <Button Margin="0,0,10,10"
+                      Content="No, don't ask again"
+                      Command="{Binding DisableStartupUpdatePromptCommand}" />
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+      </Border>
     </Grid>
   </Grid>
 </Window>
-

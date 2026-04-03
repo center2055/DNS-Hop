@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using DNSHop.App.Collections;
 using DNSHop.App.Models;
 using DNSHop.App.Services;
+using DNSHop.App.Utilities;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly RecommendationService _recommendationService;
     private readonly ExportService _exportService;
     private readonly AppSettingsService _appSettingsService;
+    private readonly AppReleaseService _appReleaseService;
     private readonly SystemDnsSwitchService _systemDnsSwitchService;
     private readonly CurrentDnsStatusService _currentDnsStatusService;
 
@@ -44,6 +46,7 @@ public partial class MainWindowViewModel : ViewModelBase
         RecommendationService recommendationService,
         ExportService exportService,
         AppSettingsService appSettingsService,
+        AppReleaseService appReleaseService,
         SystemDnsSwitchService systemDnsSwitchService,
         CurrentDnsStatusService currentDnsStatusService)
     {
@@ -52,6 +55,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _recommendationService = recommendationService;
         _exportService = exportService;
         _appSettingsService = appSettingsService;
+        _appReleaseService = appReleaseService;
         _systemDnsSwitchService = systemDnsSwitchService;
         _currentDnsStatusService = currentDnsStatusService;
 
@@ -75,6 +79,8 @@ public partial class MainWindowViewModel : ViewModelBase
         Dispatcher.UIThread.Post(
             () => SwitchTheme(SelectedTheme),
             DispatcherPriority.Loaded);
+
+        InitializeAboutAndUpdates();
 
         // Startup flow: load list immediately so the UI is ready for one-click benchmarking.
         _ = LoadServersAsync();
@@ -143,7 +149,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private int concurrencyLimit = 8;
 
     [ObservableProperty]
-    private int attemptsPerProbe = 1;
+    private int attemptsPerProbe = 3;
 
     [ObservableProperty]
     private bool autoUpdateListOnStartup = true;
@@ -185,13 +191,13 @@ public partial class MainWindowViewModel : ViewModelBase
         SaveSettingsSnapshot();
     }
 
-    public string PercentCompletedText => $"{PercentCompleted:0.0}%";
+    public string PercentCompletedText => $"{UiValueFormatter.FormatNumber(PercentCompleted)}%";
 
     private bool CanApplySelectedDns => !IsBenchmarkRunning && SelectedServer is not null;
 
     private bool CanRefreshCurrentDnsStatus => !IsCurrentDnsStatusRefreshing;
 
-    private bool CanStartBenchmark => !IsBenchmarkRunning && Servers.Count > 0;
+    private bool CanStartBenchmark => !IsBenchmarkRunning && Servers.Any(static row => !row.IsSidelined);
 
     private bool CanCancelBenchmark => IsBenchmarkRunning;
 
@@ -281,8 +287,13 @@ public partial class MainWindowViewModel : ViewModelBase
                 .GetLocalServersAsync(CancellationToken.None)
                 .ConfigureAwait(true);
 
+            foreach (var existing in Servers)
+            {
+                DetachServerRow(existing);
+            }
+
             var localRows = servers
-                .Select(static server => new DnsServerResultViewModel(server))
+                .Select(CreateServerRow)
                 .ToArray();
 
             Servers.ReplaceRange(localRows);
@@ -381,7 +392,10 @@ public partial class MainWindowViewModel : ViewModelBase
             ApplyFilterAndSort();
 
             ConclusionText = _recommendationService.BuildConclusion(
-                Servers.Select(static row => row.ToResultModel()).ToArray());
+                Servers
+                    .Where(static row => !row.IsSidelined)
+                    .Select(static row => row.ToResultModel())
+                    .ToArray());
 
             StatusMessage = $"Benchmark complete. Tested {benchmarkResults.Count} active endpoints.";
             PercentCompleted = 100;
@@ -570,6 +584,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
+        DetachServerRow(target);
         Servers.Remove(target);
 
         if (ReferenceEquals(SelectedServer, target))
@@ -593,8 +608,6 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         target.IsSidelined = !target.IsSidelined;
-        ApplyFilterAndSort();
-        UpdateIdleProgressSnapshot();
     }
 
     [RelayCommand]
@@ -720,6 +733,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         foreach (var item in toRemove)
         {
+            DetachServerRow(item);
             Servers.Remove(item);
         }
 
@@ -850,7 +864,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 continue;
             }
 
-            pendingAdds.Add(new DnsServerResultViewModel(server));
+            pendingAdds.Add(CreateServerRow(server));
         }
 
         if (pendingAdds.Count > 0)
@@ -859,6 +873,29 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         return pendingAdds.Count;
+    }
+
+    private DnsServerResultViewModel CreateServerRow(DnsServerDefinition server)
+    {
+        var row = new DnsServerResultViewModel(server);
+        row.SidelinedChanged += OnServerRowSidelinedChanged;
+        return row;
+    }
+
+    private void DetachServerRow(DnsServerResultViewModel row)
+    {
+        row.SidelinedChanged -= OnServerRowSidelinedChanged;
+    }
+
+    private void OnServerRowSidelinedChanged(DnsServerResultViewModel row)
+    {
+        ApplyFilterAndSort();
+        UpdateIdleProgressSnapshot();
+        StartBenchmarkCommand.NotifyCanExecuteChanged();
+
+        StatusMessage = row.IsSidelined
+            ? $"Sidelined {row.Endpoint}. It stays in the list but will be skipped in future benchmarks."
+            : $"Restored {row.Endpoint} to active benchmarking.";
     }
 
     private void UpdateIdleProgressSnapshot()
@@ -1003,6 +1040,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ConcurrencyLimit = settings.ConcurrencyLimit;
             AttemptsPerProbe = settings.AttemptsPerProbe;
             AutoUpdateListOnStartup = settings.AutoUpdateListOnStartup;
+            CheckForAppUpdatesOnStartup = settings.CheckForAppUpdatesOnStartup;
             SelectedProxyType = settings.OutboundProxyType;
             ProxyHost = settings.OutboundProxyHost;
             ProxyPort = settings.OutboundProxyPort;
@@ -1027,6 +1065,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ConcurrencyLimit = ConcurrencyLimit,
             AttemptsPerProbe = AttemptsPerProbe,
             AutoUpdateListOnStartup = AutoUpdateListOnStartup,
+            CheckForAppUpdatesOnStartup = CheckForAppUpdatesOnStartup,
             OutboundProxyType = SelectedProxyType,
             OutboundProxyHost = ProxyHost,
             OutboundProxyPort = ProxyPort,
