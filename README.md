@@ -2,8 +2,6 @@
 
 Modern DNS benchmarking utility (GRC-inspired) built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
 
-![DNS Hop dashboard](docs/images/dns-hop-dashboard.png)
-
 ## Phase 1 - Setup and MVVM scaffold
 
 ```powershell
@@ -94,6 +92,11 @@ Installer assets:
 - `publish-win-x64.ps1`
 - `publish-linux-x64.sh`
 
+Windows release assets typically include:
+
+- `DNS-Hop-Setup-vX.Y.exe` installer
+- `DNS-Hop-Portable-vX.Y.zip` portable build
+
 ### Publish commands
 
 ```powershell
@@ -105,7 +108,7 @@ dotnet publish src/DNSHop.App/DNSHop.App.csproj `
   /p:PublishTrimmed=true `
   /p:TrimMode=partial `
   /p:IncludeNativeLibrariesForSelfExtract=true `
-  -o artifacts/publish-win-x64
+  -o artifacts/publish-win-x64-release
 ```
 
 ```bash

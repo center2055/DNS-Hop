@@ -226,6 +226,9 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                 CachedMilliseconds = cached.AverageMilliseconds,
                 UncachedMilliseconds = uncached.AverageMilliseconds,
                 DotComMilliseconds = dotCom.AverageMilliseconds,
+                CachedStandardDeviationMilliseconds = cached.StandardDeviationMilliseconds,
+                UncachedStandardDeviationMilliseconds = uncached.StandardDeviationMilliseconds,
+                DotComStandardDeviationMilliseconds = dotCom.StandardDeviationMilliseconds,
                 Status = status,
                 SupportsDnssec = supportsDnssec,
                 RedirectsNxDomain = redirecting,
@@ -1423,6 +1426,8 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         public double? AverageMilliseconds => SuccessTimings.Count == 0
             ? null
             : SuccessTimings.Average();
+
+        public double? StandardDeviationMilliseconds => CalculateSampleStandardDeviation(SuccessTimings);
     }
 
     private sealed class RedirectAnalysis
@@ -1450,5 +1455,17 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         public int FailedAttempts { get; set; }
 
         public string? LastError { get; set; }
+    }
+
+    private static double? CalculateSampleStandardDeviation(IReadOnlyList<double> values)
+    {
+        if (values.Count < 2)
+        {
+            return null;
+        }
+
+        double mean = values.Average();
+        double variance = values.Sum(value => Math.Pow(value - mean, 2)) / (values.Count - 1);
+        return Math.Sqrt(variance);
     }
 }

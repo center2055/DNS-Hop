@@ -1,4 +1,5 @@
 using DNSHop.App.Models;
+using DNSHop.App.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,16 +43,18 @@ public sealed class RecommendationService
         var builder = new StringBuilder();
         builder.AppendLine("Primary Recommendation");
         builder.AppendLine($"- {primary.Server.EndpointDisplay} ({primary.Server.Provider})");
-        builder.AppendLine($"- Average latency: {FormatMs(primary.AverageMilliseconds)}");
+        builder.AppendLine($"- Average latency: {UiValueFormatter.FormatMilliseconds(primary.AverageMilliseconds)}");
+        builder.AppendLine($"- Std dev (C/U/D): {UiValueFormatter.FormatProbeTriplet(primary.CachedStandardDeviationMilliseconds, primary.UncachedStandardDeviationMilliseconds, primary.DotComStandardDeviationMilliseconds, includeUnit: true, nullPlaceholder: "<2", allNullText: "insufficient samples")}");
         builder.AppendLine($"- DNSSEC: {(primary.SupportsDnssec ? "Yes" : "No")}");
-        builder.AppendLine($"- Cached: {FormatMs(primary.CachedMilliseconds)}, Uncached: {FormatMs(primary.UncachedMilliseconds)}, DotCom: {FormatMs(primary.DotComMilliseconds)}");
+        builder.AppendLine($"- Cached: {UiValueFormatter.FormatMilliseconds(primary.CachedMilliseconds)}, Uncached: {UiValueFormatter.FormatMilliseconds(primary.UncachedMilliseconds)}, DotCom: {UiValueFormatter.FormatMilliseconds(primary.DotComMilliseconds)}");
 
         if (secondary is not null)
         {
             builder.AppendLine();
             builder.AppendLine("Secondary Recommendation");
             builder.AppendLine($"- {secondary.Server.EndpointDisplay} ({secondary.Server.Provider})");
-            builder.AppendLine($"- Average latency: {FormatMs(secondary.AverageMilliseconds)}");
+            builder.AppendLine($"- Average latency: {UiValueFormatter.FormatMilliseconds(secondary.AverageMilliseconds)}");
+            builder.AppendLine($"- Std dev (C/U/D): {UiValueFormatter.FormatProbeTriplet(secondary.CachedStandardDeviationMilliseconds, secondary.UncachedStandardDeviationMilliseconds, secondary.DotComStandardDeviationMilliseconds, includeUnit: true, nullPlaceholder: "<2", allNullText: "insufficient samples")}");
             builder.AppendLine($"- DNSSEC: {(secondary.SupportsDnssec ? "Yes" : "No")}");
 
             if (string.Equals(primary.Server.Provider, secondary.Server.Provider, StringComparison.OrdinalIgnoreCase))
@@ -76,10 +79,5 @@ public sealed class RecommendationService
         }
 
         return builder.ToString().TrimEnd();
-    }
-
-    private static string FormatMs(double? value)
-    {
-        return value is null ? "n/a" : $"{value:0.0} ms";
     }
 }

@@ -9,7 +9,7 @@ public sealed class DnsBenchmarkOptions
     public int ConcurrencyLimit { get; init; } = 8;
 
     // Attempts per probe type. Higher improves stability but increases runtime.
-    public int AttemptsPerProbe { get; init; } = 1;
+    public int AttemptsPerProbe { get; init; } = 3;
 
     // Whether to skip SSL certificate validation for DoT/DoH.
     public bool AllowInsecureSsl { get; init; } = false;

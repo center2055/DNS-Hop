@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using DNSHop.App.Models;
+using DNSHop.App.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,6 +8,8 @@ namespace DNSHop.App.ViewModels;
 
 public partial class DnsServerResultViewModel : ViewModelBase
 {
+    public event Action<DnsServerResultViewModel>? SidelinedChanged;
+
     public DnsServerResultViewModel(DnsServerDefinition server)
     {
         Server = server;
@@ -40,18 +43,45 @@ public partial class DnsServerResultViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AverageMilliseconds))]
+    [NotifyPropertyChangedFor(nameof(CachedDisplay))]
+    [NotifyPropertyChangedFor(nameof(AverageDisplay))]
     [NotifyPropertyChangedFor(nameof(ProbeSummary))]
     private double? cachedMilliseconds;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AverageMilliseconds))]
+    [NotifyPropertyChangedFor(nameof(UncachedDisplay))]
+    [NotifyPropertyChangedFor(nameof(AverageDisplay))]
     [NotifyPropertyChangedFor(nameof(ProbeSummary))]
     private double? uncachedMilliseconds;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AverageMilliseconds))]
+    [NotifyPropertyChangedFor(nameof(DotComDisplay))]
+    [NotifyPropertyChangedFor(nameof(AverageDisplay))]
     [NotifyPropertyChangedFor(nameof(ProbeSummary))]
     private double? dotComMilliseconds;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProbeStandardDeviationDisplay))]
+    [NotifyPropertyChangedFor(nameof(ProbeStandardDeviationSummary))]
+    [NotifyPropertyChangedFor(nameof(MeanProbeStandardDeviationMilliseconds))]
+    [NotifyPropertyChangedFor(nameof(ProbeSummary))]
+    private double? cachedStandardDeviationMilliseconds;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProbeStandardDeviationDisplay))]
+    [NotifyPropertyChangedFor(nameof(ProbeStandardDeviationSummary))]
+    [NotifyPropertyChangedFor(nameof(MeanProbeStandardDeviationMilliseconds))]
+    [NotifyPropertyChangedFor(nameof(ProbeSummary))]
+    private double? uncachedStandardDeviationMilliseconds;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProbeStandardDeviationDisplay))]
+    [NotifyPropertyChangedFor(nameof(ProbeStandardDeviationSummary))]
+    [NotifyPropertyChangedFor(nameof(MeanProbeStandardDeviationMilliseconds))]
+    [NotifyPropertyChangedFor(nameof(ProbeSummary))]
+    private double? dotComStandardDeviationMilliseconds;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusLabel))]
@@ -85,6 +115,7 @@ public partial class DnsServerResultViewModel : ViewModelBase
     private bool isPinned;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SidelinedSummary))]
     private bool isSidelined;
 
     [ObservableProperty]
@@ -106,6 +137,12 @@ public partial class DnsServerResultViewModel : ViewModelBase
 
     public bool IsAlive => Status == DnsServerStatus.Alive;
 
+    public string CachedDisplay => UiValueFormatter.FormatMilliseconds(CachedMilliseconds);
+
+    public string UncachedDisplay => UiValueFormatter.FormatMilliseconds(UncachedMilliseconds);
+
+    public string DotComDisplay => UiValueFormatter.FormatMilliseconds(DotComMilliseconds);
+
     public double? AverageMilliseconds
     {
         get
@@ -121,15 +158,59 @@ public partial class DnsServerResultViewModel : ViewModelBase
         }
     }
 
+    public string AverageDisplay => UiValueFormatter.FormatMilliseconds(AverageMilliseconds);
+
+    public double? MeanProbeStandardDeviationMilliseconds
+    {
+        get
+        {
+            List<double> values = [];
+
+            if (CachedStandardDeviationMilliseconds is double cached)
+            {
+                values.Add(cached);
+            }
+
+            if (UncachedStandardDeviationMilliseconds is double uncached)
+            {
+                values.Add(uncached);
+            }
+
+            if (DotComStandardDeviationMilliseconds is double dotCom)
+            {
+                values.Add(dotCom);
+            }
+
+            return values.Count == 0 ? null : values.Average();
+        }
+    }
+
+    public string ProbeStandardDeviationDisplay => UiValueFormatter.FormatProbeTriplet(
+        CachedStandardDeviationMilliseconds,
+        UncachedStandardDeviationMilliseconds,
+        DotComStandardDeviationMilliseconds,
+        nullPlaceholder: "<2",
+        allNullText: "insufficient");
+
+    public string ProbeStandardDeviationSummary =>
+        $"Std dev over successful repeated attempts for Cached / Uncached / DotCom: {UiValueFormatter.FormatProbeTriplet(CachedStandardDeviationMilliseconds, UncachedStandardDeviationMilliseconds, DotComStandardDeviationMilliseconds, includeUnit: true, nullPlaceholder: "<2", allNullText: "insufficient samples")}. <2 means fewer than 2 successful samples for that probe.";
+
     public string ProbeSummary =>
-        $"Cached: {FormatMs(CachedMilliseconds)} | Uncached: {FormatMs(UncachedMilliseconds)} | DotCom: {FormatMs(DotComMilliseconds)} | Avg: {FormatMs(AverageMilliseconds)} | Poisoning: {PoisoningConfidence:P0}"
+        $"Cached: {CachedDisplay} | Uncached: {UncachedDisplay} | DotCom: {DotComDisplay} | Avg: {AverageDisplay} | StdDev (C/U/D): {UiValueFormatter.FormatProbeTriplet(CachedStandardDeviationMilliseconds, UncachedStandardDeviationMilliseconds, DotComStandardDeviationMilliseconds, includeUnit: true, nullPlaceholder: "<2", allNullText: "insufficient samples")} | Poisoning: {UiValueFormatter.FormatPercent(PoisoningConfidence)}"
         + (string.IsNullOrWhiteSpace(PoisoningEvidence) ? string.Empty : $" | {PoisoningEvidence}");
+
+    public string SidelinedSummary => IsSidelined
+        ? "Excluded from future benchmark runs until restored."
+        : "Included in future benchmark runs.";
 
     public void ApplyBenchmarkResult(DnsBenchmarkResult result)
     {
         CachedMilliseconds = result.CachedMilliseconds;
         UncachedMilliseconds = result.UncachedMilliseconds;
         DotComMilliseconds = result.DotComMilliseconds;
+        CachedStandardDeviationMilliseconds = result.CachedStandardDeviationMilliseconds;
+        UncachedStandardDeviationMilliseconds = result.UncachedStandardDeviationMilliseconds;
+        DotComStandardDeviationMilliseconds = result.DotComStandardDeviationMilliseconds;
         Status = result.Status;
         SupportsDnssec = result.SupportsDnssec;
         RedirectsNxDomain = result.RedirectsNxDomain;
@@ -148,6 +229,9 @@ public partial class DnsServerResultViewModel : ViewModelBase
             CachedMilliseconds = CachedMilliseconds,
             UncachedMilliseconds = UncachedMilliseconds,
             DotComMilliseconds = DotComMilliseconds,
+            CachedStandardDeviationMilliseconds = CachedStandardDeviationMilliseconds,
+            UncachedStandardDeviationMilliseconds = UncachedStandardDeviationMilliseconds,
+            DotComStandardDeviationMilliseconds = DotComStandardDeviationMilliseconds,
             Status = Status,
             SupportsDnssec = SupportsDnssec,
             RedirectsNxDomain = RedirectsNxDomain,
@@ -167,6 +251,7 @@ public partial class DnsServerResultViewModel : ViewModelBase
     partial void OnIsSidelinedChanged(bool value)
     {
         Server.IsSidelined = value;
+        SidelinedChanged?.Invoke(this);
     }
 
     public bool MatchesFilter(string normalizedTerm)
@@ -178,8 +263,5 @@ public partial class DnsServerResultViewModel : ViewModelBase
 
         return SearchKey.Contains(normalizedTerm, System.StringComparison.Ordinal);
     }
-
-    private static string FormatMs(double? value)
-        => value is null ? "n/a" : $"{value:0.0} ms";
 }
 

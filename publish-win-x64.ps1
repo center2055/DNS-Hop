@@ -9,5 +9,5 @@ dotnet publish src/DNSHop.App/DNSHop.App.csproj `
   /p:PublishTrimmed=true `
   /p:TrimMode=partial `
   /p:IncludeNativeLibrariesForSelfExtract=true `
-  -o artifacts/publish-win-x64
+  -o artifacts/publish-win-x64-release
 
