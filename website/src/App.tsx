@@ -356,7 +356,6 @@ function App() {
           <div className="section-heading">
             <span className="eyebrow">Download</span>
             <h2>Grab the current build.</h2>
-            <p>Installer and portable, both on the latest release.</p>
 
             <div className="section-actions">
               <a
@@ -432,7 +431,6 @@ function App() {
           <div className="section-heading">
             <span className="eyebrow">FAQ</span>
             <h2>Short answers for the obvious questions.</h2>
-            <p>Enough context for visitors to understand the product fast without burying them in a manual.</p>
           </div>
 
           <div className="faq-shell">
