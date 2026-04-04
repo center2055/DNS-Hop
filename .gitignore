@@ -6,3 +6,5 @@ installer/output/
 *.user
 *.suo
 *.pdb
+website/node_modules/
+website/dist/
