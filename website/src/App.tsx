@@ -366,25 +366,6 @@ function App() {
           <div className="section-heading">
             <span className="eyebrow">Download</span>
             <h2>Grab the current build.</h2>
-
-            <div className="section-actions">
-              <a
-                className="button primary"
-                href={installerAsset?.browser_download_url ?? release.html_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download installer
-              </a>
-              <a
-                className="button secondary"
-                href={portableAsset?.browser_download_url ?? release.html_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get portable zip
-              </a>
-            </div>
           </div>
 
           <div className="release-grid">
