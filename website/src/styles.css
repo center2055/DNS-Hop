@@ -329,9 +329,9 @@ img {
 .hero-metric {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 190px;
-  padding: 16px;
+  gap: 18px;
+  min-height: 136px;
+  padding: 18px 20px;
   border-radius: 20px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.56);
@@ -348,14 +348,16 @@ img {
 }
 
 .hero-metric span {
-  min-height: 3.6em;
+  min-height: 0;
+  line-height: 1.2;
+  max-width: 10ch;
 }
 
 .hero-metric strong,
 .release-number {
   display: block;
   margin-top: auto;
-  font-size: 1.52rem;
+  font-size: 2rem;
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums lining-nums;
