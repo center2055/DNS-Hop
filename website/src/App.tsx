@@ -32,6 +32,16 @@ function formatDate(dateValue: string) {
   }).format(new Date(dateValue));
 }
 
+function formatDateTime(dateValue: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateValue));
+}
+
 function updateSpotlight(event: MouseEvent<HTMLElement>) {
   const rect = event.currentTarget.getBoundingClientRect();
   event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
@@ -124,7 +134,7 @@ function FeatureCard({
 
 function App() {
   const reducedMotion = useReducedMotion() ?? false;
-  const { repo, release, loading, error, isFallback } = useDnsHopSnapshot();
+  const { repo, release, loading, error, isFallback, fetchedAt } = useDnsHopSnapshot();
   const [activeMode, setActiveMode] = useState<StageModeId>('benchmark');
   const [openFaq, setOpenFaq] = useState(0);
 
@@ -226,7 +236,7 @@ function App() {
                   ? 'Fetching live GitHub snapshot'
                   : error
                     ? `Showing fallback release data (${error})`
-                    : `Live GitHub data synced from ${formatDate(repo.pushed_at)}`}
+                    : `Live GitHub data fetched ${fetchedAt ? formatDateTime(fetchedAt) : 'just now'}`}
               </span>
             </div>
           </motion.div>
@@ -378,28 +388,6 @@ function App() {
           </div>
 
           <div className="release-grid">
-            <article className="release-card release-hub-card" onMouseMove={updateSpotlight} onMouseLeave={resetSpotlight}>
-              <h3>{release.name}</h3>
-              <p className="release-lead">Fast Windows DNS benchmarking and one-click switching without the paywall.</p>
-              <div className="release-quick-stats">
-                <div>
-                  <span className="feature-topline">Stars</span>
-                  <strong>{formatCompactNumber(repo.stargazers_count)}</strong>
-                </div>
-                <div>
-                  <span className="feature-topline">Forks</span>
-                  <strong>{formatCompactNumber(repo.forks_count)}</strong>
-                </div>
-                <div>
-                  <span className="feature-topline">Assets</span>
-                  <strong>{release.assets.length}</strong>
-                </div>
-              </div>
-              <a className="button secondary release-hub-button" href={release.html_url} target="_blank" rel="noreferrer">
-                Open full release
-              </a>
-            </article>
-
             <div className="release-assets">
               {featuredAssets.map((asset) => (
                 <article

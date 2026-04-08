@@ -7,6 +7,7 @@ type SnapshotState = {
   loading: boolean;
   error: string | null;
   isFallback: boolean;
+  fetchedAt: string | null;
 };
 
 const defaultState: SnapshotState = {
@@ -15,10 +16,12 @@ const defaultState: SnapshotState = {
   loading: true,
   error: null,
   isFallback: true,
+  fetchedAt: null,
 };
 
 async function loadJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, {
+    cache: 'no-store',
     headers: {
       Accept: 'application/vnd.github+json',
     },
@@ -41,6 +44,7 @@ export function useDnsHopSnapshot() {
 
     async function run() {
       try {
+        const fetchedAt = new Date().toISOString();
         const [repo, release] = await Promise.all([
           loadJson<GitHubRepo>('https://api.github.com/repos/center2055/DNS-Hop', controller.signal),
           loadJson<GitHubRelease>('https://api.github.com/repos/center2055/DNS-Hop/releases/latest', controller.signal),
@@ -56,6 +60,7 @@ export function useDnsHopSnapshot() {
           loading: false,
           error: null,
           isFallback: false,
+          fetchedAt,
         });
       } catch (error) {
         if (isDisposed || controller.signal.aborted) {
@@ -68,6 +73,7 @@ export function useDnsHopSnapshot() {
           loading: false,
           error: error instanceof Error ? error.message : 'GitHub snapshot unavailable',
           isFallback: true,
+          fetchedAt: new Date().toISOString(),
         });
       }
     }
