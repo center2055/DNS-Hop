@@ -1,0 +1,93 @@
+name: Build Linux AppImage
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/linux-appimage.yml'
+      - 'DNSHop.sln'
+      - 'DNSHopLogo.png'
+      - 'New Public DNS Resolvers.ini'
+      - 'package-linux-appimage.sh'
+      - 'publish-linux-appimage.sh'
+      - 'publish-linux-x64.sh'
+      - 'src/DNSHop.App/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-appimage:
+    name: Build AppImage
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Make scripts executable
+        run: chmod +x package-linux-appimage.sh publish-linux-appimage.sh publish-linux-x64.sh
+
+      - name: Publish AppImage
+        run: ./publish-linux-appimage.sh
+
+      - name: Generate checksum
+        run: sha256sum artifacts/DNSHop-linux-x86_64.AppImage > artifacts/DNSHop-linux-x86_64.AppImage.sha256
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dns-hop-linux-appimage
+          if-no-files-found: error
+          path: |
+            artifacts/DNSHop-linux-x86_64.AppImage
+            artifacts/DNSHop-linux-x86_64.AppImage.sha256
+
+  smoke-test:
+    name: Smoke test on ${{ matrix.name }}
+    needs: build-appimage
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Debian 12
+            image: debian:12
+            install: apt-get update && apt-get install -y --no-install-recommends bash ca-certificates libicu72
+          - name: Fedora 41
+            image: fedora:41
+            install: dnf install -y bash ca-certificates libicu
+          - name: Arch
+            image: archlinux:latest
+            install: pacman -Sy --noconfirm bash ca-certificates icu
+
+    steps:
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dns-hop-linux-appimage
+          path: artifacts
+
+      - name: Run smoke test in ${{ matrix.name }}
+        env:
+          DISTRO_IMAGE: ${{ matrix.image }}
+          DISTRO_INSTALL: ${{ matrix.install }}
+        run: |
+          chmod +x artifacts/DNSHop-linux-x86_64.AppImage
+          docker run --rm \
+            -e APPIMAGE_EXTRACT_AND_RUN=1 \
+            -v "${PWD}/artifacts:/artifacts" \
+            "$DISTRO_IMAGE" \
+            /bin/sh -lc "
+              set -eu
+              $DISTRO_INSTALL
+              chmod +x /artifacts/DNSHop-linux-x86_64.AppImage
+              /artifacts/DNSHop-linux-x86_64.AppImage --smoke-test
+            "
