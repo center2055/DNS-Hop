@@ -138,6 +138,8 @@ dotnet run --project src/DNSHop.App/DNSHop.App.csproj
 - On standard Linux, DNS Hop first tries NetworkManager or `systemd-resolved`; if neither is available it falls back to writing `/etc/resolv.conf`.
 - On WSL, DNS Hop writes `/etc/resolv.conf`. For changes to survive a WSL restart, `/etc/wsl.conf` needs `[network] generateResolvConf=false`.
 - WSL testing requires WSLg for the GUI. The published `artifacts/publish-linux-x64/DNSHop.App` binary is self-contained and does not require the .NET runtime inside WSL.
+- `publish-linux-appimage.sh` produces `artifacts/DNSHop-linux-x86_64.AppImage`.
+- GitHub Actions now builds the AppImage on `ubuntu-22.04` and smoke-tests the bundled binary on Debian 12, Fedora 41, and Arch using `DNSHop.App --smoke-test`.
 
 ## Notes
 
