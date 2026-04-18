@@ -1,6 +1,6 @@
 # DNSHop
 
-Modern DNS benchmarking utility (GRC-inspired) built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
+Modern Windows and Linux DNS benchmarking utility built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
 
 ![DNS Hop Dashboard](docs/images/dns-hop-dashboard.png)
 
@@ -76,7 +76,7 @@ UI features:
 - Custom response-time visual bars:
   - `src/DNSHop.App/Controls/ResponseBarsControl.cs`
 
-## Phase 4 - Export and installer packaging
+## Phase 4 - Export and desktop packaging
 
 Export services:
 
@@ -88,16 +88,18 @@ Supported exports:
 - JSON
 - PNG chart snapshot copied to clipboard
 
-Installer assets:
+Packaging assets:
 
 - `installer/DNSHop.iss`
 - `publish-win-x64.ps1`
 - `publish-linux-x64.sh`
+- `publish-linux-appimage.sh`
 
-Windows release assets typically include:
+Release assets typically include:
 
-- `DNS-Hop-Setup-vX.Y.exe` installer
-- `DNS-Hop-Portable-vX.Y.zip` portable build
+- `DNS-Hop-Setup-vX.Y.exe` Windows installer
+- `DNS-Hop-Portable-vX.Y.zip` Windows portable build
+- `DNS-Hop-AppImage-vX.Y-x86_64.AppImage` Linux AppImage
 
 ### Publish commands
 
@@ -133,7 +135,7 @@ dotnet run --project src/DNSHop.App/DNSHop.App.csproj
 
 ### Linux / WSL notes
 
-- DNS Hop now builds and publishes for Linux (`linux-x64`) in addition to Windows.
+- DNS Hop targets Windows and Linux desktop releases.
 - System DNS switching on Linux supports classic UDP/TCP DNS endpoints with direct IP addresses.
 - On standard Linux, DNS Hop first tries NetworkManager or `systemd-resolved`; if neither is available it falls back to writing `/etc/resolv.conf`.
 - On WSL, DNS Hop writes `/etc/resolv.conf`. For changes to survive a WSL restart, `/etc/wsl.conf` needs `[network] generateResolvConf=false`.

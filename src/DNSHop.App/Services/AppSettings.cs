@@ -1,3 +1,5 @@
+using DNSHop.App.Models;
+
 namespace DNSHop.App.Services;
 
 internal sealed class AppSettings
@@ -19,4 +21,6 @@ internal sealed class AppSettings
     public string OutboundProxyHost { get; init; } = string.Empty;
 
     public int OutboundProxyPort { get; init; } = 1080;
+
+    public DnsServerDefinition[] CustomServers { get; init; } = [];
 }

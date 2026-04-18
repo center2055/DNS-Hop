@@ -1,23 +1,36 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Platform;
 using Avalonia.VisualTree;
 using DNSHop.App.ViewModels;
+using System;
+using System.Runtime.InteropServices;
 
 namespace DNSHop.App.Views;
 
 public partial class MainWindow : Window
 {
+    private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    private const int DWMWA_BORDER_COLOR = 34;
+    private const uint DwmColorNone = 0xFFFFFFFE;
+
     public MainWindow()
     {
         InitializeComponent();
         ApplyOpaqueWindowSettings();
         DataContextChanged += (_, _) => ReapplyThemeFromViewModel();
+        ActualThemeVariantChanged += (_, _) => ApplyNativeWindowChrome();
         Opened += (_, _) =>
         {
             ApplyOpaqueWindowSettings();
+            ApplyNativeWindowChrome();
             ReapplyThemeFromViewModel();
         };
-        Activated += (_, _) => ReapplyThemeFromViewModel();
+        Activated += (_, _) =>
+        {
+            ApplyNativeWindowChrome();
+            ReapplyThemeFromViewModel();
+        };
         Closing += (_, _) =>
         {
             if (DataContext is MainWindowViewModel vm)
@@ -34,6 +47,26 @@ public partial class MainWindow : Window
         ExtendClientAreaToDecorationsHint = false;
         TransparencyLevelHint = [WindowTransparencyLevel.None];
         Opacity = 1.0;
+    }
+
+    private void ApplyNativeWindowChrome()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        IntPtr? hwnd = TryGetPlatformHandle()?.Handle;
+        if (hwnd is null || hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        int cornerPreference = (int)DwmWindowCornerPreference.DoNotRound;
+        DwmSetWindowAttribute(hwnd.Value, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
+
+        uint borderColor = DwmColorNone;
+        DwmSetWindowAttribute(hwnd.Value, DWMWA_BORDER_COLOR, ref borderColor, sizeof(uint));
     }
 
     private void ReapplyThemeFromViewModel()
@@ -72,5 +105,60 @@ public partial class MainWindow : Window
             grid.SelectedItem = rowViewModel;
         }
     }
+
+    private void AddCustomDnsOverlay_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+        {
+            return;
+        }
+
+        if (vm.CancelAddCustomDnsCommand.CanExecute(null))
+        {
+            vm.CancelAddCustomDnsCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void UpdatePromptOverlay_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+        {
+            return;
+        }
+
+        if (vm.DismissUpdatePromptCommand.CanExecute(null))
+        {
+            vm.DismissUpdatePromptCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private static void DialogSurface_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private enum DwmWindowCornerPreference
+    {
+        Default = 0,
+        DoNotRound = 1,
+        Round = 2,
+        RoundSmall = 3,
+    }
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        int attribute,
+        ref int value,
+        int attributeSize);
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        int attribute,
+        ref uint value,
+        int attributeSize);
 }
 
