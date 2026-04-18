@@ -209,7 +209,7 @@ export const fallbackRelease: GitHubRelease = {
     },
     {
       name: 'DNS-Hop-AppImage-v1.3-x86_64.AppImage',
-      size: 41792704,
+      size: 41788608,
       download_count: 0,
       browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-AppImage-v1.3-x86_64.AppImage',
     },
