@@ -24,6 +24,8 @@ public sealed class DnsServerDefinition
 
     public bool IsSidelined { get; set; }
 
+    public bool IsCustom { get; set; }
+
     public string EndpointDisplay => Protocol switch
     {
         DnsProtocol.Doh => DohEndpoint ?? AddressOrHost,

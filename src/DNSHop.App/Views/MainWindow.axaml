@@ -28,6 +28,8 @@
     <SolidColorBrush x:Key="ShellCardBrush" Color="#FF223350" />
     <SolidColorBrush x:Key="ControlsCardBrush" Color="#FF1F304B" />
     <SolidColorBrush x:Key="ContentPanelBrush" Color="#FF1D2E49" />
+    <SolidColorBrush x:Key="DialogSurfaceBrush" Color="#FF223350" />
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#A0142034" />
     <SolidColorBrush x:Key="CardBrush" Color="#FF253A5A" />
     <SolidColorBrush x:Key="CardBorderBrush" Color="#FF50668A" />
     <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFEAF2FF" />
@@ -50,6 +52,8 @@
     <SolidColorBrush x:Key="ButtonAccentForegroundBrush" Color="#FFFFFFFF" />
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FF2B3D5F" />
     <SolidColorBrush x:Key="InputBorderBrush" Color="#FF4E658B" />
+    <SolidColorBrush x:Key="DialogInputBackgroundBrush" Color="#FF2B3D5F" />
+    <SolidColorBrush x:Key="DialogInputBorderBrush" Color="#FF4E658B" />
     <SolidColorBrush x:Key="InputForegroundBrush" Color="#FFEAF2FF" />
     <SolidColorBrush x:Key="ProgressTrackBrush" Color="#FF1A2942" />
     <SolidColorBrush x:Key="ProgressFillBrush" Color="#FF3C90FF" />
@@ -63,6 +67,9 @@
     <SolidColorBrush x:Key="CheckBoxBoxBorderBrush" Color="#FF8A95A8" />
     <SolidColorBrush x:Key="CheckBoxBoxBorderHoverBrush" Color="#FFA1AABC" />
     <SolidColorBrush x:Key="CheckBoxBoxBackgroundBrush" Color="#FF303744" />
+    <SolidColorBrush x:Key="DialogCheckBoxBackgroundBrush" Color="#FF303744" />
+    <SolidColorBrush x:Key="DialogCheckBoxBorderBrush" Color="#FF8A95A8" />
+    <SolidColorBrush x:Key="DialogCheckBoxHoverBrush" Color="#FFA1AABC" />
     <SolidColorBrush x:Key="CheckBoxCheckFillBrush" Color="#FF3C90FF" />
     <SolidColorBrush x:Key="CheckBoxCheckGlyphBrush" Color="#FFFFFFFF" />
 
@@ -118,7 +125,7 @@
 
     <ControlTheme x:Key="DnsHopButtonTheme" TargetType="Button">
       <Setter Property="CornerRadius" Value="999" />
-      <Setter Property="BorderThickness" Value="1.2" />
+      <Setter Property="BorderThickness" Value="1.5" />
       <Setter Property="Template">
         <ControlTemplate>
           <Border x:Name="Root"
@@ -214,6 +221,40 @@
       <Setter Property="Foreground" Value="{DynamicResource InputForegroundBrush}" />
       <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="TextBox.dialogField">
+      <Setter Property="Background" Value="{DynamicResource DialogInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogInputBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="NumericUpDown.dialogField">
+      <Setter Property="Background" Value="{DynamicResource DialogInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogInputBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="ComboBox.dialogField">
+      <Setter Property="Background" Value="{DynamicResource DialogInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogInputBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="TextBox.dialogField:pointerover">
+      <Setter Property="Background" Value="{DynamicResource DialogInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogInputBorderBrush}" />
+    </Style>
+
+    <Style Selector="NumericUpDown.dialogField:pointerover">
+      <Setter Property="Background" Value="{DynamicResource DialogInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogInputBorderBrush}" />
+    </Style>
+
+    <Style Selector="ComboBox.dialogField:pointerover">
+      <Setter Property="Background" Value="{DynamicResource DialogInputBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogInputBorderBrush}" />
     </Style>
 
     <Style Selector="CheckBox">
@@ -320,6 +361,24 @@
     <Style Selector="CheckBox.appCheck:checked /template/ Path#Glyph">
       <Setter Property="Fill" Value="{DynamicResource CheckBoxCheckGlyphBrush}" />
       <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck.dialogCheck /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource DialogCheckBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogCheckBoxBorderBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck.dialogCheck:pointerover /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource DialogCheckBoxBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DialogCheckBoxHoverBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="CheckBox.appCheck.dialogCheck:checked /template/ Border#Box">
+      <Setter Property="Background" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxCheckFillBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
     </Style>
 
     <Style Selector="CheckBox.appCheck.readonlyCheck">
@@ -506,12 +565,13 @@
               Background="{DynamicResource ControlsCardBrush}">
         <StackPanel Spacing="8">
           <WrapPanel Orientation="Horizontal">
+            <Button Margin="0,0,12,10" Classes="accent" Content="Start Benchmark" Command="{Binding StartBenchmarkCommand}" />
             <Button Margin="0,0,12,10" Content="Refresh List" Command="{Binding LoadServersCommand}" />
+            <Button Margin="0,0,12,10" Content="Add Custom DNS" Command="{Binding OpenAddCustomDnsDialogCommand}" />
             <Button Margin="0,0,12,10"
                     Content="Use Selected DNS"
                     Command="{Binding ApplySelectedDnsCommand}"
                     ToolTip.Tip="Applies the selected classic DNS endpoint to the active system resolver configuration." />
-            <Button Margin="0,0,12,10" Classes="accent" Content="Start Benchmark" Command="{Binding StartBenchmarkCommand}" />
             <Button Margin="0,0,12,10" Content="Cancel" Command="{Binding CancelBenchmarkCommand}" />
             <Button Margin="0,0,12,10" Content="Export CSV" Command="{Binding ExportCsvCommand}" />
             <Button Margin="0,0,12,10" Content="Export JSON" Command="{Binding ExportJsonCommand}" />
@@ -1152,81 +1212,208 @@
         </TabItem>
       </TabControl>
 
-      <Border Grid.RowSpan="3"
-              IsVisible="{Binding IsServerListLoading}"
-              Background="{DynamicResource PageBackgroundBrush}"
-              Opacity="0.78"
-              ZIndex="60">
-        <Border Width="460"
-                MaxWidth="520"
-                Padding="16"
-                CornerRadius="12"
-                BorderThickness="1"
-                BorderBrush="{DynamicResource CardBorderBrush}"
-                Background="{DynamicResource ShellCardBrush}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Opacity="1">
-          <StackPanel Spacing="10">
-            <TextBlock FontSize="18" FontWeight="SemiBold" Text="Loading DNS endpoints..." />
-            <TextBlock Classes="muted"
-                       TextWrapping="Wrap"
-                       Text="Fetching resolver list and preparing benchmark tabs and tables." />
-            <ProgressBar Height="8"
-                         Minimum="0"
-                         Maximum="100"
-                         IsIndeterminate="True"
-                         Background="{DynamicResource ProgressTrackBrush}" />
-          </StackPanel>
-        </Border>
-      </Border>
-
-      <Border Grid.RowSpan="3"
-              IsVisible="{Binding IsUpdatePromptVisible}"
-              Background="#A0142034"
-              ZIndex="70">
-        <Border Width="520"
-                MaxWidth="560"
-                Padding="18"
-                CornerRadius="12"
-                BorderThickness="1"
-                BorderBrush="{DynamicResource CardBorderBrush}"
-                Background="{DynamicResource ShellCardBrush}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-          <StackPanel Spacing="12">
-            <TextBlock FontSize="20"
-                       FontWeight="SemiBold"
-                       Text="{Binding UpdatePromptTitle}" />
-            <TextBlock Classes="muted"
-                       Text="{Binding UpdatePromptMessage}"
-                       TextWrapping="Wrap" />
-
-            <Border IsVisible="{Binding HasUpdatePromptNotes}"
-                    Padding="12"
-                    CornerRadius="10"
-                    Background="{DynamicResource CardBrush}"
-                    BorderBrush="{DynamicResource CardBorderBrush}"
-                    BorderThickness="1">
-              <TextBlock Text="{Binding UpdatePromptNotes}"
-                         TextWrapping="Wrap" />
-            </Border>
-
-            <WrapPanel Orientation="Horizontal">
-              <Button Margin="0,0,10,10"
-                      Classes="accent"
-                      Content="Yes"
-                      Command="{Binding AcceptUpdatePromptCommand}" />
-              <Button Margin="0,0,10,10"
-                      Content="No"
-                      Command="{Binding DismissUpdatePromptCommand}" />
-              <Button Margin="0,0,10,10"
-                      Content="No, don't ask again"
-                      Command="{Binding DisableStartupUpdatePromptCommand}" />
-            </WrapPanel>
-          </StackPanel>
-        </Border>
-      </Border>
     </Grid>
+
+    <Border IsVisible="{Binding IsServerListLoading}"
+            Background="{DynamicResource PageBackgroundBrush}"
+            Opacity="0.78"
+            ZIndex="60">
+      <Border Width="460"
+              MaxWidth="520"
+              Padding="16"
+              CornerRadius="12"
+              BorderThickness="1"
+              BorderBrush="{DynamicResource CardBorderBrush}"
+              Background="{DynamicResource ShellCardBrush}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Opacity="1">
+        <StackPanel Spacing="10">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Loading DNS endpoints..." />
+          <TextBlock Classes="muted"
+                     TextWrapping="Wrap"
+                     Text="Fetching resolver list and preparing benchmark tabs and tables." />
+          <ProgressBar Height="8"
+                       Minimum="0"
+                       Maximum="100"
+                       IsIndeterminate="True"
+                       Background="{DynamicResource ProgressTrackBrush}" />
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <Border IsVisible="{Binding IsAddCustomDnsDialogVisible}"
+            Background="{DynamicResource ModalOverlayBrush}"
+            PointerPressed="AddCustomDnsOverlay_OnPointerPressed"
+            ZIndex="75">
+      <Border Width="620"
+              MaxWidth="680"
+              Padding="18"
+              CornerRadius="12"
+              BorderThickness="0"
+              BorderBrush="{DynamicResource CardBorderBrush}"
+              Background="{DynamicResource DialogSurfaceBrush}"
+              HorizontalAlignment="Center"
+              PointerPressed="DialogSurface_OnPointerPressed"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock FontSize="20"
+                     FontWeight="SemiBold"
+                     Text="Add Custom DNS" />
+          <TextBlock Classes="muted"
+                     TextWrapping="Wrap"
+                     Text="Add a DNS endpoint that is stored locally and reloaded on startup. Classic DNS requires an IP address. DoH requires an HTTPS URL. DoT added by IP should also include the TLS host name." />
+
+          <Border IsVisible="{Binding HasCustomDnsValidationMessage}"
+                  Padding="12"
+                  CornerRadius="10"
+                  Background="{DynamicResource CardBrush}"
+                  BorderBrush="{DynamicResource CardBorderBrush}"
+                  BorderThickness="0">
+            <TextBlock Text="{Binding CustomDnsValidationMessage}"
+                       TextWrapping="Wrap" />
+          </Border>
+
+          <Grid ColumnDefinitions="170,*"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                ColumnSpacing="12"
+                RowSpacing="10">
+            <TextBlock Grid.Row="0"
+                       VerticalAlignment="Center"
+                       Text="Protocol" />
+            <ComboBox Grid.Row="0"
+                      Grid.Column="1"
+                      Classes="dialogField"
+                      ItemsSource="{Binding AvailableCustomDnsProtocols}"
+                      SelectedItem="{Binding SelectedCustomDnsProtocol, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Grid.Row="1"
+                       VerticalAlignment="Center"
+                       Text="Provider Label" />
+            <TextBox Grid.Row="1"
+                     Grid.Column="1"
+                     Classes="dialogField"
+                     Watermark="Custom DNS"
+                     Text="{Binding CustomDnsProvider, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Grid.Row="2"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding IsCustomDnsAddressOrHostVisible}"
+                       Text="Address or Host" />
+            <TextBox Grid.Row="2"
+                     Grid.Column="1"
+                     Classes="dialogField"
+                     IsVisible="{Binding IsCustomDnsAddressOrHostVisible}"
+                     Watermark="1.1.1.1 or dot.example.net"
+                     Text="{Binding CustomDnsAddressOrHost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Grid.Row="3"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding IsCustomDnsPortVisible}"
+                       Text="Port" />
+            <NumericUpDown Grid.Row="3"
+                           Grid.Column="1"
+                           Classes="dialogField"
+                           IsVisible="{Binding IsCustomDnsPortVisible}"
+                           Minimum="1"
+                           Maximum="65535"
+                           Increment="1"
+                           Value="{Binding CustomDnsPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Grid.Row="4"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding IsCustomDnsDohEndpointVisible}"
+                       Text="DoH URL" />
+            <TextBox Grid.Row="4"
+                     Grid.Column="1"
+                     Classes="dialogField"
+                     IsVisible="{Binding IsCustomDnsDohEndpointVisible}"
+                     Watermark="https://dns.example.net/dns-query"
+                     Text="{Binding CustomDnsDohEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Grid.Row="5"
+                       VerticalAlignment="Center"
+                       IsVisible="{Binding IsCustomDnsDotTlsHostVisible}"
+                       Text="DoT TLS Host" />
+            <StackPanel Grid.Row="5"
+                        Grid.Column="1"
+                        Spacing="6"
+                        IsVisible="{Binding IsCustomDnsDotTlsHostVisible}">
+              <TextBox Watermark="dns.example.net"
+                       Classes="dialogField"
+                       Text="{Binding CustomDnsDotTlsHost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+              <TextBlock Classes="muted"
+                         FontSize="12.5"
+                         TextWrapping="Wrap"
+                         Text="Needed when the DoT connection target is an IP address instead of a hostname." />
+            </StackPanel>
+
+            <CheckBox Grid.Row="6"
+                      Grid.ColumnSpan="2"
+                      Classes="appCheck dialogCheck"
+                      Content="Pin this endpoint to the top after adding"
+                      IsChecked="{Binding CustomDnsPinOnAdd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+          </Grid>
+
+          <WrapPanel Orientation="Horizontal">
+            <Button Margin="0,0,10,10"
+                    Classes="accent"
+                    Content="Add Endpoint"
+                    Command="{Binding AddCustomDnsCommand}" />
+            <Button Margin="0,0,10,10"
+                    Content="Cancel"
+                    Command="{Binding CancelAddCustomDnsCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <Border IsVisible="{Binding IsUpdatePromptVisible}"
+            Background="{DynamicResource ModalOverlayBrush}"
+            PointerPressed="UpdatePromptOverlay_OnPointerPressed"
+            ZIndex="70">
+      <Border Width="520"
+              MaxWidth="560"
+              Padding="18"
+              CornerRadius="12"
+              BorderThickness="0"
+              BorderBrush="{DynamicResource CardBorderBrush}"
+              Background="{DynamicResource DialogSurfaceBrush}"
+              HorizontalAlignment="Center"
+              PointerPressed="DialogSurface_OnPointerPressed"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock FontSize="20"
+                     FontWeight="SemiBold"
+                     Text="{Binding UpdatePromptTitle}" />
+          <TextBlock Classes="muted"
+                     Text="{Binding UpdatePromptMessage}"
+                     TextWrapping="Wrap" />
+
+          <Border IsVisible="{Binding HasUpdatePromptNotes}"
+                  Padding="12"
+                  CornerRadius="10"
+                  Background="{DynamicResource CardBrush}"
+                  BorderBrush="{DynamicResource CardBorderBrush}"
+                  BorderThickness="1">
+            <TextBlock Text="{Binding UpdatePromptNotes}"
+                       TextWrapping="Wrap" />
+          </Border>
+
+          <WrapPanel Orientation="Horizontal">
+            <Button Margin="0,0,10,10"
+                    Classes="accent"
+                    Content="Yes"
+                    Command="{Binding AcceptUpdatePromptCommand}" />
+            <Button Margin="0,0,10,10"
+                    Content="No"
+                    Command="{Binding DismissUpdatePromptCommand}" />
+            <Button Margin="0,0,10,10"
+                    Content="No, don't ask again"
+                    Command="{Binding DisableStartupUpdatePromptCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+    </Border>
   </Grid>
 </Window>

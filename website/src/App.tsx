@@ -60,6 +60,10 @@ function assetKind(asset: GitHubAsset) {
     return 'Portable build';
   }
 
+  if (lowerName.endsWith('.appimage')) {
+    return 'Linux AppImage';
+  }
+
   if (lowerName.endsWith('.exe')) {
     return 'Windows installer';
   }
@@ -142,18 +146,21 @@ function App() {
   const totalDownloads = release.assets.reduce((sum, asset) => sum + asset.download_count, 0);
   const installerAsset = release.assets.find((asset) => asset.name.toLowerCase().endsWith('.exe')) ?? release.assets[0];
   const portableAsset = release.assets.find((asset) => asset.name.toLowerCase().includes('portable')) ?? release.assets[1];
-  const featuredAssets = [installerAsset, portableAsset].filter((asset, index, assets): asset is GitHubAsset => {
-    return Boolean(asset) && assets.findIndex((candidate) => candidate?.name === asset?.name) === index;
-  });
+  const appImageAsset = release.assets.find((asset) => asset.name.toLowerCase().endsWith('.appimage'));
+  const featuredAssets = [installerAsset, portableAsset, appImageAsset, ...release.assets]
+    .filter((asset, index, assets): asset is GitHubAsset => {
+      return Boolean(asset) && assets.findIndex((candidate) => candidate?.name === asset?.name) === index;
+    })
+    .slice(0, 3);
   const repeatedMarquee = [
-    'installer + portable',
+    'windows installer + portable + appimage',
     'dnssec visibility',
     'doH + doT aware',
     'std deviation on repeated probes',
     'filter, sideline, switch',
     'csv + json + chart export',
     'github-linked updates',
-    'windows-first utility',
+    'windows + linux desktop utility',
   ];
 
   return (
@@ -163,7 +170,7 @@ function App() {
           <img className="brand-mark" src={brandMark} alt="" width="34" height="34" />
           <span className="brand-copy">
             <span className="brand-title">DNS Hop</span>
-            <span className="brand-subtitle">Windows DNS benchmark with product polish</span>
+            <span className="brand-subtitle">Windows and Linux DNS benchmark with product polish</span>
           </span>
         </a>
 
@@ -197,8 +204,9 @@ function App() {
             <span className="eyebrow">Benchmark. Compare. Switch.</span>
             <h1>DNS tooling that feels current instead of inherited.</h1>
             <p className="hero-intro">
-              DNS Hop turns resolver testing into a cleaner Windows workflow: live ranking tables, visible probe
-              behavior, direct switching, portable releases, and enough polish that you actually want to keep it open.
+              DNS Hop turns resolver testing into a cleaner desktop workflow across Windows and Linux: live ranking
+              tables, visible probe behavior, direct switching, portable release assets, and enough polish that you
+              actually want to keep it open.
             </p>
 
             <div className="hero-actions">
@@ -451,8 +459,8 @@ function App() {
               <span className="eyebrow">Take it live</span>
               <h2>Open the release, grab the right build, and benchmark your next resolver set.</h2>
               <p>
-                DNS Hop now ships with an installer, a portable zip, and an interface that is finally worth showing
-                publicly.
+                DNS Hop now ships with a Windows installer, a portable zip, a Linux AppImage, and an interface that is
+                finally worth showing publicly.
               </p>
             </div>
 
@@ -473,7 +481,7 @@ function App() {
           <img className="brand-mark" src={brandMark} alt="" width="34" height="34" />
           <span className="brand-copy">
             <span className="brand-title">DNS Hop</span>
-            <span className="brand-subtitle">Fast Windows DNS benchmarking without the paywall</span>
+            <span className="brand-subtitle">Fast Windows and Linux DNS benchmarking without the paywall</span>
           </span>
         </a>
 

@@ -35,6 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private CancellationTokenSource? _filterDebounceCts;
     private DispatcherTimer? _elapsedTimer;
     private readonly Stopwatch _uiElapsedStopwatch = new();
+    private readonly List<DnsServerDefinition> _customServers = [];
     private SortMode _sortMode = SortMode.BestPerformance;
     private bool _suppressSettingsSave;
     private bool _isRemoteRefreshRunning;
@@ -287,12 +288,14 @@ public partial class MainWindowViewModel : ViewModelBase
                 .GetLocalServersAsync(CancellationToken.None)
                 .ConfigureAwait(true);
 
+            var combinedServers = MergePersistedCustomServers(servers);
+
             foreach (var existing in Servers)
             {
                 DetachServerRow(existing);
             }
 
-            var localRows = servers
+            var localRows = combinedServers
                 .Select(CreateServerRow)
                 .ToArray();
 
@@ -580,9 +583,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (target is null)
         {
-            StatusMessage = "No nameserver selected to copy.";
+            StatusMessage = "No nameserver selected to remove.";
             return;
         }
+
+        bool removedCustomServer = ForgetCustomServer(target.Server);
 
         DetachServerRow(target);
         Servers.Remove(target);
@@ -595,6 +600,15 @@ public partial class MainWindowViewModel : ViewModelBase
         ApplyFilterAndSort();
         UpdateIdleProgressSnapshot();
         StartBenchmarkCommand.NotifyCanExecuteChanged();
+
+        if (removedCustomServer)
+        {
+            SaveSettingsSnapshot();
+        }
+
+        StatusMessage = removedCustomServer
+            ? $"Removed custom DNS endpoint {target.Endpoint}."
+            : $"Removed {target.Endpoint} from the current session list.";
     }
 
     [RelayCommand]
@@ -623,6 +637,11 @@ public partial class MainWindowViewModel : ViewModelBase
         target.IsPinned = !target.IsPinned;
         ApplyFilterAndSort();
         UpdateIdleProgressSnapshot();
+
+        if (target.Server.IsCustom)
+        {
+            SaveSettingsSnapshot();
+        }
     }
 
     [RelayCommand]
@@ -730,9 +749,11 @@ public partial class MainWindowViewModel : ViewModelBase
     private void RemoveWhere(Func<DnsServerResultViewModel, bool> predicate)
     {
         var toRemove = Servers.Where(predicate).ToArray();
+        bool removedCustomServers = false;
 
         foreach (var item in toRemove)
         {
+            removedCustomServers |= ForgetCustomServer(item.Server);
             DetachServerRow(item);
             Servers.Remove(item);
         }
@@ -740,6 +761,11 @@ public partial class MainWindowViewModel : ViewModelBase
         ApplyFilterAndSort();
         StartBenchmarkCommand.NotifyCanExecuteChanged();
         UpdateIdleProgressSnapshot();
+
+        if (removedCustomServers)
+        {
+            SaveSettingsSnapshot();
+        }
     }
 
     private void ApplyFilterAndSort()
@@ -893,6 +919,11 @@ public partial class MainWindowViewModel : ViewModelBase
         UpdateIdleProgressSnapshot();
         StartBenchmarkCommand.NotifyCanExecuteChanged();
 
+        if (row.Server.IsCustom)
+        {
+            SaveSettingsSnapshot();
+        }
+
         StatusMessage = row.IsSidelined
             ? $"Sidelined {row.Endpoint}. It stays in the list but will be skipped in future benchmarks."
             : $"Restored {row.Endpoint} to active benchmarking.";
@@ -920,20 +951,22 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (light)
         {
-            SetBrush("PageBackgroundBrush", "#FFF3F6FB");
+            SetBrush("PageBackgroundBrush", "#FFF6F8FC");
             SetBrush("ShellCardBrush", "#FFFFFFFF");
-            SetBrush("ControlsCardBrush", "#FFFFFFFF");
-            SetBrush("ContentPanelBrush", "#FFEAF0F9");
-            SetBrush("CardBrush", "#FFF9FBFF");
-            SetBrush("CardBorderBrush", "#FFB8C7DD");
+            SetBrush("ControlsCardBrush", "#FFFCFDFF");
+            SetBrush("ContentPanelBrush", "#FFF3F6FB");
+            SetBrush("DialogSurfaceBrush", "#FFFFFFFF");
+            SetBrush("ModalOverlayBrush", "#805B6675");
+            SetBrush("CardBrush", "#FFFFFFFF");
+            SetBrush("CardBorderBrush", "#0818304F");
             SetBrush("PrimaryTextBrush", "#FF11263C");
             SetBrush("MutedTextBrush", "#FF3C5574");
-            SetBrush("ButtonBackgroundBrush", "#FFF7FAFF");
-            SetBrush("ButtonBorderBrush", "#FF9EB2CF");
-            SetBrush("ButtonHoverBackgroundBrush", "#FFEAF2FF");
-            SetBrush("ButtonHoverBorderBrush", "#FF7F98BE");
-            SetBrush("ButtonPressedBackgroundBrush", "#FFE0ECFF");
-            SetBrush("ButtonPressedBorderBrush", "#FF5D84BC");
+            SetBrush("ButtonBackgroundBrush", "#FFFFFFFF");
+            SetBrush("ButtonBorderBrush", "#FF7F98BE");
+            SetBrush("ButtonHoverBackgroundBrush", "#FFF2F7FF");
+            SetBrush("ButtonHoverBorderBrush", "#FF6889BC");
+            SetBrush("ButtonPressedBackgroundBrush", "#FFE7F0FF");
+            SetBrush("ButtonPressedBorderBrush", "#FF567AAF");
             SetBrush("ButtonDisabledBackgroundBrush", "#FFF2F5FA");
             SetBrush("ButtonDisabledBorderBrush", "#FFD1DAE8");
             SetBrush("ButtonDisabledForegroundBrush", "#FF8EA1BF");
@@ -946,6 +979,8 @@ public partial class MainWindowViewModel : ViewModelBase
             SetBrush("ButtonAccentForegroundBrush", "#FFFFFFFF");
             SetBrush("InputBackgroundBrush", "#FFFFFFFF");
             SetBrush("InputBorderBrush", "#FF9FB5D4");
+            SetBrush("DialogInputBackgroundBrush", "#FFFFFFFF");
+            SetBrush("DialogInputBorderBrush", "#FFC8D7EB");
             SetBrush("InputForegroundBrush", "#FF10253B");
             SetBrush("ProgressTrackBrush", "#FFDDE6F5");
             SetBrush("ProgressFillBrush", "#FF3C90FF");
@@ -953,13 +988,16 @@ public partial class MainWindowViewModel : ViewModelBase
             SetBrush("ResponseBarTextBrush", "#FF15304F");
             SetBrush("ResponseBarNoDataBackgroundBrush", "#FFE5EDF9");
             SetBrush("ResponseBarNoDataTextBrush", "#FF5B7191");
-            SetBrush("ResponseBarBorderBrush", "#FFB2C3DC");
-            SetBrush("DataGridSelectedRowBackgroundBrush", "#FFD7E6FA");
-            SetBrush("DataGridSelectedRowBorderBrush", "#FF7FA4D9");
+            SetBrush("ResponseBarBorderBrush", "#00FFFFFF");
+            SetBrush("DataGridSelectedRowBackgroundBrush", "#FFE7F0FC");
+            SetBrush("DataGridSelectedRowBorderBrush", "#00FFFFFF");
 
             SetBrush("CheckBoxBoxBorderBrush", "#FFA3ABB8");
             SetBrush("CheckBoxBoxBorderHoverBrush", "#FF8892A1");
             SetBrush("CheckBoxBoxBackgroundBrush", "#FFF4F6F9");
+            SetBrush("DialogCheckBoxBackgroundBrush", "#FFF8FBFF");
+            SetBrush("DialogCheckBoxBorderBrush", "#FFA0B5D4");
+            SetBrush("DialogCheckBoxHoverBrush", "#FF7F98BE");
             SetBrush("CheckBoxCheckFillBrush", "#FF1E66D8");
             SetBrush("CheckBoxCheckGlyphBrush", "#FFFFFFFF");
         }
@@ -969,6 +1007,8 @@ public partial class MainWindowViewModel : ViewModelBase
             SetBrush("ShellCardBrush", "#FF223350");
             SetBrush("ControlsCardBrush", "#FF1F304B");
             SetBrush("ContentPanelBrush", "#FF1D2E49");
+            SetBrush("DialogSurfaceBrush", "#FF223350");
+            SetBrush("ModalOverlayBrush", "#A0142034");
             SetBrush("CardBrush", "#FF253A5A");
             SetBrush("CardBorderBrush", "#FF50668A");
             SetBrush("PrimaryTextBrush", "#FFEAF2FF");
@@ -991,6 +1031,8 @@ public partial class MainWindowViewModel : ViewModelBase
             SetBrush("ButtonAccentForegroundBrush", "#FFFFFFFF");
             SetBrush("InputBackgroundBrush", "#FF2B3D5F");
             SetBrush("InputBorderBrush", "#FF4E658B");
+            SetBrush("DialogInputBackgroundBrush", "#FF2B3D5F");
+            SetBrush("DialogInputBorderBrush", "#FF4E658B");
             SetBrush("InputForegroundBrush", "#FFEAF2FF");
             SetBrush("ProgressTrackBrush", "#FF1A2942");
             SetBrush("ProgressFillBrush", "#FF3C90FF");
@@ -1005,6 +1047,9 @@ public partial class MainWindowViewModel : ViewModelBase
             SetBrush("CheckBoxBoxBorderBrush", "#FF8A95A8");
             SetBrush("CheckBoxBoxBorderHoverBrush", "#FFA1AABC");
             SetBrush("CheckBoxBoxBackgroundBrush", "#FF303744");
+            SetBrush("DialogCheckBoxBackgroundBrush", "#FF303744");
+            SetBrush("DialogCheckBoxBorderBrush", "#FF8A95A8");
+            SetBrush("DialogCheckBoxHoverBrush", "#FFA1AABC");
             SetBrush("CheckBoxCheckFillBrush", "#FF3C90FF");
             SetBrush("CheckBoxCheckGlyphBrush", "#FFFFFFFF");
         }
@@ -1044,6 +1089,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedProxyType = settings.OutboundProxyType;
             ProxyHost = settings.OutboundProxyHost;
             ProxyPort = settings.OutboundProxyPort;
+            LoadPersistedCustomServers(settings.CustomServers);
         }
         finally
         {
@@ -1069,6 +1115,7 @@ public partial class MainWindowViewModel : ViewModelBase
             OutboundProxyType = SelectedProxyType,
             OutboundProxyHost = ProxyHost,
             OutboundProxyPort = ProxyPort,
+            CustomServers = SnapshotCustomServers(),
         });
     }
 

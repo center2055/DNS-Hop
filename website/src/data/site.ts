@@ -50,8 +50,8 @@ export const heroSignals = [
   },
   {
     kicker: 'Ship',
-    title: 'Installer and portable builds on the same release page',
-    body: 'Installer and portable ship together.',
+    title: 'Windows and Linux builds on the same release page',
+    body: 'Installer, portable zip, and AppImage ship together.',
     accent: 'sun' as const,
   },
 ];
@@ -83,11 +83,12 @@ export const stageModes = [
   },
   {
     id: 'portable' as const,
-    label: 'Portable',
-    title: 'Take the tool with you when you do not want an install.',
-    body: 'The latest release ships both the installer and a portable zip, so testing on borrowed or locked-down systems stays simple.',
+    label: 'Desktop',
+    title: 'Ship the same workflow to Windows and Linux without changing tools.',
+    body: 'The latest release ships a Windows installer, a Windows portable zip, and a Linux AppImage so testing stays straightforward across desktop setups.',
     points: [
-      'Portable zip in every current release',
+      'Windows installer plus portable zip',
+      'Linux AppImage for current desktop distros',
       'Release-aware About tab and update prompts',
       'CSV, JSON, and chart export built in',
     ],
@@ -102,8 +103,8 @@ export const featureCards = [
     accent: 'sky' as const,
   },
   {
-    title: 'Windows-first control',
-    body: 'DNS benchmarking, diagnostics, and switching live in one desktop workflow tuned for Windows instead of browser tabs and scripts.',
+    title: 'Desktop control',
+    body: 'DNS benchmarking, diagnostics, and switching live in one desktop workflow for Windows and Linux instead of browser tabs and scripts.',
     accent: 'mint' as const,
   },
   {
@@ -160,7 +161,7 @@ export const faqItems = [
   {
     question: 'Can I use it without installing anything?',
     answer:
-      'Yes. Current releases ship a portable zip alongside the installer so you can run DNS Hop in environments where installing software is inconvenient.',
+      'Yes. Current releases ship a Windows portable zip and a Linux AppImage alongside the Windows installer, so you can run DNS Hop without a traditional install flow.',
   },
   {
     question: 'Why show standard deviation now?',
@@ -177,34 +178,40 @@ export const fallbackRepo: GitHubRepo = {
   pushed_at: '2026-04-03T19:54:49Z',
   html_url: 'https://github.com/center2055/DNS-Hop',
   homepage: 'https://github.com/center2055/DNS-Hop/releases/latest',
-  description: 'Fast Windows DNS benchmarking, diagnostics, and one-click switching without the paywall.',
+  description: 'Cross-platform DNS benchmarking, diagnostics, and one-click switching for Windows and Linux.',
 };
 
 export const fallbackRelease: GitHubRelease = {
-  tag_name: 'v1.2',
-  name: 'DNS Hop v1.2',
-  html_url: 'https://github.com/center2055/DNS-Hop/releases/tag/v1.2',
-  published_at: '2026-04-03T19:17:15Z',
+  tag_name: 'v1.3',
+  name: 'DNS Hop v1.3',
+  html_url: 'https://github.com/center2055/DNS-Hop/releases/tag/v1.3',
+  published_at: '2026-04-18T00:00:00Z',
   body: [
-    '## DNS Hop v1.2',
+    '## DNS Hop v1.3',
     '',
-    '- Added an About tab with GitHub, Discord, and Ko-Fi links',
-    '- Added startup update checks and latest-release status inside the app',
-    '- Normalized UI number formatting to English-style decimal dots',
-    '- Added per-probe standard deviation metrics and portable release assets',
+    '- Added persistent custom DNS endpoints with a dedicated add dialog',
+    '- Fixed the Windows light-mode frame/corner presentation issues',
+    '- Added Linux AppImage packaging with smoke checks for Debian, Fedora, and Arch',
+    '- Updated the repo and website to present DNS Hop as a Windows and Linux desktop release',
   ].join('\n'),
   assets: [
     {
-      name: 'DNS-Hop-Setup-v1.2.exe',
-      size: 16175443,
-      download_count: 179,
-      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.2/DNS-Hop-Setup-v1.2.exe',
+      name: 'DNS-Hop-Setup-v1.3.exe',
+      size: 16196683,
+      download_count: 0,
+      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-Setup-v1.3.exe',
     },
     {
-      name: 'DNS-Hop-Portable-v1.2.zip',
-      size: 20324800,
-      download_count: 62,
-      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.2/DNS-Hop-Portable-v1.2.zip',
+      name: 'DNS-Hop-Portable-v1.3.zip',
+      size: 20424400,
+      download_count: 0,
+      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-Portable-v1.3.zip',
+    },
+    {
+      name: 'DNS-Hop-AppImage-v1.3-x86_64.AppImage',
+      size: 41792704,
+      download_count: 0,
+      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-AppImage-v1.3-x86_64.AppImage',
     },
   ],
 };
