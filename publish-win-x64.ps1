@@ -11,3 +11,7 @@ dotnet publish src/DNSHop.App/DNSHop.App.csproj `
   /p:IncludeNativeLibrariesForSelfExtract=true `
   -o artifacts/publish-win-x64-release
 
+.\package-win-portable.ps1 `
+  -PublishDir artifacts\publish-win-x64-release `
+  -ProjectPath src\DNSHop.App\DNSHop.App.csproj
+

@@ -203,7 +203,7 @@ export const fallbackRelease: GitHubRelease = {
     },
     {
       name: 'DNS-Hop-Portable-v1.3.zip',
-      size: 20424400,
+      size: 20429751,
       download_count: 0,
       browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-Portable-v1.3.zip',
     },
