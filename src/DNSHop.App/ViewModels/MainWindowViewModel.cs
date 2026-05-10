@@ -309,6 +309,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("UI", "Failed to load DNS server list.", ex);
             StatusMessage = $"Failed to load server list: {ex.Message}";
         }
         finally
@@ -410,6 +411,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("UI", "Benchmark run failed.", ex);
             StatusMessage = $"Benchmark failed: {ex.Message}";
         }
         finally
@@ -456,6 +458,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("UI", "CSV export failed.", ex);
             StatusMessage = $"CSV export failed ({ex.GetType().Name}): {ex.Message}";
         }
     }
@@ -485,6 +488,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("UI", "JSON export failed.", ex);
             StatusMessage = $"JSON export failed ({ex.GetType().Name}): {ex.Message}";
         }
     }
@@ -506,6 +510,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("UI", "Clipboard chart copy failed.", ex);
             StatusMessage = $"Clipboard copy failed ({ex.GetType().Name}): {ex.Message}";
         }
     }
@@ -564,6 +569,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("UI", "Current DNS status refresh failed.", ex);
             CurrentDnsResolverName = "Unavailable";
             CurrentDnsResolverAddress = "Unavailable";
             CurrentDnsActiveInterfaces = "Unavailable";
@@ -864,6 +870,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteWarning("Resolvers", $"Public feed update failed: {ex.Message}");
             StatusMessage = $"Loaded {Servers.Count} DNS endpoints. Public feed update failed: {ex.Message}";
         }
         finally

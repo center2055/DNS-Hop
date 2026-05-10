@@ -54,8 +54,15 @@ public sealed partial class DnsServerListService
                     servers.Select(static server => BuildServerKey(server)),
                     StringComparer.OrdinalIgnoreCase);
 
-                servers.AddRange(LoadIniResolversFromFile(existingKeys, MaxNormalizedServers, cancellationToken));
-                return NormalizeServerList(servers);
+                var iniServers = LoadIniResolversFromFile(existingKeys, MaxNormalizedServers, cancellationToken);
+                servers.AddRange(iniServers);
+
+                var normalizedServers = NormalizeServerList(servers);
+                AppDiagnostics.WriteInfo(
+                    "Resolvers",
+                    $"Loaded {normalizedServers.Count} local resolver endpoints ({iniServers.Count} from INI, fingerprint '{currentFingerprint}').");
+
+                return normalizedServers;
             }, cancellationToken).ConfigureAwait(false);
 
             _cachedLocalServers = normalized;
@@ -86,9 +93,10 @@ public sealed partial class DnsServerListService
                 var remoteServers = await FetchPublicResolverFeedAsync(remoteTimeoutCts.Token).ConfigureAwait(false);
                 servers.AddRange(remoteServers);
             }
-            catch
+            catch (Exception ex)
             {
                 // Startup must remain reliable even if external feed is unavailable.
+                AppDiagnostics.WriteWarning("Resolvers", $"Public resolver feed update failed during combined load: {ex.Message}");
             }
         }
 
@@ -235,6 +243,44 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDot("185.222.222.222", "dot.sb", "DNS.SB"),
             DnsServerDefinition.CreateDot("45.11.45.11", "dot.sb", "DNS.SB"),
             DnsServerDefinition.CreateDot("public.dns.iij.jp", "public.dns.iij.jp", "IIJ"),
+
+            // --- Additional verified public resolvers requested in issue triage ---
+            DnsServerDefinition.CreateUdpTcp("5.1.66.255", "FFMUC"),
+            DnsServerDefinition.CreateUdpTcp("185.150.99.255", "FFMUC"),
+            DnsServerDefinition.CreateUdpTcp("2001:678:e68:f000::", "FFMUC"),
+            DnsServerDefinition.CreateUdpTcp("2001:678:ed0:f000::", "FFMUC"),
+            DnsServerDefinition.CreateDoh("https://doh.ffmuc.net/dns-query", "FFMUC"),
+            DnsServerDefinition.CreateDot("dot.ffmuc.net", "dot.ffmuc.net", "FFMUC"),
+
+            DnsServerDefinition.CreateUdpTcp("49.12.67.122", "dnsforge"),
+            DnsServerDefinition.CreateUdpTcp("91.99.154.175", "dnsforge"),
+            DnsServerDefinition.CreateUdpTcp("2a01:4f8:c013:29d::122", "dnsforge"),
+            DnsServerDefinition.CreateUdpTcp("2a01:4f8:c010:8c35::175", "dnsforge"),
+            DnsServerDefinition.CreateDoh("https://dnsforge.de/dns-query", "dnsforge"),
+            DnsServerDefinition.CreateDot("dnsforge.de", "dnsforge.de", "dnsforge"),
+            DnsServerDefinition.CreateDoh("https://clean.dnsforge.de/dns-query", "dnsforge Clean"),
+            DnsServerDefinition.CreateDot("clean.dnsforge.de", "clean.dnsforge.de", "dnsforge Clean"),
+            DnsServerDefinition.CreateDoh("https://hard.dnsforge.de/dns-query", "dnsforge Hard"),
+            DnsServerDefinition.CreateDot("hard.dnsforge.de", "hard.dnsforge.de", "dnsforge Hard"),
+            DnsServerDefinition.CreateDoh("https://blank.dnsforge.de/dns-query", "dnsforge Blank"),
+            DnsServerDefinition.CreateDot("blank.dnsforge.de", "blank.dnsforge.de", "dnsforge Blank"),
+
+            DnsServerDefinition.CreateDoh("https://wikimedia-dns.org/dns-query", "Wikimedia DNS"),
+            DnsServerDefinition.CreateDot("wikimedia-dns.org", "wikimedia-dns.org", "Wikimedia DNS"),
+
+            DnsServerDefinition.CreateUdpTcp("96.45.45.45", "FortiGuard (managed)"),
+            DnsServerDefinition.CreateUdpTcp("96.45.46.46", "FortiGuard (managed)"),
+            DnsServerDefinition.CreateDot("96.45.45.45", "globalsdns.fortinet.net", "FortiGuard (managed)"),
+            DnsServerDefinition.CreateDot("96.45.46.46", "globalsdns.fortinet.net", "FortiGuard (managed)"),
+
+            DnsServerDefinition.CreateUdpTcp("54.174.40.213", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("52.3.100.184", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("34.240.115.208", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("34.251.171.117", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("54.199.61.196", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("176.34.8.52", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("13.237.104.38", "WatchGuard DNSWatch (managed)"),
+            DnsServerDefinition.CreateUdpTcp("13.237.109.176", "WatchGuard DNSWatch (managed)"),
         ];
     }
 
@@ -269,6 +315,10 @@ public sealed partial class DnsServerListService
             string provider = DetectProvider(entry.Ip!, entry.Name);
             servers.Add(DnsServerDefinition.CreateUdpTcp(entry.Ip!, provider));
         }
+
+        AppDiagnostics.WriteInfo(
+            "Resolvers",
+            $"Fetched {servers.Count} public resolver endpoints from remote feed '{PublicResolverFeed}'.");
 
         return servers;
     }
@@ -489,6 +539,34 @@ public sealed partial class DnsServerListService
                 return "Surfshark";
             }
 
+            if (host.Contains("ffmuc", StringComparison.OrdinalIgnoreCase))
+            {
+                return "FFMUC";
+            }
+
+            if (host.Contains("dnsforge", StringComparison.OrdinalIgnoreCase))
+            {
+                return "dnsforge";
+            }
+
+            if (host.Contains("wikimedia-dns", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Wikimedia DNS";
+            }
+
+            if (host.Contains("fortiguard", StringComparison.OrdinalIgnoreCase)
+                || host.Contains("fortinet", StringComparison.OrdinalIgnoreCase)
+                || host.Contains("globalsdns", StringComparison.OrdinalIgnoreCase))
+            {
+                return "FortiGuard (managed)";
+            }
+
+            if (host.Contains("dnswatch", StringComparison.OrdinalIgnoreCase)
+                || host.Contains("watchguard", StringComparison.OrdinalIgnoreCase))
+            {
+                return "WatchGuard DNSWatch (managed)";
+            }
+
             if (host.Contains("nextdns", StringComparison.OrdinalIgnoreCase))
             {
                 return "NextDNS";
@@ -570,6 +648,44 @@ public sealed partial class DnsServerListService
             || ipAddress.StartsWith("2a09:a707:", StringComparison.OrdinalIgnoreCase))
         {
             return "Surfshark";
+        }
+
+        if (ipAddress is "5.1.66.255" or "185.150.99.255"
+            || string.Equals(ipAddress, "2001:678:e68:f000::", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2001:678:ed0:f000::", StringComparison.OrdinalIgnoreCase))
+        {
+            return "FFMUC";
+        }
+
+        if (ipAddress is "49.12.67.122" or "91.99.154.175" or "49.12.223.2" or "49.12.43.208"
+            or "49.12.222.213" or "88.198.122.154" or "138.199.149.249" or "78.47.71.194"
+            || string.Equals(ipAddress, "2a01:4f8:c013:29d::122", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c010:8c35::175", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c17:4fbc::2", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c012:ed89::208", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c17:2c61::213", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c013:5ec0::154", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c17:7aa5::249", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(ipAddress, "2a01:4f8:c013:aae9::194", StringComparison.OrdinalIgnoreCase))
+        {
+            return "dnsforge";
+        }
+
+        if (ipAddress is "96.45.45.45" or "96.45.46.46")
+        {
+            return "FortiGuard (managed)";
+        }
+
+        if (ipAddress is "185.71.138.138"
+            || string.Equals(ipAddress, "2001:67c:930::1", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Wikimedia DNS";
+        }
+
+        if (ipAddress is "54.174.40.213" or "52.3.100.184" or "34.240.115.208" or "34.251.171.117"
+            or "54.199.61.196" or "176.34.8.52" or "13.237.104.38" or "13.237.109.176")
+        {
+            return "WatchGuard DNSWatch (managed)";
         }
 
         if (ipAddress is "95.85.95.85" or "2.56.220.2"

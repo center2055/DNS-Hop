@@ -13,6 +13,9 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        AppDiagnostics.Initialize();
+        AppDiagnostics.WriteInfo("App", $"Startup arguments: {(args.Length == 0 ? "<none>" : string.Join(' ', args))}");
+
         if (TryHandleDiagnosticCommand(args, out int diagnosticExitCode))
         {
             return diagnosticExitCode;
@@ -68,11 +71,17 @@ internal static class Program
         Console.WriteLine($"BaseDirectory: {AppContext.BaseDirectory}");
         Console.WriteLine($"ResolversFile: {(resolverListExists ? resolverListPath : "missing")}");
         Console.WriteLine($"SelfInvocation: {selfInvocation?.FileName ?? "unavailable"}");
+        Console.WriteLine($"DiagnosticsLog: {AppDiagnostics.CurrentLogPath}");
 
         if (!resolverListExists || selfInvocation is null)
         {
             Console.Error.WriteLine("Smoke test failed.");
+            AppDiagnostics.WriteWarning("SmokeTest", "Smoke test failed.");
             exitCode = 1;
+        }
+        else
+        {
+            AppDiagnostics.WriteInfo("SmokeTest", "Smoke test passed.");
         }
 
         return true;

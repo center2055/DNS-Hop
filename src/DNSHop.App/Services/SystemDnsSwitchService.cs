@@ -66,9 +66,22 @@ internal sealed class SystemDnsSwitchService
             return SystemDnsSwitchResult.Failure(reason);
         }
 
-        return OperatingSystem.IsWindows()
+        AppDiagnostics.WriteInfo("SystemDns", $"Applying system DNS endpoint {server.EndpointDisplay}.");
+
+        SystemDnsSwitchResult result = OperatingSystem.IsWindows()
             ? await ApplyOnWindowsAsync(server, cancellationToken).ConfigureAwait(false)
             : await ApplyOnLinuxAsync(server, cancellationToken).ConfigureAwait(false);
+
+        if (result.Success)
+        {
+            AppDiagnostics.WriteInfo("SystemDns", result.Message);
+        }
+        else
+        {
+            AppDiagnostics.WriteWarning("SystemDns", result.Message);
+        }
+
+        return result;
     }
 
     public static bool TryHandleCommandLine(string[] args, out int exitCode)
@@ -136,14 +149,17 @@ internal sealed class SystemDnsSwitchService
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
+            AppDiagnostics.WriteWarning("SystemDns", "Windows DNS switch canceled at elevation prompt.");
             return SystemDnsSwitchResult.Failure("DNS switch canceled at the Windows elevation prompt.");
         }
         catch (OperationCanceledException)
         {
+            AppDiagnostics.WriteWarning("SystemDns", "Windows DNS switch canceled.");
             return SystemDnsSwitchResult.Failure("DNS switch canceled.");
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("SystemDns", "Windows DNS switch failed.", ex);
             return SystemDnsSwitchResult.Failure($"DNS switch failed: {ex.Message}");
         }
         finally
@@ -186,10 +202,12 @@ internal sealed class SystemDnsSwitchService
         }
         catch (OperationCanceledException)
         {
+            AppDiagnostics.WriteWarning("SystemDns", "Linux DNS switch canceled.");
             return SystemDnsSwitchResult.Failure("DNS switch canceled.");
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("SystemDns", "Linux DNS switch failed.", ex);
             return SystemDnsSwitchResult.Failure($"DNS switch failed: {ex.Message}");
         }
         finally
@@ -322,6 +340,7 @@ internal sealed class SystemDnsSwitchService
         }
         catch (Exception ex)
         {
+            AppDiagnostics.WriteError("SystemDns", "Elevated DNS helper failed.", ex);
             result = SystemDnsSwitchResult.Failure($"DNS switch failed: {ex.Message}");
         }
 
@@ -335,6 +354,15 @@ internal sealed class SystemDnsSwitchService
         catch
         {
             // The elevated helper should still return an exit code even if the temp file write fails.
+        }
+
+        if (result.Success)
+        {
+            AppDiagnostics.WriteInfo("SystemDns", $"Elevated helper applied DNS server '{dnsServer}'.");
+        }
+        else
+        {
+            AppDiagnostics.WriteWarning("SystemDns", $"Elevated helper failed for DNS server '{dnsServer}': {result.Message}");
         }
 
         return result;
