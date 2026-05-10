@@ -32,6 +32,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
     private const int ResponseCodeNoError = 0;
     private const int ResponseCodeServFail = 2;
     private const int ResponseCodeNxDomain = 3;
+    private const double SuspiciousConfidenceLogThreshold = 0.40;
 
     // Static HttpClient avoids socket churn while benchmarking many DoH endpoints.
     private static readonly HttpClient SecureHttpClient = new()
@@ -67,6 +68,13 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         DnsServerDefinition.CreateDot("9.9.9.9", "dns.quad9.net", "Control-Quad9"),
     ];
 
+    private static readonly HijackProbeProfile[] HijackProbeProfiles =
+    [
+        new(".invalid", QueryType.A, "invalid/A"),
+        new(".invalid", QueryType.AAAA, "invalid/AAAA"),
+        new(".test", QueryType.A, "test/A"),
+    ];
+
     public async Task<IReadOnlyList<DnsBenchmarkResult>> BenchmarkAsync(
         IReadOnlyList<DnsServerDefinition> servers,
         DnsBenchmarkOptions options,
@@ -88,6 +96,10 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             OutboundProxyHost = options.OutboundProxyHost?.Trim() ?? string.Empty,
             OutboundProxyPort = Math.Clamp(options.OutboundProxyPort, 1, 65535),
         };
+
+        AppDiagnostics.WriteInfo(
+            "Benchmark",
+            $"Starting benchmark for {servers.Count} servers; timeout={effectiveOptions.TimeoutMilliseconds}ms, concurrency={effectiveOptions.ConcurrencyLimit}, attempts={effectiveOptions.AttemptsPerProbe}, proxy={effectiveOptions.OutboundProxyType}.");
 
         // Per server:
         // - cached/uncached/dotcom/dnssec probes run with AttemptsPerProbe.
@@ -130,6 +142,10 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
+        AppDiagnostics.WriteInfo(
+            "Benchmark",
+            $"Completed benchmark for {servers.Count} servers in {benchmarkStopwatch.Elapsed:c}.");
+
         return results
             .OrderByDescending(result => result.Server.IsPinned)
             .ThenBy(result => result.AverageMilliseconds ?? double.MaxValue)
@@ -155,9 +171,12 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                 (dotTcpClient, dotSession) = await EstablishDotConnectionAsync(
                     server, options, cancellationToken).ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
                 // Connection setup failed; probes will create individual connections.
+                AppDiagnostics.WriteWarning(
+                    "Benchmark",
+                    $"Unable to pre-establish DoT session for {server.EndpointDisplay}: {ex.Message}");
             }
         }
 
@@ -220,7 +239,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                     ? DnsServerStatus.Redirecting
                     : DnsServerStatus.Alive;
 
-            return new DnsBenchmarkResult
+            var result = new DnsBenchmarkResult
             {
                 Server = server,
                 CachedMilliseconds = cached.AverageMilliseconds,
@@ -250,6 +269,22 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                     ?? redirectAnalysis.LastError
                     ?? dnssecProbe.LastError,
             };
+
+            string summary =
+                $"{server.Provider} {server.EndpointDisplay} => status={result.Status}, avg={result.AverageMilliseconds?.ToString("0.###") ?? "n/a"}ms, dnssec={(supportsDnssec ? "yes" : "no")}, poisoning={result.PoisoningConfidence:0.##}, evidence={result.PoisoningEvidence ?? "none"}";
+
+            if (result.Status is DnsServerStatus.Dead or DnsServerStatus.Redirecting
+                || result.PoisoningConfidence >= SuspiciousConfidenceLogThreshold
+                || redirectAnalysis.PolicyInterferenceCount > 0)
+            {
+                AppDiagnostics.WriteWarning("Benchmark", summary);
+            }
+            else
+            {
+                AppDiagnostics.WriteInfo("Benchmark", summary);
+            }
+
+            return result;
         }
         finally
         {
@@ -327,12 +362,14 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         for (int attempt = 0; attempt < redirectProbeCount; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string domain = $"{Guid.NewGuid():N}.invalid";
+            HijackProbeProfile profile = HijackProbeProfiles[attempt % HijackProbeProfiles.Length];
+            string domain = $"{Guid.NewGuid():N}{profile.DomainSuffix}";
+            IncrementCount(analysis.ExecutedProbeFamilies, profile.Label);
 
             Task<QueryAttemptResult> targetTask = RunSingleQueryAsync(
                 server,
                 domain,
-                QueryType.A,
+                profile.QueryType,
                 options,
                 cancellationToken,
                 dotSession);
@@ -340,6 +377,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             Task<ControlConsensus> consensusTask = ProbeControlConsensusAsync(
                 server.Protocol,
                 domain,
+                profile.QueryType,
                 options,
                 onAttemptCompleted,
                 cancellationToken);
@@ -356,6 +394,12 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             if (redirectLike)
             {
                 analysis.RedirectLikeCount++;
+                IncrementCount(analysis.RedirectProbeFamilies, profile.Label);
+
+                if (IsLikelySinkholeFingerprint(targetResult.AnswerFingerprint))
+                {
+                    analysis.SinkholeAnswerCount++;
+                }
 
                 if (!string.IsNullOrWhiteSpace(targetResult.AnswerFingerprint))
                 {
@@ -368,10 +412,27 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
             ControlConsensus consensus = await consensusTask.ConfigureAwait(false);
 
-            analysis.ControlComparisons++;
+            if (consensus.HasFullConsensus)
+            {
+                analysis.ControlComparisons++;
+            }
+
+            int? policyResponseCode = targetResult.ResponseCode;
+            bool policyInterference = consensus.BothNxDomain
+                && policyResponseCode is not null
+                && policyResponseCode != ResponseCodeNxDomain
+                && !targetResult.HasAnswers;
+
             if (redirectLike && consensus.BothNxDomain)
             {
                 analysis.ControlMismatchCount++;
+            }
+
+            if (policyInterference)
+            {
+                analysis.PolicyInterferenceCount++;
+                IncrementCount(analysis.PolicyProbeFamilies, profile.Label);
+                IncrementCount(analysis.PolicyResponseCodes, DescribeResponseCode(policyResponseCode!.Value));
             }
 
             if (!string.IsNullOrWhiteSpace(consensus.LastError))
@@ -394,18 +455,26 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
         bool thresholdTriggered = analysis.RedirectLikeCount >= redirectThreshold;
         bool controlMismatchStrong = analysis.ControlMismatchCount >= Math.Max(1, (int)Math.Ceiling(redirectProbeCount * 0.34));
+        bool multiFamilyInterference =
+            analysis.RedirectProbeFamilies.Count >= 2
+            || analysis.PolicyProbeFamilies.Count >= 2;
 
         // Require repeated behavior + corroboration, but keep an all-probes redirect fallback.
         analysis.IsRedirecting =
             thresholdTriggered
-            && (analysis.RepeatedFingerprint || controlMismatchStrong || analysis.RedirectLikeCount == redirectProbeCount);
+            && (analysis.RepeatedFingerprint
+                || controlMismatchStrong
+                || analysis.SinkholeAnswerCount > 0
+                || multiFamilyInterference
+                || analysis.RedirectLikeCount == redirectProbeCount);
 
         analysis.Confidence = CalculatePoisoningConfidence(
             analysis,
             redirectProbeCount,
             redirectThreshold,
             thresholdTriggered,
-            controlMismatchStrong);
+            controlMismatchStrong,
+            multiFamilyInterference);
 
         analysis.Evidence = BuildPoisoningEvidence(
             analysis,
@@ -418,6 +487,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
     private async Task<ControlConsensus> ProbeControlConsensusAsync(
         DnsProtocol protocol,
         string domain,
+        QueryType queryType,
         DnsBenchmarkOptions options,
         Action onAttemptCompleted,
         CancellationToken cancellationToken)
@@ -437,7 +507,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             .Select(control => RunSingleQueryAsync(
                 control,
                 domain,
-                QueryType.A,
+                queryType,
                 options,
                 cancellationToken))
             .ToArray();
@@ -464,8 +534,9 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             }
         }
 
-        bool bothNxDomain = successfulResponses == controls.Count && nxDomainConsensus == controls.Count;
-        return new ControlConsensus(bothNxDomain, lastError);
+        bool hasFullConsensus = successfulResponses == controls.Count;
+        bool bothNxDomain = hasFullConsensus && nxDomainConsensus == controls.Count;
+        return new ControlConsensus(hasFullConsensus, bothNxDomain, successfulResponses, nxDomainConsensus, lastError);
     }
 
     private static void UpdateAttemptStats(RedirectAnalysis analysis, QueryAttemptResult attemptResult)
@@ -490,7 +561,8 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         int redirectProbeCount,
         int redirectThreshold,
         bool thresholdTriggered,
-        bool controlMismatchStrong)
+        bool controlMismatchStrong,
+        bool multiFamilyInterference)
     {
         if (redirectProbeCount <= 0)
         {
@@ -501,27 +573,42 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
         if (analysis.RedirectLikeCount > 0)
         {
-            confidence += 0.30 * (analysis.RedirectLikeCount / (double)redirectProbeCount);
+            confidence += 0.22 * (analysis.RedirectLikeCount / (double)redirectProbeCount);
         }
 
         if (thresholdTriggered)
         {
-            confidence += 0.35;
+            confidence += 0.26;
         }
 
         if (analysis.RepeatedFingerprint)
         {
-            confidence += 0.20;
+            confidence += 0.14;
         }
 
         if (analysis.ControlMismatchCount > 0)
         {
-            confidence += controlMismatchStrong ? 0.25 : 0.12;
+            confidence += controlMismatchStrong ? 0.20 : 0.10;
+        }
+
+        if (analysis.SinkholeAnswerCount > 0)
+        {
+            confidence += 0.16 * (analysis.SinkholeAnswerCount / (double)redirectProbeCount);
+        }
+
+        if (analysis.PolicyInterferenceCount > 0)
+        {
+            confidence += 0.10 * (analysis.PolicyInterferenceCount / (double)redirectProbeCount);
+        }
+
+        if (multiFamilyInterference)
+        {
+            confidence += 0.10;
         }
 
         if (analysis.RedirectLikeCount >= redirectThreshold && analysis.RedirectLikeCount == redirectProbeCount)
         {
-            confidence += 0.10;
+            confidence += 0.08;
         }
 
         return Math.Clamp(confidence, 0, 1);
@@ -539,12 +626,33 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
         var evidenceParts = new List<string>
         {
-            $"invalid-domain answers {analysis.RedirectLikeCount}/{redirectProbeCount} (threshold {redirectThreshold})",
+            $"redirect answers {analysis.RedirectLikeCount}/{redirectProbeCount} (threshold {redirectThreshold})",
         };
+
+        string familySummary = BuildProbeFamilySummary(analysis.ExecutedProbeFamilies, analysis.RedirectProbeFamilies);
+        if (!string.IsNullOrWhiteSpace(familySummary))
+        {
+            evidenceParts.Add($"families {familySummary}");
+        }
 
         if (analysis.ControlComparisons > 0)
         {
             evidenceParts.Add($"control mismatches {analysis.ControlMismatchCount}/{analysis.ControlComparisons}");
+        }
+
+        if (analysis.PolicyInterferenceCount > 0)
+        {
+            evidenceParts.Add($"policy mismatches {analysis.PolicyInterferenceCount}/{redirectProbeCount}");
+        }
+
+        if (analysis.PolicyResponseCodes.Count > 0)
+        {
+            evidenceParts.Add($"policy responses {string.Join(", ", analysis.PolicyResponseCodes.Select(static kv => $"{kv.Key} {kv.Value}x"))}");
+        }
+
+        if (analysis.SinkholeAnswerCount > 0)
+        {
+            evidenceParts.Add($"sinkhole answers {analysis.SinkholeAnswerCount}/{redirectProbeCount}");
         }
 
         if (analysis.RepeatedFingerprint)
@@ -566,6 +674,122 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         return fingerprint.Length <= maxLength
             ? fingerprint
             : fingerprint[..maxLength] + "...";
+    }
+
+    private static string BuildProbeFamilySummary(
+        IReadOnlyDictionary<string, int> executedProbeFamilies,
+        IReadOnlyDictionary<string, int> triggeredProbeFamilies)
+    {
+        string[] orderedLabels = HijackProbeProfiles
+            .Select(static profile => profile.Label)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        var parts = new List<string>(capacity: orderedLabels.Length);
+        foreach (string label in orderedLabels)
+        {
+            if (!executedProbeFamilies.TryGetValue(label, out int executed) || executed <= 0)
+            {
+                continue;
+            }
+
+            int triggered = triggeredProbeFamilies.TryGetValue(label, out int count) ? count : 0;
+            parts.Add($"{label} {triggered}/{executed}");
+        }
+
+        return string.Join(", ", parts);
+    }
+
+    private static void IncrementCount(IDictionary<string, int> counts, string key)
+    {
+        counts[key] = counts.TryGetValue(key, out int count)
+            ? count + 1
+            : 1;
+    }
+
+    private static bool IsLikelySinkholeFingerprint(string? fingerprint)
+    {
+        if (string.IsNullOrWhiteSpace(fingerprint))
+        {
+            return false;
+        }
+
+        foreach (string component in fingerprint.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string? addressText = component.StartsWith("A:", StringComparison.Ordinal)
+                ? component[2..]
+                : component.StartsWith("AAAA:", StringComparison.Ordinal)
+                    ? component[5..]
+                    : null;
+
+            if (addressText is null || !IPAddress.TryParse(addressText, out IPAddress? address))
+            {
+                continue;
+            }
+
+            if (IsLikelySinkholeAddress(address))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsLikelySinkholeAddress(IPAddress address)
+    {
+        if (IPAddress.IsLoopback(address)
+            || address.Equals(IPAddress.Any)
+            || address.Equals(IPAddress.IPv6Any)
+            || address.Equals(IPAddress.None)
+            || address.Equals(IPAddress.IPv6None)
+            || address.IsIPv6LinkLocal
+            || address.IsIPv6SiteLocal)
+        {
+            return true;
+        }
+
+        if (address.AddressFamily == AddressFamily.InterNetwork)
+        {
+            byte[] bytes = address.GetAddressBytes();
+
+            return bytes[0] switch
+            {
+                0 => true,
+                10 => true,
+                100 when bytes[1] >= 64 && bytes[1] <= 127 => true,
+                127 => true,
+                169 when bytes[1] == 254 => true,
+                172 when bytes[1] >= 16 && bytes[1] <= 31 => true,
+                192 when bytes[1] == 168 => true,
+                192 when bytes[1] == 0 && bytes[2] == 2 => true,
+                198 when bytes[1] is 18 or 19 => true,
+                198 when bytes[1] == 51 && bytes[2] == 100 => true,
+                203 when bytes[1] == 0 && bytes[2] == 113 => true,
+                _ => false,
+            };
+        }
+
+        byte[] ipv6Bytes = address.GetAddressBytes();
+        return ipv6Bytes[0] switch
+        {
+            0xFC or 0xFD => true,
+            _ => false,
+        };
+    }
+
+    private static string DescribeResponseCode(int responseCode)
+    {
+        return responseCode switch
+        {
+            ResponseCodeNoError => "NOERROR",
+            ResponseCodeServFail => "SERVFAIL",
+            ResponseCodeNxDomain => "NXDOMAIN",
+            1 => "FORMERR",
+            4 => "NOTIMP",
+            5 => "REFUSED",
+            _ => $"RCODE{responseCode}",
+        };
     }
 
     private static async Task<QueryAttemptResult> RunSingleQueryAsync(
@@ -604,16 +828,24 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            string timeoutMessage =
+                $"Timeout after {options.TimeoutMilliseconds} ms via {server.Protocol} {server.EndpointDisplay} for {queryType} {domain}.";
+            AppDiagnostics.WriteWarning("Benchmark", timeoutMessage);
+
             return new QueryAttemptResult(
                 null,
                 null,
                 false,
                 true,
-                $"Timeout after {options.TimeoutMilliseconds} ms",
+                timeoutMessage,
                 null);
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
+            AppDiagnostics.WriteWarning(
+                "Benchmark",
+                $"Query error via {server.Protocol} {server.EndpointDisplay} for {queryType} {domain}: {ex.Message}");
+
             return new QueryAttemptResult(
                 null,
                 null,
@@ -1405,7 +1637,14 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         int AnswerCount,
         string? AnswerFingerprint);
 
-    private readonly record struct ControlConsensus(bool BothNxDomain, string? LastError);
+    private readonly record struct ControlConsensus(
+        bool HasFullConsensus,
+        bool BothNxDomain,
+        int SuccessfulResponses,
+        int NxDomainResponses,
+        string? LastError);
+
+    private readonly record struct HijackProbeProfile(string DomainSuffix, QueryType QueryType, string Label);
 
     private sealed class ProbeAggregate
     {
@@ -1438,6 +1677,10 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
         public int ControlMismatchCount { get; set; }
 
+        public int PolicyInterferenceCount { get; set; }
+
+        public int SinkholeAnswerCount { get; set; }
+
         public bool RepeatedFingerprint { get; set; }
 
         public string? TopFingerprint { get; set; }
@@ -1449,6 +1692,14 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         public double Confidence { get; set; }
 
         public string Evidence { get; set; } = string.Empty;
+
+        public Dictionary<string, int> ExecutedProbeFamilies { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, int> RedirectProbeFamilies { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, int> PolicyProbeFamilies { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, int> PolicyResponseCodes { get; } = new(StringComparer.Ordinal);
 
         public int SuccessfulAttempts { get; set; }
 

@@ -75,6 +75,7 @@ public sealed class ExportService
         }
 
         await streamWriter.FlushAsync(cancellationToken);
+        AppDiagnostics.WriteInfo("Export", $"CSV export completed: {path}");
 
         return path;
     }
@@ -101,6 +102,8 @@ public sealed class ExportService
             rows,
             ExportJsonContext.Default.ExportRowArray,
             cancellationToken);
+
+        AppDiagnostics.WriteInfo("Export", $"JSON export completed: {path}");
 
         return path;
     }
@@ -140,6 +143,7 @@ public sealed class ExportService
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+        AppDiagnostics.WriteInfo("Export", $"Chart PNG export completed: {path}");
         return path;
     }
 
@@ -156,6 +160,7 @@ public sealed class ExportService
         {
             await TrySetBitmapOnClipboardAsync(clipboard, renderTarget).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
+            AppDiagnostics.WriteInfo("Export", "Chart copied to clipboard.");
             return true;
         }
 

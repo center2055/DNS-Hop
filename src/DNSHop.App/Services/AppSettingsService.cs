@@ -152,25 +152,10 @@ internal sealed class AppSettingsService
 
     private void LogPersistenceError(string operation, Exception exception)
     {
-        try
-        {
-            string? directory = Path.GetDirectoryName(_settingsPath);
-            if (string.IsNullOrWhiteSpace(directory))
-            {
-                directory = Path.Combine(Path.GetTempPath(), "DNS Hop");
-            }
-
-            Directory.CreateDirectory(directory);
-
-            string logPath = Path.Combine(directory, "settings-errors.log");
-            string line =
-                $"{DateTime.UtcNow:O} [{operation}] {exception.GetType().Name}: {exception.Message}{Environment.NewLine}";
-            File.AppendAllText(logPath, line);
-        }
-        catch
-        {
-            // Never throw from diagnostics.
-        }
+        AppDiagnostics.WriteError(
+            "Settings",
+            $"Failed to {operation} settings at '{_settingsPath}'.",
+            exception);
     }
 
     private static string NormalizeTheme(string? theme)
