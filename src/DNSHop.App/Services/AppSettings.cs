@@ -4,7 +4,13 @@ namespace DNSHop.App.Services;
 
 internal sealed class AppSettings
 {
-    public string Theme { get; init; } = "Dark";
+    public string Theme { get; init; } = "System";
+
+    public string Language { get; init; } = string.Empty;
+
+    public bool UseMica { get; init; } = true;
+
+    public string LastNavSection { get; init; } = "Home";
 
     public int TimeoutMilliseconds { get; init; } = 2500;
 
@@ -23,4 +29,10 @@ internal sealed class AppSettings
     public int OutboundProxyPort { get; init; } = 1080;
 
     public DnsServerDefinition[] CustomServers { get; init; } = [];
+
+    public string? ActiveProfileId { get; init; }
+
+    public DnsProfile[] Profiles { get; init; } = [];
+
+    public AppliedDnsEntry[] ApplyHistory { get; init; } = [];
 }

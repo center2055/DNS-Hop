@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.AboutPageView"
+             x:DataType="vm:AboutPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="900"
+             d:DesignHeight="700">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="14" MaxWidth="720" HorizontalAlignment="Left" Margin="40,0,40,0">
+      <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=About.Title}" />
+
+      <Border Classes="Card">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+          <Border Grid.Column="0" Width="96" Height="96" CornerRadius="16"
+                  Background="{DynamicResource SubtleFillColorTertiaryBrush}">
+            <Image Source="/Assets/DNSHopMark.png" Stretch="Uniform" Margin="8" />
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+            <TextBlock Text="{l10n:Localize Key=App.Title}" FontSize="26" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding VersionText}" Classes="Muted" />
+            <TextBlock Text="{l10n:Localize Key=About.Tagline}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=About.Repository}" IconSource="Globe">
+        <ui:SettingsExpander.Footer>
+          <Button Content="{l10n:Localize Key=About.Repository}" Command="{Binding OpenRepositoryCommand}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=About.Issues}" IconSource="Message">
+        <ui:SettingsExpander.Footer>
+          <Button Content="{l10n:Localize Key=About.Issues}" Command="{Binding OpenIssuesCommand}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <Border Classes="Card">
+        <TextBlock Text="{l10n:Localize Key=About.Credits}" Classes="Muted" TextWrapping="Wrap" />
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -2,6 +2,7 @@ using DNSHop.App.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 
@@ -36,7 +37,10 @@ internal sealed class AppSettingsService
             using var document = JsonDocument.Parse(json);
             JsonElement root = document.RootElement;
 
-            string theme = TryGetString(root, "Theme") ?? "Dark";
+            string theme = TryGetString(root, "Theme") ?? "System";
+            string language = TryGetString(root, "Language") ?? string.Empty;
+            bool useMica = TryGetBool(root, "UseMica") ?? true;
+            string lastNavSection = TryGetString(root, "LastNavSection") ?? "Home";
             int timeoutMilliseconds = TryGetInt(root, "TimeoutMilliseconds") ?? 2500;
             int concurrencyLimit = TryGetInt(root, "ConcurrencyLimit") ?? 8;
             int attemptsPerProbe = TryGetInt(root, "AttemptsPerProbe") ?? 3;
@@ -46,10 +50,16 @@ internal sealed class AppSettingsService
             string outboundProxyHost = TryGetString(root, "OutboundProxyHost") ?? string.Empty;
             int outboundProxyPort = TryGetInt(root, "OutboundProxyPort") ?? 1080;
             DnsServerDefinition[] customServers = TryGetCustomServers(root);
+            string? activeProfileId = TryGetString(root, "ActiveProfileId");
+            DnsProfile[] profiles = TryGetProfiles(root);
+            AppliedDnsEntry[] applyHistory = TryGetApplyHistory(root);
 
             return new AppSettings
             {
                 Theme = NormalizeTheme(theme),
+                Language = language?.Trim() ?? string.Empty,
+                UseMica = useMica,
+                LastNavSection = string.IsNullOrWhiteSpace(lastNavSection) ? "Home" : lastNavSection.Trim(),
                 TimeoutMilliseconds = Math.Clamp(timeoutMilliseconds, 250, 10000),
                 ConcurrencyLimit = Math.Clamp(concurrencyLimit, 1, 64),
                 AttemptsPerProbe = Math.Clamp(attemptsPerProbe, 1, 5),
@@ -59,6 +69,9 @@ internal sealed class AppSettingsService
                 OutboundProxyHost = NormalizeProxyHost(outboundProxyHost),
                 OutboundProxyPort = Math.Clamp(outboundProxyPort, 1, 65535),
                 CustomServers = customServers,
+                ActiveProfileId = string.IsNullOrWhiteSpace(activeProfileId) ? null : activeProfileId,
+                Profiles = profiles,
+                ApplyHistory = applyHistory,
             };
         }
         catch (Exception ex)
@@ -83,6 +96,9 @@ internal sealed class AppSettingsService
             var normalized = new AppSettings
             {
                 Theme = NormalizeTheme(settings.Theme),
+                Language = settings.Language?.Trim() ?? string.Empty,
+                UseMica = settings.UseMica,
+                LastNavSection = string.IsNullOrWhiteSpace(settings.LastNavSection) ? "Home" : settings.LastNavSection.Trim(),
                 TimeoutMilliseconds = Math.Clamp(settings.TimeoutMilliseconds, 250, 10000),
                 ConcurrencyLimit = Math.Clamp(settings.ConcurrencyLimit, 1, 64),
                 AttemptsPerProbe = Math.Clamp(settings.AttemptsPerProbe, 1, 5),
@@ -92,6 +108,9 @@ internal sealed class AppSettingsService
                 OutboundProxyHost = NormalizeProxyHost(settings.OutboundProxyHost),
                 OutboundProxyPort = Math.Clamp(settings.OutboundProxyPort, 1, 65535),
                 CustomServers = NormalizeCustomServers(settings.CustomServers),
+                ActiveProfileId = settings.ActiveProfileId,
+                Profiles = settings.Profiles ?? [],
+                ApplyHistory = TrimHistory(settings.ApplyHistory),
             };
 
             using var stream = new MemoryStream();
@@ -99,6 +118,9 @@ internal sealed class AppSettingsService
             {
                 writer.WriteStartObject();
                 writer.WriteString("Theme", normalized.Theme);
+                writer.WriteString("Language", normalized.Language);
+                writer.WriteBoolean("UseMica", normalized.UseMica);
+                writer.WriteString("LastNavSection", normalized.LastNavSection);
                 writer.WriteNumber("TimeoutMilliseconds", normalized.TimeoutMilliseconds);
                 writer.WriteNumber("ConcurrencyLimit", normalized.ConcurrencyLimit);
                 writer.WriteNumber("AttemptsPerProbe", normalized.AttemptsPerProbe);
@@ -107,6 +129,11 @@ internal sealed class AppSettingsService
                 writer.WriteString("OutboundProxyType", normalized.OutboundProxyType);
                 writer.WriteString("OutboundProxyHost", normalized.OutboundProxyHost);
                 writer.WriteNumber("OutboundProxyPort", normalized.OutboundProxyPort);
+
+                if (!string.IsNullOrEmpty(normalized.ActiveProfileId))
+                {
+                    writer.WriteString("ActiveProfileId", normalized.ActiveProfileId);
+                }
 
                 if (normalized.CustomServers.Length > 0)
                 {
@@ -139,6 +166,28 @@ internal sealed class AppSettingsService
                     writer.WriteEndArray();
                 }
 
+                if (normalized.Profiles.Length > 0)
+                {
+                    writer.WritePropertyName("Profiles");
+                    writer.WriteStartArray();
+                    foreach (DnsProfile profile in normalized.Profiles)
+                    {
+                        WriteProfile(writer, profile);
+                    }
+                    writer.WriteEndArray();
+                }
+
+                if (normalized.ApplyHistory.Length > 0)
+                {
+                    writer.WritePropertyName("ApplyHistory");
+                    writer.WriteStartArray();
+                    foreach (AppliedDnsEntry entry in normalized.ApplyHistory)
+                    {
+                        WriteHistoryEntry(writer, entry);
+                    }
+                    writer.WriteEndArray();
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -160,9 +209,17 @@ internal sealed class AppSettingsService
 
     private static string NormalizeTheme(string? theme)
     {
-        return string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase)
-            ? "Light"
-            : "Dark";
+        if (string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Light";
+        }
+
+        if (string.Equals(theme, "Dark", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Dark";
+        }
+
+        return "System";
     }
 
     private static string NormalizeProxyType(string? proxyType)
@@ -383,5 +440,160 @@ internal sealed class AppSettingsService
     private static string BuildServerKey(DnsServerDefinition server)
     {
         return $"{server.Protocol}|{server.EndpointDisplay}";
+    }
+
+    private static DnsProfile[] TryGetProfiles(JsonElement root)
+    {
+        if (!root.TryGetProperty("Profiles", out JsonElement value)
+            || value.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var profiles = new List<DnsProfile>();
+        foreach (JsonElement item in value.EnumerateArray())
+        {
+            string? id = TryGetString(item, "Id");
+            string? name = TryGetString(item, "Name");
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            string? protocolName = TryGetString(item, "EncryptedProtocol");
+            Enum.TryParse(protocolName, ignoreCase: true, out DnsProtocol protocol);
+
+            profiles.Add(new DnsProfile
+            {
+                Id = id,
+                Name = name,
+                Description = TryGetString(item, "Description"),
+                PreferredIPv4 = TryGetString(item, "PreferredIPv4"),
+                AlternateIPv4 = TryGetString(item, "AlternateIPv4"),
+                PreferredIPv6 = TryGetString(item, "PreferredIPv6"),
+                AlternateIPv6 = TryGetString(item, "AlternateIPv6"),
+                EncryptedEndpoint = TryGetString(item, "EncryptedEndpoint"),
+                EncryptedProtocol = protocol,
+                IsBuiltIn = TryGetBool(item, "IsBuiltIn") ?? false,
+                BuiltInKey = TryGetString(item, "BuiltInKey"),
+            });
+        }
+
+        return profiles.ToArray();
+    }
+
+    private static AppliedDnsEntry[] TryGetApplyHistory(JsonElement root)
+    {
+        if (!root.TryGetProperty("ApplyHistory", out JsonElement value)
+            || value.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var entries = new List<AppliedDnsEntry>();
+        foreach (JsonElement item in value.EnumerateArray())
+        {
+            string? label = TryGetString(item, "DisplayLabel");
+            string? whenStr = TryGetString(item, "AppliedAt");
+            if (string.IsNullOrWhiteSpace(label) || !DateTimeOffset.TryParse(whenStr, out var when))
+            {
+                continue;
+            }
+
+            entries.Add(new AppliedDnsEntry
+            {
+                AppliedAt = when,
+                DisplayLabel = label,
+                PreferredIPv4 = TryGetString(item, "PreferredIPv4"),
+                AlternateIPv4 = TryGetString(item, "AlternateIPv4"),
+                PreferredIPv6 = TryGetString(item, "PreferredIPv6"),
+                AlternateIPv6 = TryGetString(item, "AlternateIPv6"),
+                ProfileId = TryGetString(item, "ProfileId"),
+            });
+        }
+
+        return TrimHistory(entries.ToArray());
+    }
+
+    private static AppliedDnsEntry[] TrimHistory(AppliedDnsEntry[]? entries)
+    {
+        if (entries is null || entries.Length == 0)
+        {
+            return [];
+        }
+
+        return entries
+            .OrderByDescending(e => e.AppliedAt)
+            .Take(5)
+            .ToArray();
+    }
+
+    private static void WriteProfile(Utf8JsonWriter writer, DnsProfile profile)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("Id", profile.Id);
+        writer.WriteString("Name", profile.Name);
+        if (!string.IsNullOrWhiteSpace(profile.Description))
+        {
+            writer.WriteString("Description", profile.Description);
+        }
+        if (!string.IsNullOrWhiteSpace(profile.PreferredIPv4))
+        {
+            writer.WriteString("PreferredIPv4", profile.PreferredIPv4);
+        }
+        if (!string.IsNullOrWhiteSpace(profile.AlternateIPv4))
+        {
+            writer.WriteString("AlternateIPv4", profile.AlternateIPv4);
+        }
+        if (!string.IsNullOrWhiteSpace(profile.PreferredIPv6))
+        {
+            writer.WriteString("PreferredIPv6", profile.PreferredIPv6);
+        }
+        if (!string.IsNullOrWhiteSpace(profile.AlternateIPv6))
+        {
+            writer.WriteString("AlternateIPv6", profile.AlternateIPv6);
+        }
+        if (!string.IsNullOrWhiteSpace(profile.EncryptedEndpoint))
+        {
+            writer.WriteString("EncryptedEndpoint", profile.EncryptedEndpoint);
+            writer.WriteString("EncryptedProtocol", profile.EncryptedProtocol.ToString());
+        }
+        if (profile.IsBuiltIn)
+        {
+            writer.WriteBoolean("IsBuiltIn", true);
+            if (!string.IsNullOrWhiteSpace(profile.BuiltInKey))
+            {
+                writer.WriteString("BuiltInKey", profile.BuiltInKey);
+            }
+        }
+        writer.WriteEndObject();
+    }
+
+    private static void WriteHistoryEntry(Utf8JsonWriter writer, AppliedDnsEntry entry)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("AppliedAt", entry.AppliedAt.ToString("O"));
+        writer.WriteString("DisplayLabel", entry.DisplayLabel);
+        if (!string.IsNullOrWhiteSpace(entry.PreferredIPv4))
+        {
+            writer.WriteString("PreferredIPv4", entry.PreferredIPv4);
+        }
+        if (!string.IsNullOrWhiteSpace(entry.AlternateIPv4))
+        {
+            writer.WriteString("AlternateIPv4", entry.AlternateIPv4);
+        }
+        if (!string.IsNullOrWhiteSpace(entry.PreferredIPv6))
+        {
+            writer.WriteString("PreferredIPv6", entry.PreferredIPv6);
+        }
+        if (!string.IsNullOrWhiteSpace(entry.AlternateIPv6))
+        {
+            writer.WriteString("AlternateIPv6", entry.AlternateIPv6);
+        }
+        if (!string.IsNullOrWhiteSpace(entry.ProfileId))
+        {
+            writer.WriteString("ProfileId", entry.ProfileId);
+        }
+        writer.WriteEndObject();
     }
 }

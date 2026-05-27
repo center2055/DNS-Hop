@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:vm="using:DNSHop.App.ViewModels"
+        xmlns:l10n="using:DNSHop.App.Localization"
+        x:Class="DNSHop.App.Views.ShellWindow"
+        x:DataType="vm:ShellViewModel"
+        mc:Ignorable="d"
+        d:DesignWidth="1280"
+        d:DesignHeight="820"
+        Width="1280"
+        Height="840"
+        MinWidth="1000"
+        MinHeight="660"
+        Icon="/Assets/DNSHopLogoText.ico"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="False"
+        Title="{l10n:Localize Key=App.Title}">
+
+  <ui:NavigationView x:Name="Nav"
+                     PaneDisplayMode="Left"
+                     IsBackButtonVisible="False"
+                     IsSettingsVisible="True"
+                     IsPaneToggleButtonVisible="True"
+                     OpenPaneLength="260"
+                     CompactPaneLength="48"
+                     Background="Transparent"
+                     MenuItemsSource="{Binding Sections}"
+                     SelectedItem="{Binding SelectedSection, Mode=TwoWay}"
+                     PaneTitle="{l10n:Localize Key=App.Title}">
+
+    <ui:NavigationView.MenuItemTemplate>
+      <DataTemplate x:DataType="vm:NavSection">
+        <ui:NavigationViewItem Content="{Binding Label}" Tag="{Binding Key}">
+          <ui:NavigationViewItem.IconSource>
+            <ui:FontIconSource Glyph="{Binding Glyph}" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="16" />
+          </ui:NavigationViewItem.IconSource>
+        </ui:NavigationViewItem>
+      </DataTemplate>
+    </ui:NavigationView.MenuItemTemplate>
+
+    <Border Margin="0" Padding="40,8,0,32">
+      <ContentControl Content="{Binding CurrentPage}" />
+    </Border>
+  </ui:NavigationView>
+</Window>

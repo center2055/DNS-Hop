@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.HomePageView"
+             x:DataType="vm:HomePageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="980"
+             d:DesignHeight="700">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="20" MaxWidth="1080" HorizontalAlignment="Stretch" Margin="0,0,40,0">
+
+      <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=Home.Title}" />
+
+      <ui:InfoBar IsOpen="{Binding HasUpdate}"
+                  Severity="Informational"
+                  Title="{Binding UpdateLabel}"
+                  Message="{l10n:Localize Key=Home.Update.Install}"
+                  IsClosable="True" />
+
+      <!-- Hero row: resolver identity + quick system facts -->
+      <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
+        <Border Grid.Column="0" Classes="Card">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="18">
+            <Border Grid.Column="0"
+                    Width="64" Height="64"
+                    CornerRadius="12"
+                    Background="{DynamicResource SubtleFillColorTertiaryBrush}">
+              <Image Source="/Assets/DNSHopMark.png" Stretch="Uniform" Margin="6" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+              <TextBlock Text="{l10n:Localize Key=Home.CurrentDns.Title}"
+                         Classes="Caption" />
+              <TextBlock Text="{Binding CurrentResolver}"
+                         FontSize="24" FontWeight="SemiBold"
+                         TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding CurrentAdapter}"
+                         Classes="Muted" FontSize="13" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Classes="Card">
+          <StackPanel Spacing="10">
+            <StackPanel Spacing="2">
+              <TextBlock Text="{l10n:Localize Key=Home.Profile.Title}" Classes="Caption" />
+              <TextBlock Text="{Binding ActiveProfileLabel}" FontWeight="SemiBold" />
+            </StackPanel>
+            <StackPanel Spacing="2">
+              <TextBlock Text="{l10n:Localize Key=Home.System.Region}" Classes="Caption" />
+              <TextBlock Text="{Binding RegionLabel}" FontWeight="SemiBold" />
+            </StackPanel>
+            <StackPanel Spacing="2">
+              <TextBlock Text="{l10n:Localize Key=Home.LastBenchmark.Title}" Classes="Caption" />
+              <TextBlock Text="{Binding LastBenchmarkLabel}" TextWrapping="Wrap" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Home.QuickActions.Title}" />
+
+      <StackPanel Classes="SettingsList">
+
+        <Button Classes="RowButton" Command="{Binding GoToBenchmarkCommand}">
+          <Border Classes="SettingRow">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+              <ui:FontIcon Grid.Column="0" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="20" />
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.RunBenchmark}" FontWeight="SemiBold" />
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.RunBenchmark.Description}" Classes="Caption" TextWrapping="Wrap" />
+              </StackPanel>
+              <ui:FontIcon Grid.Column="2" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </Grid>
+          </Border>
+        </Button>
+
+        <Button Classes="RowButton" Command="{Binding ApplyBestCommand}">
+          <Border Classes="SettingRow">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+              <ui:FontIcon Grid.Column="0" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="20" />
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.ApplyBest}" FontWeight="SemiBold" />
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.ApplyBest.Description}" Classes="Caption" TextWrapping="Wrap" />
+              </StackPanel>
+              <ui:FontIcon Grid.Column="2" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </Grid>
+          </Border>
+        </Button>
+
+        <Button Classes="RowButton" Command="{Binding CheckTamperingCommand}"
+                IsEnabled="{Binding !IsLeakTestRunning}">
+          <Border Classes="SettingRow">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+              <ui:FontIcon Grid.Column="0" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="20" />
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.CheckTampering}" FontWeight="SemiBold" />
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.CheckTampering.Description}" Classes="Caption" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding LeakTestStatus}" Classes="Caption" />
+              </StackPanel>
+              <ui:FontIcon Grid.Column="2" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </Grid>
+          </Border>
+        </Button>
+
+        <Button Classes="RowButton" Command="{Binding RestorePreviousCommand}"
+                IsVisible="{Binding CanRestorePrevious}">
+          <Border Classes="SettingRow">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+              <ui:FontIcon Grid.Column="0" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="20" />
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.RestorePrevious}" FontWeight="SemiBold" />
+                <TextBlock Text="{l10n:Localize Key=Home.QuickActions.RestorePrevious.Description}" Classes="Caption" TextWrapping="Wrap" />
+              </StackPanel>
+              <ui:FontIcon Grid.Column="2" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </Grid>
+          </Border>
+        </Button>
+
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

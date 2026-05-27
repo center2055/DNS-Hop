@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.BenchmarkPageView"
+             x:DataType="vm:BenchmarkPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="980"
+             d:DesignHeight="700">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="14" MaxWidth="1080" Margin="0,0,40,0">
+      <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=Benchmark.Title}" />
+
+      <Border Classes="Card">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" VerticalAlignment="Center">
+            <StackPanel Grid.Column="0" Spacing="6">
+              <TextBlock Text="{Binding StatusMessage}" />
+              <ProgressBar Minimum="0" Maximum="100" Value="{Binding PercentCompleted}" Height="6" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="accent"
+                    Content="{l10n:Localize Key=Benchmark.Start}"
+                    Command="{Binding StartCommand}"
+                    IsEnabled="{Binding !IsRunning}" />
+            <Button Grid.Column="2"
+                    Content="{l10n:Localize Key=Benchmark.Cancel}"
+                    Command="{Binding CancelCommand}"
+                    IsEnabled="{Binding IsRunning}" />
+          </Grid>
+
+          <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Resolvers" Classes="Caption" />
+              <TextBlock FontSize="28" FontWeight="SemiBold">
+                <Run Text="{Binding ServersCompleted}" /><Run Text=" / " /><Run Text="{Binding ServersTotal}" />
+              </TextBlock>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="{l10n:Localize Key=Benchmark.Completed}" Classes="Caption" />
+              <TextBlock Text="{Binding PercentCompleted, StringFormat={}{0}%}" FontSize="28" FontWeight="SemiBold" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Text="{l10n:Localize Key=Benchmark.Elapsed}" Classes="Caption" />
+              <TextBlock Text="{Binding Elapsed}" FontSize="28" FontWeight="SemiBold" />
+            </StackPanel>
+            <StackPanel Grid.Column="3">
+              <TextBlock Text="ETA" Classes="Caption" />
+              <TextBlock Text="{Binding Eta}" FontSize="28" FontWeight="SemiBold" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Benchmark.Title}" />
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.Timeout}" IconSource="Clock">
+        <ui:SettingsExpander.Footer>
+          <NumericUpDown MinWidth="140" Minimum="250" Maximum="10000" Increment="250" Value="{Binding TimeoutMilliseconds}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.Concurrency}" IconSource="Switch">
+        <ui:SettingsExpander.Footer>
+          <NumericUpDown MinWidth="140" Minimum="1" Maximum="64" Increment="1" Value="{Binding ConcurrencyLimit}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.Attempts}" IconSource="Refresh">
+        <ui:SettingsExpander.Footer>
+          <NumericUpDown MinWidth="140" Minimum="1" Maximum="5" Increment="1" Value="{Binding AttemptsPerProbe}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.AutoUpdate}" IconSource="Download">
+        <ui:SettingsExpander.Footer>
+          <ToggleSwitch IsChecked="{Binding AutoUpdateListOnStartup, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Benchmark.Probes.Cached}" />
+      <Border Classes="Card">
+        <StackPanel Spacing="14">
+          <StackPanel>
+            <TextBlock FontWeight="SemiBold" Text="{l10n:Localize Key=Benchmark.Probes.Cached}" />
+            <TextBlock Classes="Caption" Text="{l10n:Localize Key=Benchmark.Probes.Cached.Description}" TextWrapping="Wrap" />
+          </StackPanel>
+          <StackPanel>
+            <TextBlock FontWeight="SemiBold" Text="{l10n:Localize Key=Benchmark.Probes.Uncached}" />
+            <TextBlock Classes="Caption" Text="{l10n:Localize Key=Benchmark.Probes.Uncached.Description}" TextWrapping="Wrap" />
+          </StackPanel>
+          <StackPanel>
+            <TextBlock FontWeight="SemiBold" Text="{l10n:Localize Key=Benchmark.Probes.DotCom}" />
+            <TextBlock Classes="Caption" Text="{l10n:Localize Key=Benchmark.Probes.DotCom.Description}" TextWrapping="Wrap" />
+          </StackPanel>
+          <StackPanel>
+            <TextBlock FontWeight="SemiBold" Text="{l10n:Localize Key=Benchmark.Probes.Reliability}" />
+            <TextBlock Classes="Caption" Text="{l10n:Localize Key=Benchmark.Probes.Reliability.Description}" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

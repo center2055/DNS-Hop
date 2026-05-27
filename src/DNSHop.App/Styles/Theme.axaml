@@ -1,0 +1,34 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Win 11 25H2 Settings inspired typography. Cards/colors lean on FluentAvalonia's
+       LayerFillColor / CardBackgroundFillColor tokens so light/dark/Mica look right out
+       of the box. -->
+
+  <Style Selector="TextBlock.Muted">
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.PageTitle">
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,20,0,24" />
+  </Style>
+
+  <Style Selector="TextBlock.GroupHeader">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="2,18,0,8" />
+  </Style>
+
+  <Style Selector="TextBlock.Caption">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.PageSubtitle">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    <Setter Property="Margin" Value="0,0,0,12" />
+  </Style>
+</Styles>

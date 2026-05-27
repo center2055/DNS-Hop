@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:models="using:DNSHop.App.Models"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.ProfilesPageView"
+             x:DataType="vm:ProfilesPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="900"
+             d:DesignHeight="700">
+  <Grid>
+    <ScrollViewer IsEnabled="{Binding !IsEditing}">
+      <StackPanel Spacing="14" Margin="0,0,40,0">
+        <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=Profiles.Title}" />
+        <TextBlock Classes="Muted" Text="{l10n:Localize Key=Profiles.Description}" TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="accent" Content="{l10n:Localize Key=Profiles.New}" Command="{Binding NewCommand}" />
+        </StackPanel>
+
+        <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Profiles.BuiltIn.Section}" />
+        <ItemsControl ItemsSource="{Binding BuiltIns}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="models:DnsProfile">
+              <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Description}" Classes="Caption" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Button Grid.Column="1"
+                          Content="{l10n:Localize Key=Profiles.Apply}"
+                          Command="{Binding ((vm:ProfilesPageViewModel)DataContext).ApplyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding .}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Profiles.Custom.Section}" />
+        <ContentControl IsVisible="{Binding Custom.Count, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
+        <TextBlock Classes="Caption" Text="{l10n:Localize Key=Profiles.Empty}" IsVisible="{Binding Custom.Count, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0}" />
+
+        <ItemsControl ItemsSource="{Binding Custom}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="models:DnsProfile">
+              <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Center">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding PreferredIPv4}" Classes="Caption" />
+                  </StackPanel>
+                  <Button Grid.Column="1"
+                          Content="{l10n:Localize Key=Profiles.Apply}"
+                          Command="{Binding ((vm:ProfilesPageViewModel)DataContext).ApplyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding .}" />
+                  <Button Grid.Column="2"
+                          Content="{l10n:Localize Key=Profiles.Edit}"
+                          Command="{Binding ((vm:ProfilesPageViewModel)DataContext).EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding .}" />
+                  <Button Grid.Column="3"
+                          Content="{l10n:Localize Key=Profiles.Delete}"
+                          Command="{Binding ((vm:ProfilesPageViewModel)DataContext).DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding .}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Profiles.History.Title}" />
+        <ItemsControl ItemsSource="{Binding History}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="models:AppliedDnsEntry">
+              <Border Classes="SettingRow">
+                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center" ColumnSpacing="8">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding DisplayLabel}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding AppliedAt, StringFormat={}{0:g}}" Classes="Caption" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding PreferredIPv4}" Classes="Caption" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Background="#80000000" IsVisible="{Binding IsEditing}">
+      <Border Width="480" Padding="20" CornerRadius="8"
+              Background="{DynamicResource CardFillBrush}"
+              BorderBrush="{DynamicResource CardStrokeBrush}"
+              BorderThickness="1"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{l10n:Localize Key=Profiles.New}" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock Text="{l10n:Localize Key=Profiles.Field.Name}" Classes="Caption" />
+          <TextBox Text="{Binding Draft.Name}" />
+          <TextBlock Text="{l10n:Localize Key=Profiles.Field.PreferredV4}" Classes="Caption" />
+          <TextBox Text="{Binding Draft.PreferredIPv4}" />
+          <TextBlock Text="{l10n:Localize Key=Profiles.Field.AlternateV4}" Classes="Caption" />
+          <TextBox Text="{Binding Draft.AlternateIPv4}" />
+          <TextBlock Text="{l10n:Localize Key=Profiles.Field.PreferredV6}" Classes="Caption" />
+          <TextBox Text="{Binding Draft.PreferredIPv6}" />
+          <TextBlock Text="{l10n:Localize Key=Profiles.Field.AlternateV6}" Classes="Caption" />
+          <TextBox Text="{Binding Draft.AlternateIPv6}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="{l10n:Localize Key=Common.Cancel}" Command="{Binding CancelEditCommand}" />
+            <Button Classes="accent" Content="{l10n:Localize Key=Common.Save}" Command="{Binding SaveDraftCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Grid>
+</UserControl>

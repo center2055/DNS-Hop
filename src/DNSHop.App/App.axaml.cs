@@ -1,12 +1,13 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using DNSHop.App.Localization;
 using DNSHop.App.Services;
 using DNSHop.App.ViewModels;
 using DNSHop.App.Views;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DNSHop.App;
 
@@ -21,33 +22,79 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // CommunityToolkit and Avalonia can both validate DataAnnotations; we keep one source.
             DisableAvaloniaDataAnnotationValidation();
 
-            var benchmarkService = new DnsBenchmarkService();
-            var serverListService = new DnsServerListService();
-            var recommendationService = new RecommendationService();
-            var exportService = new ExportService();
-            var appSettingsService = new AppSettingsService();
-            var appReleaseService = new AppReleaseService();
-            var systemDnsSwitchService = new SystemDnsSwitchService();
-            var currentDnsStatusService = new CurrentDnsStatusService();
+            var services = BuildServices();
+            var shell = new ShellViewModel(services);
 
-            desktop.MainWindow = new MainWindow
+            RequestedThemeVariant = shell.ActiveTheme switch
             {
-                DataContext = new MainWindowViewModel(
-                    benchmarkService,
-                    serverListService,
-                    recommendationService,
-                    exportService,
-                    appSettingsService,
-                    appReleaseService,
-                    systemDnsSwitchService,
-                    currentDnsStatusService),
+                "Light" => Avalonia.Styling.ThemeVariant.Light,
+                "Dark" => Avalonia.Styling.ThemeVariant.Dark,
+                _ => Avalonia.Styling.ThemeVariant.Default,
             };
+
+            var window = new ShellWindow
+            {
+                DataContext = shell,
+            };
+
+            window.Closing += (_, _) =>
+            {
+                Task.Run(shell.PersistAll);
+            };
+
+            desktop.MainWindow = window;
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static AppServices BuildServices()
+    {
+        var settingsService = new AppSettingsService();
+        var settings = settingsService.Load();
+
+        var localization = LocalizationService.Instance;
+        localization.EnsureLoaded();
+        var culture = string.IsNullOrWhiteSpace(settings.Language)
+            ? LocalizationService.DetectSystemCulture()
+            : settings.Language;
+        localization.SetCulture(culture);
+
+        var metadata = new ResolverMetadataService();
+        metadata.Load();
+
+        var appState = new AppStateService
+        {
+            ActiveProfileId = settings.ActiveProfileId,
+        };
+        foreach (var profile in settings.Profiles)
+        {
+            appState.Profiles.Add(profile);
+        }
+        foreach (var entry in settings.ApplyHistory)
+        {
+            appState.ApplyHistory.Add(entry);
+        }
+
+        return new AppServices
+        {
+            Localization = localization,
+            Settings = settingsService,
+            Benchmark = new DnsBenchmarkService(),
+            ServerList = new DnsServerListService(),
+            Recommendations = new RecommendationService(),
+            Export = new ExportService(),
+            Releases = new AppReleaseService(),
+            SystemDns = new SystemDnsSwitchService(),
+            CurrentDns = new CurrentDnsStatusService(),
+            Profiles = new DnsProfileService(),
+            Metadata = metadata,
+            Geo = new GeoLocationService(),
+            LeakTest = new DnsLeakTestService(),
+            AppState = appState,
+        };
     }
 
     private static void DisableAvaloniaDataAnnotationValidation()
@@ -62,4 +109,3 @@ public partial class App : Application
         }
     }
 }
-

@@ -1,0 +1,54 @@
+[
+  { "key": "Cloudflare", "provider": "Cloudflare", "countryCode": "US", "regions": ["GLOBAL", "EU", "NA", "AS"], "noLogs": true, "privacyPolicyUrl": "https://www.cloudflare.com/privacypolicy/" },
+  { "key": "1.1.1.1", "provider": "Cloudflare", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true },
+  { "key": "1.0.0.1", "provider": "Cloudflare", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true },
+  { "key": "one.one.one.one", "provider": "Cloudflare", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true },
+
+  { "key": "Quad9", "provider": "Quad9", "countryCode": "CH", "regions": ["GLOBAL", "EU", "NA"], "noLogs": true, "blocksMalware": true, "privacyPolicyUrl": "https://quad9.net/service/privacy/" },
+  { "key": "9.9.9.9", "provider": "Quad9", "countryCode": "CH", "regions": ["GLOBAL", "EU"], "noLogs": true, "blocksMalware": true },
+  { "key": "149.112.112.112", "provider": "Quad9", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
+
+  { "key": "Google", "provider": "Google", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": false, "privacyPolicyUrl": "https://developers.google.com/speed/public-dns/privacy" },
+  { "key": "8.8.8.8", "provider": "Google", "countryCode": "US", "regions": ["GLOBAL"] },
+  { "key": "8.8.4.4", "provider": "Google", "countryCode": "US", "regions": ["GLOBAL"] },
+
+  { "key": "AdGuard", "provider": "AdGuard", "countryCode": "CY", "regions": ["EU", "AS"], "noLogs": true, "blocksAds": true, "privacyPolicyUrl": "https://adguard-dns.io/en/privacy.html" },
+  { "key": "AdGuard Family", "provider": "AdGuard", "countryCode": "CY", "regions": ["EU"], "noLogs": true, "blocksAds": true, "blocksAdult": true, "blocksMalware": true },
+  { "key": "94.140.14.14", "provider": "AdGuard", "countryCode": "CY", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+  { "key": "94.140.15.15", "provider": "AdGuard", "countryCode": "CY", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+
+  { "key": "Mullvad", "provider": "Mullvad", "countryCode": "SE", "regions": ["EU"], "noLogs": true, "privacyPolicyUrl": "https://mullvad.net/help/no-logging-data-policy/" },
+  { "key": "194.242.2.2", "provider": "Mullvad", "countryCode": "SE", "regions": ["EU"], "noLogs": true },
+  { "key": "194.242.2.3", "provider": "Mullvad", "countryCode": "SE", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+
+  { "key": "NextDNS", "provider": "NextDNS", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://nextdns.io/privacy" },
+  { "key": "OpenDNS", "provider": "Cisco OpenDNS", "countryCode": "US", "regions": ["GLOBAL"] },
+  { "key": "208.67.222.222", "provider": "Cisco OpenDNS", "countryCode": "US", "regions": ["GLOBAL"] },
+  { "key": "208.67.220.220", "provider": "Cisco OpenDNS", "countryCode": "US", "regions": ["GLOBAL"] },
+
+  { "key": "Verisign", "provider": "Verisign", "countryCode": "US", "regions": ["NA"] },
+  { "key": "64.6.64.6", "provider": "Verisign", "countryCode": "US", "regions": ["NA"] },
+  { "key": "64.6.65.6", "provider": "Verisign", "countryCode": "US", "regions": ["NA"] },
+
+  { "key": "DNS.SB", "provider": "DNS.SB", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "185.222.222.222", "provider": "DNS.SB", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "45.11.45.11", "provider": "DNS.SB", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+
+  { "key": "FFMUC", "provider": "Freifunk München", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "dnsforge", "provider": "Dnsforge", "countryCode": "DE", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+
+  { "key": "FDN", "provider": "FDN (French Data Network)", "countryCode": "FR", "regions": ["EU"], "noLogs": true, "privacyPolicyUrl": "https://www.fdn.fr/actions/dns/" },
+  { "key": "80.67.169.12", "provider": "FDN", "countryCode": "FR", "regions": ["EU"], "noLogs": true },
+  { "key": "80.67.169.40", "provider": "FDN", "countryCode": "FR", "regions": ["EU"], "noLogs": true },
+
+  { "key": "Yandex", "provider": "Yandex", "countryCode": "RU", "regions": ["EU", "AS"] },
+  { "key": "77.88.8.8", "provider": "Yandex", "countryCode": "RU", "regions": ["EU"] },
+
+  { "key": "OpenNIC", "provider": "OpenNIC", "regions": ["GLOBAL"] },
+  { "key": "Hurricane Electric", "provider": "Hurricane Electric", "countryCode": "US", "regions": ["NA"] },
+  { "key": "Wikimedia DNS", "provider": "Wikimedia", "regions": ["GLOBAL"], "noLogs": true },
+
+  { "key": "Alekberg", "provider": "Alekberg", "countryCode": "NL", "regions": ["EU"], "noLogs": true },
+  { "key": "BlahDNS", "provider": "BlahDNS", "countryCode": "DE", "regions": ["EU", "AS"], "noLogs": true, "blocksAds": true },
+  { "key": "tiar.app", "provider": "Tiar", "countryCode": "JP", "regions": ["AS"], "noLogs": true }
+]

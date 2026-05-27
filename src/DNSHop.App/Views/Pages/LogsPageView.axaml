@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             x:Class="DNSHop.App.Views.Pages.LogsPageView"
+             x:DataType="vm:LogsPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="800">
+  <UserControl.Styles>
+    <Style Selector="Border.LogRow">
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+    </Style>
+    <Style Selector="Border.LogRow.Error">
+      <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+    </Style>
+    <Style Selector="Border.LogRow.Warn">
+      <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+    </Style>
+    <Style Selector="TextBlock.LevelTag">
+      <Setter Property="FontFamily" Value="Cascadia Mono,Consolas,monospace" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="MinWidth" Value="42" />
+    </Style>
+    <Style Selector="TextBlock.LevelTag.Error">
+      <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+    </Style>
+    <Style Selector="TextBlock.LevelTag.Warn">
+      <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+    </Style>
+    <Style Selector="TextBlock.LevelTag.Info">
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="10" Margin="0,0,40,0">
+    <TextBlock Grid.Row="0" Classes="PageTitle" Text="{l10n:Localize Key=Logs.Title}" />
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+      <TextBox Grid.Column="0" Watermark="{l10n:Localize Key=Logs.Filter}" Text="{Binding FilterText, Mode=TwoWay}" />
+      <Button Grid.Column="1" Content="{l10n:Localize Key=Logs.Refresh}" Command="{Binding RefreshCommand}" />
+      <Button Grid.Column="2" Content="{l10n:Localize Key=Common.Save}" Command="{Binding ExportCommand}" />
+      <Button Grid.Column="3" Content="{l10n:Localize Key=Logs.OpenFolder}" Command="{Binding OpenFolderCommand}" />
+    </Grid>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10">
+      <CheckBox Content="INFO" IsChecked="{Binding ShowInfo, Mode=TwoWay}" />
+      <CheckBox Content="WARN" IsChecked="{Binding ShowWarn, Mode=TwoWay}" />
+      <CheckBox Content="ERROR" IsChecked="{Binding ShowError, Mode=TwoWay}" />
+      <TextBlock VerticalAlignment="Center" Classes="Caption">
+        <Run Text="Showing " /><Run Text="{Binding Entries.Count}" /><Run Text=" of " /><Run Text="{Binding TotalLines}" /><Run Text=" lines" />
+      </TextBlock>
+      <TextBlock VerticalAlignment="Center" Classes="Caption"
+                 Text="{Binding ExportStatus}"
+                 IsVisible="{Binding ExportStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+
+    <TextBlock Grid.Row="3" Text="{Binding LogPath}" Classes="Caption" TextTrimming="CharacterEllipsis" />
+
+    <Border Grid.Row="4" Classes="Card" Padding="0">
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Entries}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:LogEntry">
+              <Border Classes="LogRow"
+                      Classes.Error="{Binding IsError}"
+                      Classes.Warn="{Binding IsWarn}">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="10" VerticalAlignment="Top">
+                  <TextBlock Grid.Column="0"
+                             Classes="LevelTag"
+                             Classes.Error="{Binding IsError}"
+                             Classes.Warn="{Binding IsWarn}"
+                             Classes.Info="{Binding IsInfo}"
+                             Text="{Binding Level}" />
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding Component}"
+                             Classes="Caption"
+                             MinWidth="100" />
+                  <TextBlock Grid.Column="2"
+                             Text="{Binding Timestamp}"
+                             Classes="Caption"
+                             FontFamily="Cascadia Mono,Consolas,monospace"
+                             MinWidth="180" />
+                  <SelectableTextBlock Grid.Column="3"
+                                       Text="{Binding Message}"
+                                       FontFamily="Cascadia Mono,Consolas,monospace"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

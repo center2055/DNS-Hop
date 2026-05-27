@@ -1,0 +1,123 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:loc="using:DNSHop.App.Localization"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.SettingsPageView"
+             x:DataType="vm:SettingsPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="980"
+             d:DesignHeight="700">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="6" MaxWidth="1000" HorizontalAlignment="Stretch" Margin="0,0,40,0">
+
+      <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=Settings.Title}" />
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Appearance.Title}" />
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Appearance.Theme}"
+                           IconSource="DarkTheme">
+        <ui:SettingsExpander.Footer>
+          <ComboBox MinWidth="180"
+                    ItemsSource="{Binding AvailableThemes}"
+                    SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Appearance.Language}"
+                           IconSource="Globe">
+        <ui:SettingsExpander.Footer>
+          <ComboBox MinWidth="220"
+                    ItemsSource="{Binding AvailableLanguages}"
+                    SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="loc:LanguageDescriptor">
+                <TextBlock Text="{Binding NativeName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Appearance.Mica}"
+                           IconSource="Highlight">
+        <ui:SettingsExpander.Footer>
+          <ToggleSwitch IsChecked="{Binding UseMica, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Benchmark.Title}" />
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.Timeout}"
+                           IconSource="Clock">
+        <ui:SettingsExpander.Footer>
+          <NumericUpDown MinWidth="140" Minimum="250" Maximum="10000" Increment="250" Value="{Binding TimeoutMilliseconds}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.Concurrency}"
+                           IconSource="Switch">
+        <ui:SettingsExpander.Footer>
+          <NumericUpDown MinWidth="140" Minimum="1" Maximum="64" Increment="1" Value="{Binding ConcurrencyLimit}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.Attempts}"
+                           IconSource="Refresh">
+        <ui:SettingsExpander.Footer>
+          <NumericUpDown MinWidth="140" Minimum="1" Maximum="5" Increment="1" Value="{Binding AttemptsPerProbe}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.AutoUpdate}"
+                           IconSource="Download">
+        <ui:SettingsExpander.Footer>
+          <ToggleSwitch IsChecked="{Binding AutoUpdateListOnStartup, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Network.Title}" />
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Network.ProxyType}"
+                           IconSource="Globe">
+        <ui:SettingsExpander.Footer>
+          <ComboBox MinWidth="160"
+                    ItemsSource="{Binding AvailableProxyTypes}"
+                    SelectedItem="{Binding OutboundProxyType, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+        <ui:SettingsExpanderItem Content="{l10n:Localize Key=Settings.Network.ProxyHost}">
+          <ui:SettingsExpanderItem.Footer>
+            <TextBox MinWidth="240" Text="{Binding OutboundProxyHost, Mode=TwoWay}" />
+          </ui:SettingsExpanderItem.Footer>
+        </ui:SettingsExpanderItem>
+        <ui:SettingsExpanderItem Content="{l10n:Localize Key=Settings.Network.ProxyPort}">
+          <ui:SettingsExpanderItem.Footer>
+            <NumericUpDown MinWidth="140" Minimum="1" Maximum="65535" Increment="1" Value="{Binding OutboundProxyPort}" />
+          </ui:SettingsExpanderItem.Footer>
+        </ui:SettingsExpanderItem>
+      </ui:SettingsExpander>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Updates.Title}" />
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Updates.CheckOnStart}"
+                           IconSource="Sync">
+        <ui:SettingsExpander.Footer>
+          <ToggleSwitch IsChecked="{Binding CheckForAppUpdatesOnStartup, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Updates.CheckNow}"
+                           Description="{Binding UpdateStatus}"
+                           IconSource="Refresh">
+        <ui:SettingsExpander.Footer>
+          <Button Content="{l10n:Localize Key=Settings.Updates.CheckNow}" Command="{Binding CheckForUpdatesCommand}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

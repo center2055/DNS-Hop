@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:vmShared="using:DNSHop.App.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.NetworkPageView"
+             x:DataType="vm:NetworkPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="1000"
+             d:DesignHeight="800">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="14" MaxWidth="1100" Margin="0,0,40,0">
+      <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=Network.Title}" />
+
+      <Border Classes="Card">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+          <StackPanel Grid.Column="0" Spacing="6">
+            <TextBlock Text="{l10n:Localize Key=Home.CurrentDns.Title}" Classes="Caption" />
+            <TextBlock Text="{Binding ResolverName}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding ResolverAddress}" Classes="Muted" />
+            <TextBlock Text="{Binding ActiveInterfaces}" Classes="Caption" />
+          </StackPanel>
+          <Button Grid.Column="1" Content="{l10n:Localize Key=Network.Refresh}" Command="{Binding RefreshCommand}" VerticalAlignment="Top" />
+        </Grid>
+      </Border>
+
+      <Border Classes="Card">
+        <StackPanel Spacing="8">
+          <TextBlock Text="{l10n:Localize Key=Network.LeakTest.Title}" FontWeight="SemiBold" />
+          <TextBlock Text="{l10n:Localize Key=Network.LeakTest.Description}" Classes="Caption" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0" VerticalAlignment="Center">
+            <Button Classes="accent" Content="{l10n:Localize Key=Network.LeakTest.Run}" Command="{Binding RunLeakTestCommand}" IsEnabled="{Binding !IsLeakTestRunning}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding LeakTestStatus}" />
+          </StackPanel>
+          <TextBlock Text="{Binding LeakTestLastRun}" Classes="Caption" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Network.Adapter.Title}" />
+
+      <ItemsControl ItemsSource="{Binding Adapters}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="6" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vmShared:CurrentDnsAdapterViewModel">
+            <Border Classes="Card">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" VerticalAlignment="Center">
+                  <TextBlock Grid.Column="0" Text="{Binding InterfaceName}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
+                  <Border Grid.Column="1" Classes="Badge">
+                    <TextBlock Text="{Binding Status}" />
+                  </Border>
+                  <Border Grid.Column="2" Classes="Badge">
+                    <TextBlock Text="{Binding TrafficRole}" />
+                  </Border>
+                </Grid>
+
+                <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="4">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{l10n:Localize Key=Network.AdapterColumn.Gateway}" Classes="Caption" />
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GatewaySummary}" TextWrapping="Wrap" />
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{l10n:Localize Key=Network.AdapterColumn.Ipv4Mode}" Classes="Caption" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Ipv4Mode}" />
+
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{l10n:Localize Key=Network.AdapterColumn.Ipv4Servers}" Classes="Caption" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Ipv4Servers}" TextWrapping="Wrap" />
+
+                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{l10n:Localize Key=Network.AdapterColumn.Ipv6Mode}" Classes="Caption" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Ipv6Mode}" />
+
+                  <TextBlock Grid.Row="4" Grid.Column="0" Text="{l10n:Localize Key=Network.AdapterColumn.Ipv6Servers}" Classes="Caption" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Ipv6Servers}" TextWrapping="Wrap" />
+                </Grid>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <Border Classes="CardSecondary">
+        <TextBlock Text="{Binding ResolverNote}" Classes="Muted" TextWrapping="Wrap" />
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

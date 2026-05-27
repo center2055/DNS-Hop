@@ -1,15 +1,25 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
+             xmlns:sty="using:FluentAvalonia.Styling"
+             xmlns:converters="using:DNSHop.App.Converters"
+             xmlns:local="using:DNSHop.App"
              x:Class="DNSHop.App.App"
              RequestedThemeVariant="Default">
 
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
   <Application.Styles>
-    <!-- SukiTheme brings the modern style system and runtime light/dark switching hooks. -->
-    <suki:SukiTheme />
-
-    <!-- DataGrid has separate styles package in Avalonia. -->
+    <sty:FluentAvaloniaTheme PreferUserAccentColor="True" />
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <StyleInclude Source="avares://DNSHop.App/Styles/Theme.axaml" />
+    <StyleInclude Source="avares://DNSHop.App/Styles/Cards.axaml" />
   </Application.Styles>
-</Application>
 
+  <Application.Resources>
+    <ResourceDictionary>
+      <converters:StatusToBrushConverter x:Key="StatusToBrushConverter" />
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

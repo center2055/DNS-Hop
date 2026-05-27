@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l10n="using:DNSHop.App.Localization"
+             xmlns:vm="using:DNSHop.App.ViewModels.Pages"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="DNSHop.App.Views.Pages.ResolversPageView"
+             x:DataType="vm:ResolversPageViewModel"
+             mc:Ignorable="d"
+             d:DesignWidth="900"
+             d:DesignHeight="700">
+  <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12" Margin="0,0,40,0">
+    <TextBlock Grid.Row="0" Classes="PageTitle" Text="{l10n:Localize Key=Resolvers.Title}" />
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <TextBox Grid.Column="0"
+               Watermark="{l10n:Localize Key=Resolvers.Filter}"
+               Text="{Binding FilterText, Mode=TwoWay}" />
+      <Button Grid.Column="1" Content="{l10n:Localize Key=Resolvers.Refresh}" Command="{Binding ReloadCommand}" />
+      <Button Grid.Column="2" Classes="accent" Content="{l10n:Localize Key=Resolvers.Apply}" Command="{Binding ApplyCommand}" />
+    </Grid>
+
+    <ProgressBar Grid.Row="2" IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+
+    <Border Grid.Row="3" Classes="Card" Padding="6">
+      <ListBox ItemsSource="{Binding Filtered}"
+               SelectedItem="{Binding Selected, Mode=TwoWay}"
+               Background="Transparent"
+               BorderThickness="0">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:ResolverItemViewModel">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="8" ColumnSpacing="10">
+              <StackPanel Grid.Column="0">
+                <TextBlock Text="{Binding Endpoint}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Provider}" Classes="Caption" />
+              </StackPanel>
+              <Border Grid.Column="1"
+                      VerticalAlignment="Center"
+                      Padding="6,2" CornerRadius="4"
+                      Background="{DynamicResource SubtleFillBrush}"
+                      IsVisible="{Binding NoLogs}">
+                <TextBlock Text="{l10n:Localize Key=Resolvers.Column.NoLogs}" FontSize="11" />
+              </Border>
+              <Border Grid.Column="2"
+                      VerticalAlignment="Center"
+                      Padding="6,2" CornerRadius="4"
+                      Background="{DynamicResource SubtleFillBrush}">
+                <TextBlock Text="{Binding Protocol}" FontSize="11" />
+              </Border>
+              <Border Grid.Column="3"
+                      VerticalAlignment="Center"
+                      Padding="6,2" CornerRadius="4"
+                      Background="{DynamicResource SuccessAccentBrush}"
+                      IsVisible="{Binding BestForRegion}">
+                <TextBlock Text="{l10n:Localize Key=Resolvers.RegionBadge}" FontSize="11" Foreground="White" />
+              </Border>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+  </Grid>
+</UserControl>
