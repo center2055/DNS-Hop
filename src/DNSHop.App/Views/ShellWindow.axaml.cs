@@ -125,6 +125,14 @@ public partial class ShellWindow : Window
         {
             app.RequestedThemeVariant = variant;
         }
+
+        if (OperatingSystem.IsWindows())
+        {
+            // Tell uxtheme about the new mode so any future window in this process
+            // (including the FluentAvalonia ContentDialog overlay layer) paints
+            // with the right chrome immediately.
+            DNSHop.App.Services.WindowsAppMode.Apply(shell.ActiveTheme);
+        }
     }
 
     private void ApplyWindowChrome()

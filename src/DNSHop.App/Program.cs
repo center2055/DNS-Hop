@@ -26,6 +26,24 @@ internal static class Program
             return exitCode;
         }
 
+        if (OperatingSystem.IsWindows())
+        {
+            // Read the persisted theme directly and tell uxtheme what to default to
+            // BEFORE any window is created. Without this the OS paints the first
+            // frame of chrome in its own default (usually light) and only later
+            // catches up after our per-window DWM call, which the user sees as a
+            // white flash on startup.
+            try
+            {
+                var theme = new AppSettingsService().Load().Theme;
+                WindowsAppMode.Apply(theme);
+            }
+            catch (Exception ex)
+            {
+                AppDiagnostics.WriteWarning("App", $"Early theme apply failed: {ex.Message}");
+            }
+        }
+
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
     }
