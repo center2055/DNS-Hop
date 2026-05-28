@@ -187,6 +187,7 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
             IsRunning = false;
             IsServerListLoading = false;
             StopTickTimer();
+            _runStopwatch.Stop();
         }
     }
 
@@ -221,7 +222,11 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
 
     private void StartTickTimer()
     {
-        StopTickTimer();
+        if (_tickTimer is not null)
+        {
+            _tickTimer.Stop();
+            _tickTimer = null;
+        }
         _tickTimer = new DispatcherTimer(
             TimeSpan.FromMilliseconds(250),
             DispatcherPriority.Background,
@@ -231,12 +236,13 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
 
     private void StopTickTimer()
     {
+        // The stopwatch lifecycle belongs to StartAsync; only the UI tick is
+        // toggled here so navigating between pages can't pause Elapsed.
         if (_tickTimer is not null)
         {
             _tickTimer.Stop();
             _tickTimer = null;
         }
-        _runStopwatch.Stop();
     }
 
     private void UpdateElapsedAndEta()
