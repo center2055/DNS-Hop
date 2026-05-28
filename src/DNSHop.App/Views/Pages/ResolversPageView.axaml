@@ -78,53 +78,67 @@
       </Border>
     </Grid>
 
-    <!-- Add-custom overlay -->
-    <Border Background="#80000000" IsVisible="{Binding IsAdding}">
-      <Border Width="520" Padding="24" CornerRadius="8"
-              Background="{DynamicResource CardFillBrush}"
-              BorderBrush="{DynamicResource CardStrokeBrush}"
-              BorderThickness="1"
-              VerticalAlignment="Center"
-              HorizontalAlignment="Center">
-        <StackPanel Spacing="10">
-          <TextBlock Text="Add a custom DNS endpoint" FontSize="18" FontWeight="SemiBold" />
+    <!-- Add-custom overlay. Full-bleed scrim + centered opaque dialog. -->
+    <Border IsVisible="{Binding IsAdding}"
+            Background="Black"
+            Opacity="0.55"
+            ZIndex="10" />
 
+    <Border IsVisible="{Binding IsAdding}"
+            ZIndex="11"
+            Padding="32,24"
+            Width="560"
+            CornerRadius="10"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"
+            BoxShadow="0 8 24 0 #66000000">
+      <StackPanel Spacing="12">
+        <TextBlock Text="Add a custom DNS endpoint" FontSize="20" FontWeight="SemiBold" />
+
+        <StackPanel Spacing="4">
           <TextBlock Text="Protocol" Classes="Caption" />
           <ComboBox ItemsSource="{Binding AvailableProtocols}"
                     SelectedItem="{Binding Draft.Protocol, Mode=TwoWay}"
                     HorizontalAlignment="Stretch" />
+        </StackPanel>
 
+        <StackPanel Spacing="4">
           <TextBlock Text="Provider label" Classes="Caption" />
           <TextBox Text="{Binding Draft.Provider, Mode=TwoWay}" Watermark="Custom DNS" />
+        </StackPanel>
 
+        <StackPanel Spacing="4">
           <TextBlock Text="Endpoint" Classes="Caption" />
           <TextBox Text="{Binding Draft.Endpoint, Mode=TwoWay}"
                    Watermark="IPv4 / IPv6 (UDP/TCP, DoT) or https URL (DoH)" />
-
-          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-            <StackPanel Grid.Column="0">
-              <TextBlock Text="Port" Classes="Caption" />
-              <NumericUpDown Minimum="1" Maximum="65535" Increment="1"
-                             Value="{Binding Draft.Port, Mode=TwoWay}" />
-            </StackPanel>
-            <StackPanel Grid.Column="1">
-              <TextBlock Text="DoT TLS host (optional)" Classes="Caption" />
-              <TextBox Text="{Binding Draft.DotTlsHost, Mode=TwoWay}"
-                       Watermark="e.g. dns.quad9.net" />
-            </StackPanel>
-          </Grid>
-
-          <TextBlock Text="{Binding AddError}"
-                     Foreground="{DynamicResource SystemFillColorCriticalBrush}"
-                     IsVisible="{Binding AddError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                     TextWrapping="Wrap" />
-
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Content="{l10n:Localize Key=Common.Cancel}" Command="{Binding CancelAddCustomCommand}" />
-            <Button Classes="accent" Content="{l10n:Localize Key=Common.Save}" Command="{Binding SaveCustomCommand}" />
-          </StackPanel>
         </StackPanel>
-      </Border>
+
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+          <StackPanel Grid.Column="0" Spacing="4">
+            <TextBlock Text="Port" Classes="Caption" />
+            <NumericUpDown Minimum="1" Maximum="65535" Increment="1"
+                           Value="{Binding Draft.Port, Mode=TwoWay}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="4">
+            <TextBlock Text="DoT TLS host (optional)" Classes="Caption" />
+            <TextBox Text="{Binding Draft.DotTlsHost, Mode=TwoWay}"
+                     Watermark="e.g. dns.quad9.net" />
+          </StackPanel>
+        </Grid>
+
+        <TextBlock Text="{Binding AddError}"
+                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                   IsVisible="{Binding AddError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
+          <Button Content="{l10n:Localize Key=Common.Cancel}" Command="{Binding CancelAddCustomCommand}" />
+          <Button Classes="accent" Content="{l10n:Localize Key=Common.Save}" Command="{Binding SaveCustomCommand}" />
+        </StackPanel>
+      </StackPanel>
     </Border>
   </Grid>
 </UserControl>

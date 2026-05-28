@@ -107,21 +107,6 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private async Task CopyChartAsync()
-    {
-        if (!HasResults) { return; }
-        try
-        {
-            var path = await _services.Export.ExportChartToClipboardAsync(Results.ToList(), CancellationToken.None).ConfigureAwait(false);
-            ExportStatus = path;
-        }
-        catch (Exception ex)
-        {
-            ExportStatus = ex.Message;
-        }
-    }
-
-    [RelayCommand]
     private async Task ApplyRowAsync(ResolverRowViewModel? row)
     {
         if (row is null)
