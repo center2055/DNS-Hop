@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -27,26 +28,49 @@ internal static class WindowsAppMode
             return;
         }
 
+        // AllowDark by itself does NOT force the chrome — it only permits a per-window
+        // DwmSetWindowAttribute opt-in. For "System" we resolve the actual OS theme
+        // and pick ForceDark / ForceLight so the first WM_NCPAINT is correct.
+        bool systemPrefersDark = SystemPrefersDarkMode();
         var mode = themeName switch
         {
             "Light" => PreferredAppMode.ForceLight,
             "Dark" => PreferredAppMode.ForceDark,
-            _ => PreferredAppMode.AllowDark,
+            _ => systemPrefersDark ? PreferredAppMode.ForceDark : PreferredAppMode.ForceLight,
         };
 
         TryApply(mode);
+    }
+
+    [SupportedOSPlatform("windows")]
+    public static bool SystemPrefersDarkMode()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            if (key?.GetValue("AppsUseLightTheme") is int v)
+            {
+                return v == 0;
+            }
+        }
+        catch
+        {
+        }
+        return false;
     }
 
     private static void TryApply(PreferredAppMode mode)
     {
         try
         {
-            _ = SetPreferredAppMode(mode);
-            _ = FlushMenuThemes();
+            var previous = SetPreferredAppMode(mode);
+            FlushMenuThemes();
+            AppDiagnostics.WriteInfo("WindowsAppMode", $"SetPreferredAppMode({mode}) succeeded (previous={previous}).");
         }
         catch (Exception ex)
         {
-            AppDiagnostics.WriteWarning("WindowsAppMode", $"SetPreferredAppMode failed: {ex.Message}");
+            AppDiagnostics.WriteWarning("WindowsAppMode", $"SetPreferredAppMode({mode}) failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 

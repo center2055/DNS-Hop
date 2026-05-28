@@ -153,8 +153,17 @@ public partial class ShellWindow : Window
             int round = (int)DwmCornerPreference.Round;
             DwmSetWindowAttribute(hwnd.Value, DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
 
-            int darkMode = IsEffectivelyDark() ? 1 : 0;
+            bool dark = IsEffectivelyDark();
+            int darkMode = dark ? 1 : 0;
             DwmSetWindowAttribute(hwnd.Value, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
+
+            // Belt-and-suspenders: if some upstream theme code keeps flipping
+            // IMMERSIVE_DARK_MODE back to 0, hard-set the caption colour to a
+            // matching neutral shade. COLORREF is 0x00BBGGRR.
+            int captionColor = dark ? 0x00202020 : unchecked((int)0xFFFFFFFE); // FFFFFFFE = "default"
+            int textColor = dark ? 0x00F0F0F0 : unchecked((int)0xFFFFFFFE);
+            DwmSetWindowAttribute(hwnd.Value, DWMWA_CAPTION_COLOR, ref captionColor, sizeof(int));
+            DwmSetWindowAttribute(hwnd.Value, DWMWA_TEXT_COLOR, ref textColor, sizeof(int));
 
             // The DWM attribute only takes effect at the next non-client paint.
             // SWP_FRAMECHANGED forces that repaint immediately so the title bar
@@ -204,6 +213,8 @@ public partial class ShellWindow : Window
 
     private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+    private const int DWMWA_CAPTION_COLOR = 35;
+    private const int DWMWA_TEXT_COLOR = 36;
 
     private enum DwmCornerPreference
     {
