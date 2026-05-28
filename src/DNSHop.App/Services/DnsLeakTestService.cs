@@ -1,6 +1,6 @@
 using DNSHop.App.Models;
-using DnsClient;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -10,70 +10,69 @@ namespace DNSHop.App.Services;
 
 internal sealed class DnsLeakTestService
 {
-    public async Task<LeakTestResult> RunAsync(string? expectedResolver, CancellationToken cancellationToken = default)
+    // Compares the resolver IPs the user applied via DNS Hop against the resolver IP
+    // Windows / Linux is actually using right now. No external network call is needed
+    // — relying on whoami.cloudflare only worked when the system DNS was already a
+    // Cloudflare resolver, which made the test useless for anything else.
+    public Task<LeakTestResult> RunAsync(
+        IReadOnlyList<string> expectedIps,
+        string? detectedResolverAddress,
+        CancellationToken cancellationToken = default)
     {
-        try
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var observed = (detectedResolverAddress ?? string.Empty).Trim();
+        if (observed.Length == 0
+            || string.Equals(observed, "Unknown", StringComparison.OrdinalIgnoreCase))
         {
-            var options = new LookupClientOptions
-            {
-                Timeout = TimeSpan.FromSeconds(3),
-                UseCache = false,
-                Retries = 1,
-            };
-
-            var client = new LookupClient(options);
-            // whoami.cloudflare returns a TXT record echoing the public resolver address.
-            var result = await client.QueryAsync("whoami.cloudflare", QueryType.TXT, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            string? observed = result.Answers
-                .TxtRecords()
-                .SelectMany(r => r.Text)
-                .Select(t => t.Trim())
-                .FirstOrDefault(t => IPAddress.TryParse(t, out _));
-
-            if (string.IsNullOrWhiteSpace(observed))
-            {
-                return new LeakTestResult
-                {
-                    Passed = false,
-                    CheckedAt = DateTimeOffset.UtcNow,
-                    ExpectedResolver = expectedResolver,
-                    ObservedResolver = null,
-                    Note = "No echo answer from whoami.cloudflare",
-                };
-            }
-
-            bool match = string.IsNullOrWhiteSpace(expectedResolver)
-                || string.Equals(observed, expectedResolver, StringComparison.OrdinalIgnoreCase)
-                || ShareSubnet(observed, expectedResolver);
-
-            return new LeakTestResult
-            {
-                Passed = match,
-                CheckedAt = DateTimeOffset.UtcNow,
-                ExpectedResolver = expectedResolver,
-                ObservedResolver = observed,
-            };
-        }
-        catch (Exception ex)
-        {
-            return new LeakTestResult
+            return Task.FromResult(new LeakTestResult
             {
                 Passed = false,
                 CheckedAt = DateTimeOffset.UtcNow,
-                ExpectedResolver = expectedResolver,
-                Note = ex.Message,
-            };
+                ExpectedResolver = expectedIps.FirstOrDefault(),
+                ObservedResolver = null,
+                Note = "Could not detect the active system resolver.",
+            });
         }
+
+        if (expectedIps.Count == 0)
+        {
+            return Task.FromResult(new LeakTestResult
+            {
+                Passed = false,
+                CheckedAt = DateTimeOffset.UtcNow,
+                ObservedResolver = observed,
+                Note = "Apply a DNS profile or resolver first — there is nothing to compare against yet.",
+            });
+        }
+
+        foreach (var expected in expectedIps.Where(static s => !string.IsNullOrWhiteSpace(s)))
+        {
+            if (string.Equals(expected, observed, StringComparison.OrdinalIgnoreCase)
+                || ShareSubnet(observed, expected))
+            {
+                return Task.FromResult(new LeakTestResult
+                {
+                    Passed = true,
+                    CheckedAt = DateTimeOffset.UtcNow,
+                    ExpectedResolver = expected,
+                    ObservedResolver = observed,
+                });
+            }
+        }
+
+        return Task.FromResult(new LeakTestResult
+        {
+            Passed = false,
+            CheckedAt = DateTimeOffset.UtcNow,
+            ExpectedResolver = expectedIps.FirstOrDefault(),
+            ObservedResolver = observed,
+            Note = $"System resolver {observed} is not in the applied set.",
+        });
     }
 
-    private static bool ShareSubnet(string observed, string? expected)
+    private static bool ShareSubnet(string observed, string expected)
     {
-        if (string.IsNullOrWhiteSpace(expected))
-        {
-            return false;
-        }
-
         if (!IPAddress.TryParse(observed, out var observedIp)
             || !IPAddress.TryParse(expected, out var expectedIp))
         {

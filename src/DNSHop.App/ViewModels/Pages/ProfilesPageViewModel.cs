@@ -118,18 +118,12 @@ internal sealed partial class ProfilesPageViewModel : PageViewModel
     [RelayCommand]
     private async Task ApplyAsync(DnsProfile profile)
     {
-        if (string.IsNullOrWhiteSpace(profile.PreferredIPv4))
+        if (profile is null)
         {
             return;
         }
 
-        if (!IPAddress.TryParse(profile.PreferredIPv4, out var _))
-        {
-            return;
-        }
-
-        var server = DnsServerDefinition.CreateUdpTcp(profile.PreferredIPv4, profile.Name);
-        var result = await _services.SystemDns.ApplyAsync(server, CancellationToken.None).ConfigureAwait(false);
+        var result = await _services.SystemDns.ApplyProfileAsync(profile, CancellationToken.None).ConfigureAwait(false);
         if (result.Success)
         {
             _services.AppState.ActiveProfileId = profile.Id;

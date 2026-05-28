@@ -103,7 +103,8 @@ internal sealed partial class HomePageViewModel : PageViewModel
         IsLeakTestRunning = true;
         try
         {
-            var result = await _services.LeakTest.RunAsync(CurrentResolver).ConfigureAwait(false);
+            var expectedIps = CollectExpectedIps();
+            var result = await _services.LeakTest.RunAsync(expectedIps, CurrentResolver, System.Threading.CancellationToken.None).ConfigureAwait(false);
             _services.AppState.LastLeakTest = result;
             LeakTestStatus = result.Passed
                 ? Localization["Network.LeakTest.Pass"]
@@ -115,17 +116,50 @@ internal sealed partial class HomePageViewModel : PageViewModel
         }
     }
 
+    private System.Collections.Generic.IReadOnlyList<string> CollectExpectedIps()
+    {
+        var latest = _services.AppState.ApplyHistory.FirstOrDefault();
+        if (latest is null)
+        {
+            return System.Array.Empty<string>();
+        }
+
+        var ips = new System.Collections.Generic.List<string>(4);
+        if (!string.IsNullOrWhiteSpace(latest.PreferredIPv4)) { ips.Add(latest.PreferredIPv4!); }
+        if (!string.IsNullOrWhiteSpace(latest.AlternateIPv4)) { ips.Add(latest.AlternateIPv4!); }
+        if (!string.IsNullOrWhiteSpace(latest.PreferredIPv6)) { ips.Add(latest.PreferredIPv6!); }
+        if (!string.IsNullOrWhiteSpace(latest.AlternateIPv6)) { ips.Add(latest.AlternateIPv6!); }
+        return ips;
+    }
+
     [RelayCommand]
     private async Task RestorePreviousAsync()
     {
         var previous = _services.AppState.PreviousApplied();
-        if (previous?.PreferredIPv4 is null)
+        if (previous is null)
         {
             return;
         }
 
-        var server = DnsServerDefinition.CreateUdpTcp(previous.PreferredIPv4, previous.DisplayLabel);
-        await ApplyServerAsync(server, recordHistory: false).ConfigureAwait(false);
+        var pseudoProfile = new DnsProfile
+        {
+            Id = previous.ProfileId ?? "history",
+            Name = previous.DisplayLabel,
+            PreferredIPv4 = previous.PreferredIPv4,
+            AlternateIPv4 = previous.AlternateIPv4,
+            PreferredIPv6 = previous.PreferredIPv6,
+            AlternateIPv6 = previous.AlternateIPv6,
+        };
+
+        try
+        {
+            await _services.SystemDns.ApplyProfileAsync(pseudoProfile, System.Threading.CancellationToken.None).ConfigureAwait(false);
+            await RefreshCurrentDnsAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            AppDiagnostics.WriteError("Home", "Restore previous DNS failed.", ex);
+        }
     }
 
     private async Task RefreshCurrentDnsAsync()

@@ -3,7 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using DNSHop.App.Models;
 using DNSHop.App.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,7 +56,8 @@ internal sealed partial class NetworkPageViewModel : PageViewModel
             var snapshot = await _services.CurrentDns.GetSnapshotAsync(CancellationToken.None).ConfigureAwait(false);
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                ResolverName = snapshot.ResolverName;
+                var displayName = ResolveDisplayName(snapshot.ResolverName, snapshot.ResolverAddress);
+                ResolverName = displayName;
                 ResolverAddress = snapshot.ResolverAddress;
                 ActiveInterfaces = snapshot.ActiveInterfaces;
                 ResolverNote = snapshot.ResolverNote;
@@ -85,7 +88,8 @@ internal sealed partial class NetworkPageViewModel : PageViewModel
 
         try
         {
-            var result = await _services.LeakTest.RunAsync(ResolverAddress, CancellationToken.None).ConfigureAwait(false);
+            var expectedIps = CollectExpectedIps();
+            var result = await _services.LeakTest.RunAsync(expectedIps, ResolverAddress, CancellationToken.None).ConfigureAwait(false);
             _services.AppState.LastLeakTest = result;
 
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
@@ -100,5 +104,41 @@ internal sealed partial class NetworkPageViewModel : PageViewModel
         {
             IsLeakTestRunning = false;
         }
+    }
+
+    private IReadOnlyList<string> CollectExpectedIps()
+    {
+        var latest = _services.AppState.ApplyHistory.FirstOrDefault();
+        if (latest is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var ips = new List<string>(4);
+        if (!string.IsNullOrWhiteSpace(latest.PreferredIPv4)) { ips.Add(latest.PreferredIPv4!); }
+        if (!string.IsNullOrWhiteSpace(latest.AlternateIPv4)) { ips.Add(latest.AlternateIPv4!); }
+        if (!string.IsNullOrWhiteSpace(latest.PreferredIPv6)) { ips.Add(latest.PreferredIPv6!); }
+        if (!string.IsNullOrWhiteSpace(latest.AlternateIPv6)) { ips.Add(latest.AlternateIPv6!); }
+        return ips;
+    }
+
+    private string ResolveDisplayName(string? snapshotName, string? snapshotAddress)
+    {
+        // nslookup returns "UnKnown" when the resolver has no PTR record; fall back to
+        // a metadata lookup or to the bare address rather than showing the literal.
+        if (!string.IsNullOrWhiteSpace(snapshotName)
+            && !string.Equals(snapshotName, "UnKnown", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(snapshotName, "Unknown", StringComparison.OrdinalIgnoreCase))
+        {
+            return snapshotName;
+        }
+
+        var meta = _services.Metadata.LookupByEndpoint(snapshotAddress, null);
+        if (meta is not null && !string.IsNullOrWhiteSpace(meta.Provider))
+        {
+            return meta.Provider;
+        }
+
+        return string.IsNullOrWhiteSpace(snapshotAddress) ? string.Empty : snapshotAddress;
     }
 }

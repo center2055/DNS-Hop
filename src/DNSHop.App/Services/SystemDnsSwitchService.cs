@@ -17,7 +17,10 @@ namespace DNSHop.App.Services;
 internal sealed class SystemDnsSwitchService
 {
     private const string ApplyCommandName = "--apply-system-dns";
+    private const string ApplyMultiCommandName = "--apply-system-dns-multi";
     private const string ResultPathArgumentName = "--result-file";
+    private const string Ipv4ListArgumentName = "--ipv4";
+    private const string Ipv6ListArgumentName = "--ipv6";
     private const string LinuxResolvConfPath = "/etc/resolv.conf";
     private const string LinuxResolvConfBackupPath = "/etc/resolv.conf.dnshop.bak";
 
@@ -59,6 +62,56 @@ internal sealed class SystemDnsSwitchService
         return null;
     }
 
+    public async Task<SystemDnsSwitchResult> ApplyProfileAsync(DnsProfile profile, CancellationToken cancellationToken)
+    {
+        if (profile is null)
+        {
+            return SystemDnsSwitchResult.Failure("No profile supplied.");
+        }
+
+        var ipv4 = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(profile.PreferredIPv4) && IPAddress.TryParse(profile.PreferredIPv4, out _))
+        {
+            ipv4.Add(profile.PreferredIPv4!.Trim());
+        }
+        if (!string.IsNullOrWhiteSpace(profile.AlternateIPv4) && IPAddress.TryParse(profile.AlternateIPv4, out _))
+        {
+            ipv4.Add(profile.AlternateIPv4!.Trim());
+        }
+
+        var ipv6 = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(profile.PreferredIPv6) && IPAddress.TryParse(profile.PreferredIPv6, out _))
+        {
+            ipv6.Add(profile.PreferredIPv6!.Trim());
+        }
+        if (!string.IsNullOrWhiteSpace(profile.AlternateIPv6) && IPAddress.TryParse(profile.AlternateIPv6, out _))
+        {
+            ipv6.Add(profile.AlternateIPv6!.Trim());
+        }
+
+        if (ipv4.Count == 0 && ipv6.Count == 0)
+        {
+            return SystemDnsSwitchResult.Failure("Profile has no valid IPv4 or IPv6 endpoint.");
+        }
+
+        AppDiagnostics.WriteInfo("SystemDns", $"Applying profile '{profile.Name}': v4=[{string.Join(',', ipv4)}] v6=[{string.Join(',', ipv6)}].");
+
+        if (OperatingSystem.IsWindows())
+        {
+            return await ApplyMultiOnWindowsAsync(ipv4, ipv6, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (OperatingSystem.IsLinux() && ipv4.Count > 0)
+        {
+            // Linux profile apply currently lands the preferred IPv4 via the existing single-IP path;
+            // multi-server Linux apply is tracked as a follow-up.
+            var legacyServer = DnsServerDefinition.CreateUdpTcp(ipv4[0], profile.Name);
+            return await ApplyAsync(legacyServer, cancellationToken).ConfigureAwait(false);
+        }
+
+        return SystemDnsSwitchResult.Failure("Profile apply is supported on Windows and Linux only.");
+    }
+
     public async Task<SystemDnsSwitchResult> ApplyAsync(DnsServerDefinition server, CancellationToken cancellationToken)
     {
         if (TryGetUnsupportedReason(server) is { } reason)
@@ -88,13 +141,46 @@ internal sealed class SystemDnsSwitchService
     {
         exitCode = 0;
 
-        if (args.Length == 0 || !string.Equals(args[0], ApplyCommandName, StringComparison.OrdinalIgnoreCase))
+        if (args.Length == 0)
+        {
+            return false;
+        }
+
+        if (string.Equals(args[0], ApplyMultiCommandName, StringComparison.OrdinalIgnoreCase))
+        {
+            string? resultPath = null;
+            string[] ipv4 = Array.Empty<string>();
+            string[] ipv6 = Array.Empty<string>();
+
+            for (int index = 1; index < args.Length; index++)
+            {
+                string current = args[index];
+                if (string.Equals(current, ResultPathArgumentName, StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+                {
+                    resultPath = args[++index];
+                }
+                else if (string.Equals(current, Ipv4ListArgumentName, StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+                {
+                    ipv4 = SplitIpList(args[++index]);
+                }
+                else if (string.Equals(current, Ipv6ListArgumentName, StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+                {
+                    ipv6 = SplitIpList(args[++index]);
+                }
+            }
+
+            SystemDnsSwitchResult multiResult = ApplyMultiInElevatedProcess(ipv4, ipv6, resultPath);
+            exitCode = multiResult.Success ? 0 : 1;
+            return true;
+        }
+
+        if (!string.Equals(args[0], ApplyCommandName, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
         string? dnsServer = null;
-        string? resultPath = null;
+        string? singleResultPath = null;
 
         for (int index = 1; index < args.Length; index++)
         {
@@ -109,13 +195,74 @@ internal sealed class SystemDnsSwitchService
             if (string.Equals(current, ResultPathArgumentName, StringComparison.OrdinalIgnoreCase)
                 && index + 1 < args.Length)
             {
-                resultPath = args[++index];
+                singleResultPath = args[++index];
             }
         }
 
-        SystemDnsSwitchResult result = ApplyInElevatedProcess(dnsServer, resultPath);
+        SystemDnsSwitchResult result = ApplyInElevatedProcess(dnsServer, singleResultPath);
         exitCode = result.Success ? 0 : 1;
         return true;
+    }
+
+    private static string[] SplitIpList(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return Array.Empty<string>();
+        }
+        return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    private async Task<SystemDnsSwitchResult> ApplyMultiOnWindowsAsync(
+        IReadOnlyList<string> ipv4,
+        IReadOnlyList<string> ipv6,
+        CancellationToken cancellationToken)
+    {
+        string resultPath = BuildResultPath();
+
+        try
+        {
+            ProcessStartInfo? startInfo = TryCreateWindowsMultiElevationStartInfo(ipv4, ipv6, resultPath);
+            if (startInfo is null)
+            {
+                return SystemDnsSwitchResult.Failure("Unable to locate the DNS Hop executable for elevation.");
+            }
+
+            using Process? process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return SystemDnsSwitchResult.Failure("Unable to start the Windows DNS switch command.");
+            }
+
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            if (File.Exists(resultPath))
+            {
+                return await ReadResultAsync(resultPath, cancellationToken).ConfigureAwait(false);
+            }
+
+            return process.ExitCode == 0
+                ? SystemDnsSwitchResult.Succeeded("Profile applied.")
+                : SystemDnsSwitchResult.Failure("Windows rejected the DNS profile change.");
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            AppDiagnostics.WriteWarning("SystemDns", "Profile apply canceled at elevation prompt.");
+            return SystemDnsSwitchResult.Failure("Profile apply canceled at the Windows elevation prompt.");
+        }
+        catch (OperationCanceledException)
+        {
+            return SystemDnsSwitchResult.Failure("Profile apply canceled.");
+        }
+        catch (Exception ex)
+        {
+            AppDiagnostics.WriteError("SystemDns", "Windows profile apply failed.", ex);
+            return SystemDnsSwitchResult.Failure($"Profile apply failed: {ex.Message}");
+        }
+        finally
+        {
+            TryDelete(resultPath);
+        }
     }
 
     private async Task<SystemDnsSwitchResult> ApplyOnWindowsAsync(DnsServerDefinition server, CancellationToken cancellationToken)
@@ -221,6 +368,46 @@ internal sealed class SystemDnsSwitchService
             Path.GetTempPath(),
             $"dnshop-system-dns-{Guid.NewGuid():N}.result");
 
+    private static ProcessStartInfo? TryCreateWindowsMultiElevationStartInfo(
+        IReadOnlyList<string> ipv4,
+        IReadOnlyList<string> ipv6,
+        string resultPath)
+    {
+        var args = new List<string>
+        {
+            ApplyMultiCommandName,
+            ResultPathArgumentName,
+            resultPath,
+        };
+
+        if (ipv4.Count > 0)
+        {
+            args.Add(Ipv4ListArgumentName);
+            args.Add(string.Join(',', ipv4));
+        }
+        if (ipv6.Count > 0)
+        {
+            args.Add(Ipv6ListArgumentName);
+            args.Add(string.Join(',', ipv6));
+        }
+
+        SelfInvocationCommand? invocation = ProcessCommand.TryCreateSelfInvocation(args);
+        if (invocation is null)
+        {
+            return null;
+        }
+
+        return new ProcessStartInfo
+        {
+            FileName = invocation.FileName,
+            Arguments = string.Join(" ", invocation.Arguments.Select(QuoteArgument)),
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = Environment.CurrentDirectory,
+        };
+    }
+
     private static ProcessStartInfo? TryCreateWindowsElevationStartInfo(string dnsServer, string resultPath)
     {
         SelfInvocationCommand? invocation = ProcessCommand.TryCreateSelfInvocation(
@@ -324,6 +511,129 @@ internal sealed class SystemDnsSwitchService
     {
         ProcessCommandResult result = ProcessCommand.Run("id", "-u");
         return result.Success && string.Equals(result.Output.Trim(), "0", StringComparison.Ordinal);
+    }
+
+    private static SystemDnsSwitchResult ApplyMultiInElevatedProcess(string[] ipv4, string[] ipv6, string? resultPath)
+    {
+        SystemDnsSwitchResult result;
+
+        try
+        {
+            result = OperatingSystem.IsWindows()
+                ? ApplyMultiToWindowsAdapters(ipv4, ipv6)
+                : SystemDnsSwitchResult.Failure("Multi-server DNS apply is currently Windows-only.");
+        }
+        catch (Exception ex)
+        {
+            AppDiagnostics.WriteError("SystemDns", "Multi-server elevated helper failed.", ex);
+            result = SystemDnsSwitchResult.Failure($"Profile apply failed: {ex.Message}");
+        }
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(resultPath))
+            {
+                WriteResult(resultPath, result);
+            }
+        }
+        catch
+        {
+        }
+
+        if (result.Success)
+        {
+            AppDiagnostics.WriteInfo(
+                "SystemDns",
+                $"Elevated multi helper applied v4=[{string.Join(',', ipv4)}] v6=[{string.Join(',', ipv6)}].");
+        }
+        else
+        {
+            AppDiagnostics.WriteWarning(
+                "SystemDns",
+                $"Elevated multi helper failed for v4=[{string.Join(',', ipv4)}] v6=[{string.Join(',', ipv6)}]: {result.Message}");
+        }
+
+        return result;
+    }
+
+    private static SystemDnsSwitchResult ApplyMultiToWindowsAdapters(string[] ipv4, string[] ipv6)
+    {
+        foreach (var ip in ipv4)
+        {
+            if (!IPAddress.TryParse(ip, out var parsed) || parsed.AddressFamily != AddressFamily.InterNetwork)
+            {
+                return SystemDnsSwitchResult.Failure($"Invalid IPv4 entry: {ip}");
+            }
+        }
+        foreach (var ip in ipv6)
+        {
+            if (!IPAddress.TryParse(ip, out var parsed) || parsed.AddressFamily != AddressFamily.InterNetworkV6)
+            {
+                return SystemDnsSwitchResult.Failure($"Invalid IPv6 entry: {ip}");
+            }
+        }
+
+        var v4Targets = ipv4.Length > 0
+            ? FindTargetInterfaces(AddressFamily.InterNetwork)
+            : Array.Empty<string>();
+        var v6Targets = ipv6.Length > 0
+            ? FindTargetInterfaces(AddressFamily.InterNetworkV6)
+            : Array.Empty<string>();
+        string[] allTargets = v4Targets.Concat(v6Targets).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+        if (allTargets.Length == 0)
+        {
+            return SystemDnsSwitchResult.Failure("No active network adapters were found.");
+        }
+
+        foreach (string target in allTargets)
+        {
+            if (ipv4.Length > 0 && Array.Exists(v4Targets, t => string.Equals(t, target, StringComparison.OrdinalIgnoreCase)))
+            {
+                var setResult = ProcessCommand.Run("netsh.exe", "interface", "ipv4", "set", "dnsservers",
+                    $"name={target}", "source=static", $"address={ipv4[0]}", "register=primary", "validate=no");
+                if (!setResult.Success)
+                {
+                    return SystemDnsSwitchResult.Failure($"Failed to set IPv4 DNS on {target}: {setResult.CombinedOutput}");
+                }
+
+                for (int i = 1; i < ipv4.Length; i++)
+                {
+                    var addResult = ProcessCommand.Run("netsh.exe", "interface", "ipv4", "add", "dnsservers",
+                        $"name={target}", $"address={ipv4[i]}", $"index={i + 1}", "validate=no");
+                    if (!addResult.Success)
+                    {
+                        return SystemDnsSwitchResult.Failure($"Failed to add IPv4 DNS {ipv4[i]} on {target}: {addResult.CombinedOutput}");
+                    }
+                }
+            }
+
+            if (ipv6.Length > 0 && Array.Exists(v6Targets, t => string.Equals(t, target, StringComparison.OrdinalIgnoreCase)))
+            {
+                var setResult = ProcessCommand.Run("netsh.exe", "interface", "ipv6", "set", "dnsservers",
+                    $"name={target}", "source=static", $"address={ipv6[0]}", "validate=no");
+                if (!setResult.Success)
+                {
+                    return SystemDnsSwitchResult.Failure($"Failed to set IPv6 DNS on {target}: {setResult.CombinedOutput}");
+                }
+
+                for (int i = 1; i < ipv6.Length; i++)
+                {
+                    var addResult = ProcessCommand.Run("netsh.exe", "interface", "ipv6", "add", "dnsservers",
+                        $"name={target}", $"address={ipv6[i]}", $"index={i + 1}", "validate=no");
+                    if (!addResult.Success)
+                    {
+                        return SystemDnsSwitchResult.Failure($"Failed to add IPv6 DNS {ipv6[i]} on {target}: {addResult.CombinedOutput}");
+                    }
+                }
+            }
+        }
+
+        ProcessCommand.Run("ipconfig.exe", "/flushdns");
+
+        string effectiveResolver = CurrentDnsStatusService.ReadEffectiveResolverSummary();
+        return SystemDnsSwitchResult.Succeeded(
+            $"Applied profile to {string.Join(", ", allTargets)}. Current Windows resolver: {effectiveResolver}.");
     }
 
     private static SystemDnsSwitchResult ApplyInElevatedProcess(string? dnsServer, string? resultPath)
