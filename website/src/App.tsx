@@ -128,12 +128,11 @@ function FeatureCard({
 
 function App() {
   const reducedMotion = useReducedMotion() ?? false;
-  const { repo, release } = useDnsHopSnapshot();
+  const { repo, release, totalDownloads } = useDnsHopSnapshot();
   const [activeMode, setActiveMode] = useState<StageModeId>('benchmark');
   const [openFaq, setOpenFaq] = useState(0);
 
   const activeStage = stageModes.find((mode) => mode.id === activeMode) ?? stageModes[0];
-  const totalDownloads = release.assets.reduce((sum, asset) => sum + asset.download_count, 0);
   const installerAsset = release.assets.find((asset) => asset.name.toLowerCase().endsWith('.exe')) ?? release.assets[0];
   const portableAsset = release.assets.find((asset) => asset.name.toLowerCase().includes('portable')) ?? release.assets[1];
   const appImageAsset = release.assets.find((asset) => asset.name.toLowerCase().endsWith('.appimage'));
@@ -203,7 +202,7 @@ function App() {
                 <strong>{formatCompactNumber(repo.stargazers_count)}</strong>
               </div>
               <div className="hero-metric">
-                <span>Total release downloads</span>
+                <span>Total downloads</span>
                 <strong>{formatCompactNumber(totalDownloads)}</strong>
               </div>
               <div className="hero-metric">
