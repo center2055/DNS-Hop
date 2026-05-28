@@ -32,16 +32,6 @@ function formatDate(dateValue: string) {
   }).format(new Date(dateValue));
 }
 
-function formatDateTime(dateValue: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(dateValue));
-}
-
 function updateSpotlight(event: MouseEvent<HTMLElement>) {
   const rect = event.currentTarget.getBoundingClientRect();
   event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
@@ -138,7 +128,7 @@ function FeatureCard({
 
 function App() {
   const reducedMotion = useReducedMotion() ?? false;
-  const { repo, release, loading, error, isFallback, fetchedAt } = useDnsHopSnapshot();
+  const { repo, release } = useDnsHopSnapshot();
   const [activeMode, setActiveMode] = useState<StageModeId>('benchmark');
   const [openFaq, setOpenFaq] = useState(0);
 
@@ -226,16 +216,6 @@ function App() {
               </div>
             </div>
 
-            <div className="status-line">
-              <span className={`status-dot ${isFallback ? 'fallback' : ''}`} />
-              <span>
-                {loading
-                  ? 'Fetching live GitHub snapshot'
-                  : error
-                    ? `Showing fallback release data (${error})`
-                    : `Live GitHub data fetched ${fetchedAt ? formatDateTime(fetchedAt) : 'just now'}`}
-              </span>
-            </div>
           </motion.div>
 
           <motion.aside

@@ -363,28 +363,6 @@ img {
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-.status-line {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 24px;
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--accent-mint);
-  box-shadow: 0 0 0 8px rgba(56, 203, 176, 0.16);
-}
-
-.status-dot.fallback {
-  background: var(--accent-sun);
-  box-shadow: 0 0 0 8px rgba(241, 184, 79, 0.2);
-}
-
 .hero-stage {
   border-radius: 42px;
   padding: 24px;
