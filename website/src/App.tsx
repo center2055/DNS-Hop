@@ -152,19 +152,6 @@ function App() {
       return Boolean(asset) && assets.findIndex((candidate) => candidate?.name === asset?.name) === index;
     })
     .slice(0, 3);
-  const repeatedMarquee = [
-    'windows 11 25h2 look',
-    'one-click dns profiles',
-    'v4 and v6 in the same apply',
-    'built-in leak test',
-    'best resolver for your region',
-    'doh, dot, classic dns',
-    'dnssec visible at a glance',
-    'en · de · fr · ru · zh-cn',
-    'installer, portable, appimage',
-    'csv, json, chart export',
-  ];
-
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -313,16 +300,6 @@ function App() {
               </motion.div>
             </AnimatePresence>
           </motion.aside>
-        </section>
-
-        <section className="marquee" aria-label="DNS Hop capabilities">
-          <div className="marquee-track">
-            {repeatedMarquee.concat(repeatedMarquee).map((item, index) => (
-              <span key={`${item}-${index}`} className="marquee-pill">
-                {item}
-              </span>
-            ))}
-          </div>
         </section>
 
         <section className="section section-grid compact-section" id="why">
