@@ -1,107 +1,57 @@
-# DNSHop
+# DNS Hop
 
-Modern Windows and Linux DNS benchmarking utility built with C# 12, .NET 8, Avalonia, SukiUI, and MVVM.
+Modern DNS benchmark and resolver-switcher for Windows and Linux. Built with C#, .NET 8 and Avalonia + FluentAvalonia.
 
-![DNS Hop Dashboard](docs/images/dns-hop-dashboard.png)
+![DNS Hop Home](docs/images/dns-hop-home.png)
 
-## Phase 1 - Setup and MVVM scaffold
+## What it does
 
-```powershell
-# From repository root
-New-Item -ItemType Directory -Path DNSHop -Force
-cd DNSHop
+DNS Hop helps you pick a fast, honest DNS resolver and apply it to your system without leaving the app.
 
-dotnet new sln -n DNSHop
+- Benchmarks public resolvers across classic UDP/TCP, DoH and DoT
+- Surfaces three timing probes (cached, uncached, DotCom) plus reliability checks for DNSSEC, NXDOMAIN hijacking and dead servers
+- Applies the resolver you pick directly to the active system adapter on Windows or Linux
+- Verifies what actually went through with a DNS leak test
+- Speaks five languages out of the box
 
-dotnet new avalonia.mvvm -n DNSHop.App -o src/DNSHop.App
+## v2 highlights
 
-dotnet sln DNSHop.sln add src/DNSHop.App/DNSHop.App.csproj
+The whole shell was redesigned in v2 around the Windows 11 25H2 Settings aesthetic:
 
-dotnet add src/DNSHop.App/DNSHop.App.csproj package SukiUI
-dotnet add src/DNSHop.App/DNSHop.App.csproj package DnsClient
-dotnet add src/DNSHop.App/DNSHop.App.csproj package CsvHelper
-dotnet add src/DNSHop.App/DNSHop.App.csproj package Avalonia.Controls.DataGrid
+- **FluentAvalonia `NavigationView`** with a left rail: Home, Benchmark, Resolvers, Results, Profiles, Network, Logs, Settings, About
+- **Mica backdrop** on Windows 11 when you stay on the System theme; solid backgrounds in Light/Dark so the title bar and sidebar match the rest of the UI
+- **DNS Profiles** — save preferred + alternate pairs for IPv4 + IPv6 and apply with one click. Built-in profiles: Cloudflare Privacy, Quad9 Secure, AdGuard Family, Mullvad, Google
+- **Geo-aware recommendations** that bias the resolver list toward your region (Cloudflare CDN trace, country-only, six-hour cache, no precise geolocation)
+- **Curated resolver metadata** — operator, country, no-log policy, ad/malware/adult filtering surfaced as badges
+- **DNS leak test** via `whoami.cloudflare` so you can verify your active resolver
+- **Apply history** keeps the last five applied configurations with a one-click "Restore previous"
+- **Results page** with two recommendation cards (Primary / Secondary) and per-row latency bars
+- **Logs page** with severity colours, level filters, search and export
+- **Five languages** out of the box (English, German, French, Russian, Simplified Chinese) with reactive switching — no restart
+
+## Get it
+
+Latest release: <https://github.com/center2055/DNS-Hop/releases/latest>
+
+Each release ships:
+
+| Asset | Platform |
+| --- | --- |
+| `DNS-Hop-Setup-vX.Y.exe` | Windows installer |
+| `DNS-Hop-Portable-vX.Y.zip` | Windows portable |
+| `DNS-Hop-AppImage-vX.Y-x86_64.AppImage` | Linux AppImage |
+
+## Build from source
+
+Requires the .NET 8 SDK.
+
+```bash
+dotnet restore
+dotnet build DNSHop.sln
+dotnet run --project src/DNSHop.App/DNSHop.App.csproj
 ```
 
-Scaffolded MVVM core:
-
-- `src/DNSHop.App/ViewModels/MainWindowViewModel.cs`
-- `src/DNSHop.App/ViewModels/DnsServerResultViewModel.cs`
-- `src/DNSHop.App/Models/*.cs`
-- `src/DNSHop.App/Views/MainWindow.axaml`
-
-## Phase 2 - DNS benchmarking engine
-
-Core benchmarking service:
-
-- `src/DNSHop.App/Services/DnsBenchmarkService.cs`
-
-Features implemented:
-
-- Concurrent benchmarking with `Task.WhenAll` + `SemaphoreSlim` concurrency cap.
-- Cached probe: `google.com`.
-- Uncached probe: randomized `Guid.com`.
-- DotCom probe: `com` NS.
-- Reliability probes:
-  - Redirecting/NXDOMAIN hijack check: randomized `.invalid` query.
-  - DNSSEC validation check: `dnssec-failed.org` (SERVFAIL expected for validating resolvers).
-- Protocol support:
-  - Standard UDP/TCP DNS via `DnsClient.NET`.
-  - DoH via RFC 8484 wire-format POST.
-  - DoT via TLS-wrapped DNS with length-prefixed wire format.
-
-## Phase 3 - Avalonia + SukiUI UI/UX
-
-Main shell:
-
-- `src/DNSHop.App/Views/MainWindow.axaml` using `SukiWindow`.
-- `src/DNSHop.App/App.axaml` with `SukiTheme` for light/dark theme switching.
-
-Views included:
-
-- Introduction
-- Nameservers (main DataGrid + context menu)
-- Tabular Data
-- Conclusions
-
-UI features:
-
-- Dashboard with queries remaining, completion %, elapsed time.
-- Filterable/sortable nameserver list.
-- Context-menu actions:
-  - Remove / Sideline / Pin to Top
-  - Remove Dead / Non-DNSSEC / Redirecting
-  - Copy IP
-  - Sort by Best / Cached / Uncached
-- Custom response-time visual bars:
-  - `src/DNSHop.App/Controls/ResponseBarsControl.cs`
-
-## Phase 4 - Export and desktop packaging
-
-Export services:
-
-- `src/DNSHop.App/Services/ExportService.cs`
-
-Supported exports:
-
-- CSV
-- JSON
-- PNG chart snapshot copied to clipboard
-
-Packaging assets:
-
-- `installer/DNSHop.iss`
-- `publish-win-x64.ps1`
-- `publish-linux-x64.sh`
-- `publish-linux-appimage.sh`
-
-Release assets typically include:
-
-- `DNS-Hop-Setup-vX.Y.exe` Windows installer
-- `DNS-Hop-Portable-vX.Y.zip` Windows portable build
-- `DNS-Hop-AppImage-vX.Y-x86_64.AppImage` Linux AppImage
-
-### Publish commands
+### Self-contained Windows release
 
 ```powershell
 dotnet publish src/DNSHop.App/DNSHop.App.csproj `
@@ -109,42 +59,61 @@ dotnet publish src/DNSHop.App/DNSHop.App.csproj `
   -r win-x64 `
   --self-contained true `
   /p:PublishSingleFile=true `
-  /p:PublishTrimmed=true `
-  /p:TrimMode=partial `
   /p:IncludeNativeLibrariesForSelfExtract=true `
   -o artifacts/publish-win-x64-release
+
+# portable zip
+.\package-win-portable.ps1 -PublishDir artifacts\publish-win-x64-release -ProjectPath src\DNSHop.App\DNSHop.App.csproj
+
+# installer (Inno Setup 6)
+& "C:\Path\To\Inno Setup 6\ISCC.exe" installer\DNSHop.iss
 ```
+
+### Self-contained Linux AppImage
 
 ```bash
-dotnet publish src/DNSHop.App/DNSHop.App.csproj \
-  -c Release \
-  -r linux-x64 \
-  --self-contained true \
-  /p:PublishSingleFile=true \
-  /p:IncludeNativeLibrariesForSelfExtract=true \
-  -o artifacts/publish-linux-x64
+./publish-linux-appimage.sh
+# Produces artifacts/DNSHop-linux-x86_64.AppImage
 ```
 
-### Build + run locally
+The Linux AppImage is also built by CI on every push to `main` and attached to GitHub Releases on every `v*` tag — see [`.github/workflows/linux-appimage.yml`](.github/workflows/linux-appimage.yml). The matrix smoke-tests the bundled binary on Debian 12, Fedora 41 and Arch using `DNSHop.App --smoke-test`.
 
-```powershell
-dotnet restore
-dotnet build DNSHop.sln
-dotnet run --project src/DNSHop.App/DNSHop.App.csproj
+## Project layout
+
+```
+src/DNSHop.App/
+├── App.axaml(.cs)             FluentAvalonia bootstrap + DI
+├── Program.cs                 Entry point, command-line dispatch
+├── Localization/              i18n service, markup extension
+├── Models/                    DnsServerDefinition, DnsProfile, etc.
+├── Services/                  Benchmark, ServerList, SystemDns, Profiles, LeakTest, Geo, Metadata
+├── Styles/                    Theme + card styles
+├── ViewModels/
+│   ├── ShellViewModel.cs      Navigation rail + active page
+│   └── Pages/                 One VM per nav item
+├── Views/
+│   ├── ShellWindow.axaml      Main window (NavigationView + Mica)
+│   └── Pages/                 One view per nav item
+└── Assets/
+    ├── i18n/                  Per-culture JSON dictionaries
+    └── resolver-metadata.json Curated operator / region / no-log info
 ```
 
-### Linux / WSL notes
+## System DNS switching
 
-- DNS Hop targets Windows and Linux desktop releases.
-- System DNS switching on Linux supports classic UDP/TCP DNS endpoints with direct IP addresses.
-- On standard Linux, DNS Hop first tries NetworkManager or `systemd-resolved`; if neither is available it falls back to writing `/etc/resolv.conf`.
-- On WSL, DNS Hop writes `/etc/resolv.conf`. For changes to survive a WSL restart, `/etc/wsl.conf` needs `[network] generateResolvConf=false`.
-- WSL testing requires WSLg for the GUI. The published `artifacts/publish-linux-x64/DNSHop.App` binary is self-contained and does not require the .NET runtime inside WSL.
-- `publish-linux-appimage.sh` produces `artifacts/DNSHop-linux-x86_64.AppImage`.
-- GitHub Actions now builds the AppImage on `ubuntu-22.04` and smoke-tests the bundled binary on Debian 12, Fedora 41, and Arch using `DNSHop.App --smoke-test`.
+- **Windows**: classic UDP/TCP IPv4 + IPv6 endpoints on port 53. Profiles apply preferred + alternate via `netsh`.
+- **Linux**: tries NetworkManager (`nmcli`) and `systemd-resolved` first; falls back to writing `/etc/resolv.conf`.
+- **WSL**: writes `/etc/resolv.conf`. For changes to survive a restart, set `[network] generateResolvConf=false` in `/etc/wsl.conf`. WSLg is required for the GUI.
+
+## Diagnostics
+
+- Logs are written to `%LOCALAPPDATA%\DNS Hop\Logs` on Windows and `$HOME/.local/share/DNS Hop/Logs` on Linux.
+- The in-app Logs page parses these with severity colouring and supports filter + export.
+- `DNSHop.App --smoke-test` runs a quick non-UI sanity pass and prints version, platform and the active diagnostics log path. This is what the CI matrix uses.
 
 ## Notes
 
-- On startup, the app can merge built-in resolvers with a public list feed.
-- Export files are written to: `Documents\DNSHop\Exports`.
-
+- Custom resolver entries you add in **Resolvers** persist in `settings.json` under `%LOCALAPPDATA%\DNS Hop\`.
+- The "Update public list on launch" option pulls a small additional set of resolvers from <https://public-dns.info>. Turn it off if you only want the curated built-in list.
+- Exports land in `Documents\DNSHop\Exports`.
+- Translations live in `src/DNSHop.App/Assets/i18n/<culture>.json`. PRs adding more languages are welcome.

@@ -153,14 +153,16 @@ function App() {
     })
     .slice(0, 3);
   const repeatedMarquee = [
-    'windows installer + portable + appimage',
-    'dnssec visibility',
+    'fluentavalonia + win 11 25h2 shell',
+    'dns profiles, preferred + alternate',
+    'ipv4 + ipv6 in one apply',
+    'leak test via whoami.cloudflare',
+    'geo-aware recommendations',
     'doH + doT aware',
-    'std deviation on repeated probes',
-    'filter, sideline, switch',
+    'dnssec visibility',
+    'en · de · fr · ru · zh-cn',
+    'windows installer + portable + appimage',
     'csv + json + chart export',
-    'github-linked updates',
-    'windows + linux desktop utility',
   ];
 
   return (
@@ -170,7 +172,7 @@ function App() {
           <img className="brand-mark" src={brandMark} alt="" width="34" height="34" />
           <span className="brand-copy">
             <span className="brand-title">DNS Hop</span>
-            <span className="brand-subtitle">Windows and Linux DNS benchmark with product polish</span>
+            <span className="brand-subtitle">Windows and Linux DNS benchmark, profiles and switching</span>
           </span>
         </a>
 
@@ -201,12 +203,12 @@ function App() {
             animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="eyebrow">Benchmark. Compare. Switch.</span>
-            <h1>DNS tooling that feels current instead of inherited.</h1>
+            <span className="eyebrow">Benchmark. Profile. Switch.</span>
+            <h1>A DNS tool that finally looks like Windows 11.</h1>
             <p className="hero-intro">
-              DNS Hop turns resolver testing into a cleaner desktop workflow across Windows and Linux: live ranking
-              tables, visible probe behavior, direct switching, portable release assets, and enough polish that you
-              actually want to keep it open.
+              v2 ships the whole shell on FluentAvalonia in the Windows 11 25H2 Settings style, adds DNS profiles for
+              one-click preferred + alternate switching, surfaces geo-aware recommendations, runs a DNS leak test after
+              every apply, and speaks five languages out of the box.
             </p>
 
             <div className="hero-actions">
@@ -325,8 +327,8 @@ function App() {
 
         <section className="section section-grid compact-section" id="why">
           <div className="section-heading">
-            <span className="eyebrow">Why it hits</span>
-            <h2>Why DNS Hop.</h2>
+            <span className="eyebrow">What is new in v2</span>
+            <h2>v2 in three lines.</h2>
           </div>
 
           <div className="signal-grid">
@@ -459,8 +461,8 @@ function App() {
               <span className="eyebrow">Take it live</span>
               <h2>Open the release, grab the right build, and benchmark your next resolver set.</h2>
               <p>
-                DNS Hop now ships with a Windows installer, a portable zip, a Linux AppImage, and an interface that is
-                finally worth showing publicly.
+                v2 ships a Windows installer, a portable zip, a Linux AppImage, five UI languages, and an interface that
+                feels like a 2026 Windows app instead of a 2014 utility.
               </p>
             </div>
 
@@ -481,7 +483,7 @@ function App() {
           <img className="brand-mark" src={brandMark} alt="" width="34" height="34" />
           <span className="brand-copy">
             <span className="brand-title">DNS Hop</span>
-            <span className="brand-subtitle">Fast Windows and Linux DNS benchmarking without the paywall</span>
+            <span className="brand-subtitle">Fast Windows and Linux DNS benchmarking, profiles and switching</span>
           </span>
         </a>
 

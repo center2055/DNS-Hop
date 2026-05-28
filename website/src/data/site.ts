@@ -1,5 +1,5 @@
 export type Accent = 'sky' | 'mint' | 'sun';
-export type StageModeId = 'benchmark' | 'switch' | 'portable';
+export type StageModeId = 'benchmark' | 'profiles' | 'desktop';
 
 export type GitHubRepo = {
   stargazers_count: number;
@@ -29,7 +29,7 @@ export type GitHubRelease = {
 };
 
 export const navItems = [
-  { label: 'Why it hits', href: '#why' },
+  { label: 'What is new', href: '#why' },
   { label: 'Workflow', href: '#workflow' },
   { label: 'Live release', href: '#release' },
   { label: 'FAQ', href: '#faq' },
@@ -37,21 +37,21 @@ export const navItems = [
 
 export const heroSignals = [
   {
-    kicker: 'Benchmark',
-    title: 'Three-probe signal, not one fake average',
-    body: 'See cached, uncached, and dotcom at once.',
+    kicker: 'Redesigned',
+    title: 'Windows 11 25H2 Settings shell, in your DNS tool',
+    body: 'FluentAvalonia NavigationView, Mica backdrop, theme-aware title bar.',
     accent: 'sky' as const,
   },
   {
-    kicker: 'Switch',
-    title: 'One-click DNS changes without old-tool friction',
-    body: 'Pick a winner straight from the table.',
+    kicker: 'Profiles',
+    title: 'Preferred + alternate DNS, IPv4 + IPv6, one click',
+    body: 'Built-in profiles for Cloudflare, Quad9, AdGuard, Mullvad, Google.',
     accent: 'mint' as const,
   },
   {
-    kicker: 'Ship',
-    title: 'Windows and Linux builds on the same release page',
-    body: 'Installer, portable zip, and AppImage ship together.',
+    kicker: 'Multilingual',
+    title: 'Five languages out of the box',
+    body: 'English, German, French, Russian and Simplified Chinese with live switching.',
     accent: 'sun' as const,
   },
 ];
@@ -60,37 +60,37 @@ export const stageModes = [
   {
     id: 'benchmark' as const,
     label: 'Benchmark',
-    title: 'Compare resolvers like a modern product, not a throwback utility.',
+    title: 'Cached, uncached and DotCom probes side by side.',
     body: 'DNS Hop keeps the real test signals visible so you can spot fast-but-unstable servers before you switch.',
     points: [
-      'Cached, uncached, and dotcom probes side by side',
-      'Per-probe standard deviation on repeated runs',
-      'DNSSEC visibility and protocol awareness',
+      'Three timing probes per resolver, with stddev on repeated runs',
+      'DNSSEC and NXDOMAIN-hijack reliability checks',
+      'Live ETA and resolver-count progress so long runs stay readable',
     ],
     badge: 'Latency story',
   },
   {
-    id: 'switch' as const,
-    label: 'Switch',
-    title: 'Move from result table to system DNS without leaving the app.',
-    body: 'Shortlist candidates, sideline noise, then apply the resolver you actually trust instead of the one that merely won one pass.',
+    id: 'profiles' as const,
+    label: 'Profiles',
+    title: 'Save preferred + alternate pairs and apply them with one click.',
+    body: 'Pick a winner once. Apply the same DNS configuration whenever you want, with IPv4 and IPv6 in the same gesture.',
     points: [
-      'Use selected DNS directly from the table',
-      'Sidelined rows stay visible but skip future runs',
-      'Status, protocol, and security stay readable',
+      'Builtins for Cloudflare Privacy, Quad9 Secure, AdGuard Family, Mullvad and Google',
+      'Geo-aware ranking biases toward resolvers with a PoP in your region',
+      'Apply history with one-click "restore previous DNS"',
     ],
     badge: 'Decision flow',
   },
   {
-    id: 'portable' as const,
+    id: 'desktop' as const,
     label: 'Desktop',
-    title: 'Ship the same workflow to Windows and Linux without changing tools.',
-    body: 'The latest release ships a Windows installer, a Windows portable zip, and a Linux AppImage so testing stays straightforward across desktop setups.',
+    title: 'Ship the same workflow to Windows and Linux.',
+    body: 'A Windows installer, a Windows portable zip and a Linux AppImage are produced from the same release pipeline so testing stays straightforward across desktop setups.',
     points: [
       'Windows installer plus portable zip',
-      'Linux AppImage for current desktop distros',
-      'Release-aware About tab and update prompts',
-      'CSV, JSON, and chart export built in',
+      'Linux AppImage built and smoke-tested on Debian, Fedora and Arch by CI',
+      'Five UI languages, auto-detected from the OS',
+      'CSV, JSON and chart-PNG export for results',
     ],
     badge: 'Ship shape',
   },
@@ -98,33 +98,33 @@ export const stageModes = [
 
 export const featureCards = [
   {
-    title: 'Readable response bars',
-    body: 'The ranking table uses quick visual bars so you can read resolver behavior before you read every number.',
+    title: 'DNS leak test',
+    body: 'After you apply a resolver, DNS Hop verifies that resolution actually goes through it using a probe to whoami.cloudflare.',
     accent: 'sky' as const,
   },
   {
-    title: 'Desktop control',
-    body: 'DNS benchmarking, diagnostics, and switching live in one desktop workflow for Windows and Linux instead of browser tabs and scripts.',
+    title: 'Curated metadata',
+    body: 'Operator, country, no-log policy and content-filtering flags are surfaced as badges in the resolver list and recommendation cards.',
     accent: 'mint' as const,
   },
   {
-    title: 'Release discipline',
-    body: 'The app now exposes changelog data, update prompts, and parallel installer plus portable assets.',
+    title: 'Settings as expanders',
+    body: 'The Settings page is built from FluentAvalonia SettingsExpander rows, the same control pattern as Windows 11 Settings.',
     accent: 'sun' as const,
+  },
+  {
+    title: 'Logs you can read',
+    body: 'INFO / WARN / ERROR severity colouring, a filter, and a one-click export — diagnostics finally fit on screen.',
+    accent: 'sky' as const,
+  },
+  {
+    title: 'Theme-aware chrome',
+    body: 'The Windows title bar follows the in-app Light/Dark choice via DWM, and Mica stays on when you let DNS Hop follow the OS.',
+    accent: 'mint' as const,
   },
   {
     title: 'No paywall positioning',
     body: 'DNS Hop is framed as an accessible tool, not a crippled teaser for a paid tier.',
-    accent: 'sky' as const,
-  },
-  {
-    title: 'Filtering that matches how people compare',
-    body: 'Endpoint, provider, protocol, security, and active shortlist state can all be scanned without losing context.',
-    accent: 'mint' as const,
-  },
-  {
-    title: 'Export when the data matters',
-    body: 'CSV, JSON, and chart copy let you take the benchmark outside the app when you need to publish or archive a run.',
     accent: 'sun' as const,
   },
 ];
@@ -132,41 +132,46 @@ export const featureCards = [
 export const workflowSteps = [
   {
     index: '01',
-    title: 'Load the public list',
-    body: 'Start broad.',
+    title: 'Benchmark the public list',
+    body: 'Watch resolver counts and ETA tick down live.',
   },
   {
     index: '02',
-    title: 'Run repeated probes',
-    body: 'Check stability.',
+    title: 'Pick a profile or a row',
+    body: 'Built-in profiles or any row from your results.',
   },
   {
     index: '03',
-    title: 'Switch or export',
-    body: 'Use it or save it.',
+    title: 'Apply and verify',
+    body: 'One click to switch, then the leak test confirms it.',
   },
 ];
 
 export const faqItems = [
   {
-    question: 'What makes DNS Hop different from older DNS benchmark tools?',
+    question: 'What changed in v2?',
     answer:
-      'The main difference is product clarity. DNS Hop combines modern UI, live release handling, portable builds, direct DNS switching, and richer probe visibility instead of acting like a raw benchmark dump.',
+      'The whole shell was redesigned around the Windows 11 25H2 Settings look using FluentAvalonia. v2 also adds DNS profiles with built-in vendor presets, geo-aware recommendations, a DNS leak test, an apply-history with restore-previous, a localized UI in five languages, a refreshed logs page, and a softer card system that adapts to Light / Dark / System theme.',
   },
   {
-    question: 'Does it only benchmark one protocol?',
+    question: 'Which languages does the UI support?',
     answer:
-      'No. The resolver list includes classic UDP/TCP entries plus encrypted endpoints such as DoH and DoT where available, and the table keeps the protocol visible.',
+      'English, German, French, Russian and Simplified Chinese, auto-detected from your OS UI language on first launch. You can override the language in Settings, and switching is reactive — no restart.',
+  },
+  {
+    question: 'Does it benchmark encrypted DNS?',
+    answer:
+      'Yes. The resolver list includes classic UDP/TCP, DNS-over-HTTPS and DNS-over-TLS endpoints, and the protocol stays visible in the results.',
   },
   {
     question: 'Can I use it without installing anything?',
     answer:
-      'Yes. Current releases ship a Windows portable zip and a Linux AppImage alongside the Windows installer, so you can run DNS Hop without a traditional install flow.',
+      'Yes. Releases ship a Windows portable zip and a Linux AppImage alongside the Windows installer, so you can run DNS Hop without a traditional install flow.',
   },
   {
-    question: 'Why show standard deviation now?',
+    question: 'How does the leak test work?',
     answer:
-      'Average latency alone can hide unstable behavior. DNS Hop now surfaces per-probe deviation on repeated attempts so variance is visible instead of being buried.',
+      'After you apply a resolver, DNS Hop queries whoami.cloudflare and compares the answer to the resolver you expect. Same IP or same anycast block ✓; different operator ✗.',
   },
 ];
 
@@ -175,43 +180,45 @@ export const fallbackRepo: GitHubRepo = {
   forks_count: 5,
   open_issues_count: 1,
   subscribers_count: 2,
-  pushed_at: '2026-04-03T19:54:49Z',
+  pushed_at: '2026-05-27T18:18:33Z',
   html_url: 'https://github.com/center2055/DNS-Hop',
   homepage: 'https://github.com/center2055/DNS-Hop/releases/latest',
-  description: 'Cross-platform DNS benchmarking, diagnostics, and one-click switching for Windows and Linux.',
+  description: 'Cross-platform DNS benchmarking, profiles and one-click switching for Windows and Linux.',
 };
 
 export const fallbackRelease: GitHubRelease = {
-  tag_name: 'v1.3',
-  name: 'DNS Hop v1.3',
-  html_url: 'https://github.com/center2055/DNS-Hop/releases/tag/v1.3',
-  published_at: '2026-04-18T00:00:00Z',
+  tag_name: 'v2.0',
+  name: 'DNS Hop v2.0',
+  html_url: 'https://github.com/center2055/DNS-Hop/releases/tag/v2.0',
+  published_at: '2026-05-27T18:18:33Z',
   body: [
-    '## DNS Hop v1.3',
+    '## DNS Hop v2.0',
     '',
-    '- Added persistent custom DNS endpoints with a dedicated add dialog',
-    '- Fixed the Windows light-mode frame/corner presentation issues',
-    '- Added Linux AppImage packaging with smoke checks for Debian, Fedora, and Arch',
-    '- Updated the repo and website to present DNS Hop as a Windows and Linux desktop release',
+    '- Full UI redesign on FluentAvalonia in the Windows 11 25H2 Settings style',
+    '- DNS Profiles (preferred + alternate, IPv4 + IPv6) with built-in vendor presets',
+    '- Geo-aware recommendations + curated resolver metadata',
+    '- DNS leak test + apply history with restore-previous',
+    '- Refreshed Results, Network and Logs pages',
+    '- Five UI languages: English, German, French, Russian, Simplified Chinese',
   ].join('\n'),
   assets: [
     {
-      name: 'DNS-Hop-Setup-v1.3.exe',
-      size: 16196683,
+      name: 'DNS-Hop-Setup-v2.0.exe',
+      size: 34_603_008,
       download_count: 0,
-      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-Setup-v1.3.exe',
+      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v2.0/DNS-Hop-Setup-v2.0.exe',
     },
     {
-      name: 'DNS-Hop-Portable-v1.3.zip',
-      size: 20429751,
+      name: 'DNS-Hop-Portable-v2.0.zip',
+      size: 44_040_192,
       download_count: 0,
-      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-Portable-v1.3.zip',
+      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v2.0/DNS-Hop-Portable-v2.0.zip',
     },
     {
-      name: 'DNS-Hop-AppImage-v1.3-x86_64.AppImage',
-      size: 41788608,
+      name: 'DNS-Hop-AppImage-v2.0-x86_64.AppImage',
+      size: 41_788_608,
       download_count: 0,
-      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v1.3/DNS-Hop-AppImage-v1.3-x86_64.AppImage',
+      browser_download_url: 'https://github.com/center2055/DNS-Hop/releases/download/v2.0/DNS-Hop-AppImage-v2.0-x86_64.AppImage',
     },
   ],
 };
