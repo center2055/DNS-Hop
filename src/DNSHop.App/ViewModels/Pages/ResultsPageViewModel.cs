@@ -11,6 +11,17 @@ using System.Threading.Tasks;
 
 namespace DNSHop.App.ViewModels.Pages;
 
+public enum ResultsSortMode
+{
+    Best,
+    Average,
+    Cached,
+    Uncached,
+    DotCom,
+    Provider,
+    Status,
+}
+
 internal sealed partial class ResultsPageViewModel : PageViewModel
 {
     private readonly AppServices _services;
@@ -36,6 +47,21 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
     [ObservableProperty]
     private int _redirectingCount;
 
+    [ObservableProperty]
+    private ResultsSortMode _sortMode = ResultsSortMode.Best;
+
+    [ObservableProperty]
+    private bool _hideDead;
+
+    [ObservableProperty]
+    private bool _hideRedirecting;
+
+    [ObservableProperty]
+    private bool _dnssecOnly;
+
+    [ObservableProperty]
+    private bool _hidePoisoned;
+
     public ResultsPageViewModel(AppServices services) : base("Results", "Results.Title")
     {
         _services = services;
@@ -45,6 +71,8 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
     public ObservableCollection<DnsBenchmarkResult> Results => _services.AppState.LastResults;
 
     public ObservableCollection<ResolverRowViewModel> Rows { get; } = new();
+
+    public ObservableCollection<ResultsSortMode> AvailableSortModes { get; } = new(Enum.GetValues<ResultsSortMode>());
 
     public bool HasResults => Results.Count > 0;
 
@@ -115,6 +143,12 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
 
     public override void OnActivated() => Refresh();
 
+    partial void OnSortModeChanged(ResultsSortMode value) => Refresh();
+    partial void OnHideDeadChanged(bool value) => Refresh();
+    partial void OnHideRedirectingChanged(bool value) => Refresh();
+    partial void OnDnssecOnlyChanged(bool value) => Refresh();
+    partial void OnHidePoisonedChanged(bool value) => Refresh();
+
     private void Refresh()
     {
         TotalCount = Results.Count;
@@ -138,13 +172,42 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
         var slowest = eligible.LastOrDefault()?.AverageMilliseconds ?? 1;
         var range = Math.Max(slowest - fastest, 1);
 
+        IEnumerable<DnsBenchmarkResult> filtered = Results;
+        if (HideDead) { filtered = filtered.Where(r => r.Status != DnsServerStatus.Dead); }
+        if (HideRedirecting) { filtered = filtered.Where(r => r.Status != DnsServerStatus.Redirecting && !r.RedirectsNxDomain); }
+        if (DnssecOnly) { filtered = filtered.Where(r => r.SupportsDnssec); }
+        if (HidePoisoned) { filtered = filtered.Where(r => r.PoisoningConfidence < 0.5); }
+
+        var ordered = SortMode switch
+        {
+            ResultsSortMode.Best => filtered
+                .OrderByDescending(r => r.Status == DnsServerStatus.Alive && !r.RedirectsNxDomain)
+                .ThenBy(r => r.AverageMilliseconds ?? double.MaxValue),
+            ResultsSortMode.Average => filtered.OrderBy(r => r.AverageMilliseconds ?? double.MaxValue),
+            ResultsSortMode.Cached => filtered.OrderBy(r => r.CachedMilliseconds ?? double.MaxValue),
+            ResultsSortMode.Uncached => filtered.OrderBy(r => r.UncachedMilliseconds ?? double.MaxValue),
+            ResultsSortMode.DotCom => filtered.OrderBy(r => r.DotComMilliseconds ?? double.MaxValue),
+            ResultsSortMode.Provider => filtered.OrderBy(r => r.Server.Provider, StringComparer.OrdinalIgnoreCase),
+            ResultsSortMode.Status => filtered.OrderBy(r => StatusOrder(r)),
+            _ => filtered.OrderBy(r => r.AverageMilliseconds ?? double.MaxValue),
+        };
+
         Rows.Clear();
-        foreach (var r in Results.OrderBy(r => r.AverageMilliseconds ?? double.MaxValue))
+        foreach (var r in ordered)
         {
             Rows.Add(new ResolverRowViewModel(r, range, fastest));
         }
 
         OnPropertyChanged(nameof(HasResults));
+    }
+
+    private static int StatusOrder(DnsBenchmarkResult r)
+    {
+        if (r.Status == DnsServerStatus.Alive && !r.RedirectsNxDomain) { return 0; }
+        if (r.Status == DnsServerStatus.Alive) { return 1; }
+        if (r.Status == DnsServerStatus.Redirecting) { return 2; }
+        if (r.Status == DnsServerStatus.Dead) { return 3; }
+        return 4;
     }
 }
 
@@ -161,6 +224,12 @@ internal sealed class ResolverRowViewModel
         SupportsDnssec = result.SupportsDnssec;
         AverageMs = result.AverageMilliseconds;
         AverageDisplay = result.AverageMilliseconds is double v ? $"{v:F0} ms" : "—";
+        CachedMs = result.CachedMilliseconds;
+        CachedDisplay = result.CachedMilliseconds is double c ? $"{c:F0} ms" : "—";
+        UncachedMs = result.UncachedMilliseconds;
+        UncachedDisplay = result.UncachedMilliseconds is double u ? $"{u:F0} ms" : "—";
+        DotComMs = result.DotComMilliseconds;
+        DotComDisplay = result.DotComMilliseconds is double d ? $"{d:F0} ms" : "—";
 
         var fillFraction = result.AverageMilliseconds is double avg && range > 0
             ? Math.Clamp(1.0 - (avg - fastest) / range, 0.0, 1.0)
@@ -181,6 +250,12 @@ internal sealed class ResolverRowViewModel
     public bool SupportsDnssec { get; }
     public double? AverageMs { get; }
     public string AverageDisplay { get; }
+    public double? CachedMs { get; }
+    public string CachedDisplay { get; }
+    public double? UncachedMs { get; }
+    public string UncachedDisplay { get; }
+    public double? DotComMs { get; }
+    public string DotComDisplay { get; }
     public double LatencyFraction { get; }
     public bool IsHealthy { get; }
     public bool IsRedirecting { get; }

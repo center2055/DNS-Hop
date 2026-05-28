@@ -119,6 +119,21 @@
 
         <TextBlock Classes="GroupHeader" Text="All resolvers" />
 
+        <Border Classes="CardSecondary">
+          <Grid ColumnDefinitions="Auto,180,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Sort by" VerticalAlignment="Center" Classes="Caption" />
+            <ComboBox Grid.Row="0" Grid.Column="1"
+                      ItemsSource="{Binding AvailableSortModes}"
+                      SelectedItem="{Binding SortMode, Mode=TwoWay}" />
+            <WrapPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" ItemSpacing="14" ItemHeight="32">
+              <CheckBox Content="Hide dead" IsChecked="{Binding HideDead, Mode=TwoWay}" />
+              <CheckBox Content="Hide redirecting" IsChecked="{Binding HideRedirecting, Mode=TwoWay}" />
+              <CheckBox Content="DNSSEC only" IsChecked="{Binding DnssecOnly, Mode=TwoWay}" />
+              <CheckBox Content="Hide poisoned" IsChecked="{Binding HidePoisoned, Mode=TwoWay}" />
+            </WrapPanel>
+          </Grid>
+        </Border>
+
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>

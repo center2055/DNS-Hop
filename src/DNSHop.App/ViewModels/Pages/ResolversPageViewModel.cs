@@ -3,12 +3,21 @@ using CommunityToolkit.Mvvm.Input;
 using DNSHop.App.Models;
 using DNSHop.App.Services;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace DNSHop.App.ViewModels.Pages;
+
+public enum ResolversSortMode
+{
+    Region,
+    Provider,
+    Endpoint,
+    Protocol,
+}
 
 internal sealed partial class ResolversPageViewModel : PageViewModel
 {
@@ -23,6 +32,15 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
     [ObservableProperty]
     private ResolverItemViewModel? _selected;
 
+    [ObservableProperty]
+    private ResolversSortMode _sortMode = ResolversSortMode.Region;
+
+    [ObservableProperty]
+    private bool _noLogsOnly;
+
+    [ObservableProperty]
+    private bool _regionOnly;
+
     public ResolversPageViewModel(AppServices services) : base("Resolvers", "Resolvers.Title")
     {
         _services = services;
@@ -31,6 +49,8 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
     public ObservableCollection<ResolverItemViewModel> Items { get; } = new();
 
     public ObservableCollection<ResolverItemViewModel> Filtered { get; } = new();
+
+    public ObservableCollection<ResolversSortMode> AvailableSortModes { get; } = new(Enum.GetValues<ResolversSortMode>());
 
     public override async void OnActivated()
     {
@@ -64,6 +84,9 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
     }
 
     partial void OnFilterTextChanged(string value) => ApplyFilter();
+    partial void OnSortModeChanged(ResolversSortMode value) => ApplyFilter();
+    partial void OnNoLogsOnlyChanged(bool value) => ApplyFilter();
+    partial void OnRegionOnlyChanged(bool value) => ApplyFilter();
 
     private async Task LoadAsync(bool forceRemote)
     {
@@ -98,14 +121,39 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
 
     private void ApplyFilter()
     {
-        Filtered.Clear();
         var needle = FilterText?.Trim();
-        foreach (var item in Items)
+
+        IEnumerable<ResolverItemViewModel> view = Items;
+        if (!string.IsNullOrEmpty(needle))
         {
-            if (string.IsNullOrEmpty(needle) || item.Matches(needle))
-            {
-                Filtered.Add(item);
-            }
+            view = view.Where(i => i.Matches(needle));
+        }
+        if (NoLogsOnly)
+        {
+            view = view.Where(i => i.NoLogs);
+        }
+        if (RegionOnly)
+        {
+            view = view.Where(i => i.BestForRegion);
+        }
+
+        view = SortMode switch
+        {
+            ResolversSortMode.Region => view
+                .OrderByDescending(i => i.BestForRegion)
+                .ThenBy(i => i.Provider, StringComparer.OrdinalIgnoreCase),
+            ResolversSortMode.Provider => view.OrderBy(i => i.Provider, StringComparer.OrdinalIgnoreCase),
+            ResolversSortMode.Endpoint => view.OrderBy(i => i.Endpoint, StringComparer.OrdinalIgnoreCase),
+            ResolversSortMode.Protocol => view
+                .OrderBy(i => i.Protocol, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(i => i.Provider, StringComparer.OrdinalIgnoreCase),
+            _ => view,
+        };
+
+        Filtered.Clear();
+        foreach (var item in view)
+        {
+            Filtered.Add(item);
         }
     }
 }

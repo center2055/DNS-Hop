@@ -10,7 +10,7 @@
              mc:Ignorable="d"
              d:DesignWidth="900"
              d:DesignHeight="700">
-  <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12" Margin="0,0,40,0">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12" Margin="0,0,40,0">
     <TextBlock Grid.Row="0" Classes="PageTitle" Text="{l10n:Localize Key=Resolvers.Title}" />
 
     <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
@@ -21,9 +21,20 @@
       <Button Grid.Column="2" Classes="accent" Content="{l10n:Localize Key=Resolvers.Apply}" Command="{Binding ApplyCommand}" />
     </Grid>
 
-    <ProgressBar Grid.Row="2" IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+    <Border Grid.Row="2" Classes="CardSecondary">
+      <Grid ColumnDefinitions="Auto,180,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+        <TextBlock Grid.Column="0" Text="Sort by" VerticalAlignment="Center" Classes="Caption" />
+        <ComboBox Grid.Column="1"
+                  ItemsSource="{Binding AvailableSortModes}"
+                  SelectedItem="{Binding SortMode, Mode=TwoWay}" />
+        <CheckBox Grid.Column="2" Content="No-logs only" IsChecked="{Binding NoLogsOnly, Mode=TwoWay}" />
+        <CheckBox Grid.Column="3" Content="My region only" IsChecked="{Binding RegionOnly, Mode=TwoWay}" />
+      </Grid>
+    </Border>
 
-    <Border Grid.Row="3" Classes="Card" Padding="6">
+    <ProgressBar Grid.Row="3" IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+
+    <Border Grid.Row="4" Classes="Card" Padding="6">
       <ListBox ItemsSource="{Binding Filtered}"
                SelectedItem="{Binding Selected, Mode=TwoWay}"
                Background="Transparent"
