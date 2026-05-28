@@ -181,11 +181,11 @@ function App() {
             transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           >
             <span className="eyebrow">Benchmark. Profile. Switch.</span>
-            <h1>A DNS tool that finally looks like Windows 11.</h1>
+            <h1>Modern DNS tooling for Windows and Linux desktops.</h1>
             <p className="hero-intro">
-              v2 ships the whole shell on FluentAvalonia in the Windows 11 25H2 Settings style, adds DNS profiles for
-              one-click preferred + alternate switching, surfaces geo-aware recommendations, runs a DNS leak test after
-              every apply, and speaks five languages out of the box.
+              v2 ships a redesigned shell, DNS profiles for one-click preferred + alternate switching, geo-aware
+              recommendations, a leak test after every apply, and five UI languages &mdash; from the same release that
+              hands you a native installer, a portable build and a Linux AppImage.
             </p>
 
             <div className="hero-actions">
