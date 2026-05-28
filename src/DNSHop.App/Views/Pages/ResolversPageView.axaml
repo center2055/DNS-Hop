@@ -78,23 +78,22 @@
       </Border>
     </Grid>
 
-    <!-- Add-custom overlay. Full-bleed scrim + centered opaque dialog. -->
+    <!-- Add-custom overlay. Near-opaque scrim + centered solid dialog. -->
     <Border IsVisible="{Binding IsAdding}"
-            Background="Black"
-            Opacity="0.55"
+            Background="#F0000000"
             ZIndex="10" />
 
     <Border IsVisible="{Binding IsAdding}"
             ZIndex="11"
-            Padding="32,24"
-            Width="560"
-            CornerRadius="10"
-            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            Padding="32,28"
+            Width="620"
+            CornerRadius="12"
+            Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
-            BoxShadow="0 8 24 0 #66000000">
+            BoxShadow="0 12 36 0 #80000000">
       <StackPanel Spacing="12">
         <TextBlock Text="Add a custom DNS endpoint" FontSize="20" FontWeight="SemiBold" />
 
