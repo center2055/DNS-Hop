@@ -17,6 +17,11 @@ public partial class ShellWindow : Window
     {
         InitializeComponent();
         DataContextChanged += (_, _) => HookViewModel();
+
+        // Initialized fires once the platform window handle exists but before the
+        // first frame is presented; calling DWM here avoids a white-title-bar flash.
+        Initialized += (_, _) => ApplyWindowChrome();
+
         Opened += (_, _) =>
         {
             ApplyTheme();
@@ -142,6 +147,20 @@ public partial class ShellWindow : Window
 
             int darkMode = IsEffectivelyDark() ? 1 : 0;
             DwmSetWindowAttribute(hwnd.Value, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
+
+            // The DWM attribute only takes effect at the next non-client paint.
+            // SWP_FRAMECHANGED forces that repaint immediately so the title bar
+            // never flashes light on first show.
+            const uint SWP_NOSIZE = 0x0001;
+            const uint SWP_NOMOVE = 0x0002;
+            const uint SWP_NOZORDER = 0x0004;
+            const uint SWP_NOACTIVATE = 0x0010;
+            const uint SWP_FRAMECHANGED = 0x0020;
+            SetWindowPos(
+                hwnd.Value,
+                IntPtr.Zero,
+                0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
         catch
         {
@@ -188,4 +207,7 @@ public partial class ShellWindow : Window
 
     [DllImport("dwmapi.dll", PreserveSig = true)]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int attributeSize);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 }
