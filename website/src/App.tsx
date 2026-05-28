@@ -153,16 +153,16 @@ function App() {
     })
     .slice(0, 3);
   const repeatedMarquee = [
-    'fluentavalonia + win 11 25h2 shell',
-    'dns profiles, preferred + alternate',
-    'ipv4 + ipv6 in one apply',
-    'leak test via whoami.cloudflare',
-    'geo-aware recommendations',
-    'doH + doT aware',
-    'dnssec visibility',
+    'windows 11 25h2 look',
+    'one-click dns profiles',
+    'v4 and v6 in the same apply',
+    'built-in leak test',
+    'best resolver for your region',
+    'doh, dot, classic dns',
+    'dnssec visible at a glance',
     'en · de · fr · ru · zh-cn',
-    'windows installer + portable + appimage',
-    'csv + json + chart export',
+    'installer, portable, appimage',
+    'csv, json, chart export',
   ];
 
   return (
