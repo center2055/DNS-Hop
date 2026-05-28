@@ -63,7 +63,7 @@ dotnet publish src/DNSHop.App/DNSHop.App.csproj `
   -o artifacts/publish-win-x64-release
 
 # portable zip
-.\package-win-portable.ps1 -PublishDir artifacts\publish-win-x64-release -ProjectPath src\DNSHop.App\DNSHop.App.csproj
+.\scripts\package-win-portable.ps1 -PublishDir artifacts\publish-win-x64-release -ProjectPath src\DNSHop.App\DNSHop.App.csproj
 
 # installer (Inno Setup 6)
 & "C:\Path\To\Inno Setup 6\ISCC.exe" installer\DNSHop.iss
@@ -72,7 +72,7 @@ dotnet publish src/DNSHop.App/DNSHop.App.csproj `
 ### Self-contained Linux AppImage
 
 ```bash
-./publish-linux-appimage.sh
+./scripts/publish-linux-appimage.sh
 # Produces artifacts/DNSHop-linux-x86_64.AppImage
 ```
 

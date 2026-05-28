@@ -9,7 +9,7 @@ fi
 PUBLISH_DIR="$(cd "$1" && pwd)"
 OUTPUT_APPIMAGE="$(mkdir -p "$(dirname "$2")" && cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ICON_SOURCE="${3:-$SCRIPT_DIR/DNSHopLogo.png}"
+ICON_SOURCE="${3:-$SCRIPT_DIR/../assets/DNSHopLogo.png}"
 TOOLS_DIR="$HOME/.cache/dnshop-appimage-tools"
 APPIMAGETOOL="$TOOLS_DIR/appimagetool-x86_64.AppImage"
 APPDIR="$(mktemp -d "${TMPDIR:-/tmp}/dnshop-appdir.XXXXXX")"

@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\New Public DNS Resolvers.ini">
+    <None Include="..\..\assets\New Public DNS Resolvers.ini">
       <Link>New Public DNS Resolvers.ini</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

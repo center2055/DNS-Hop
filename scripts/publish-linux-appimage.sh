@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_SCRIPT="$ROOT_DIR/package-linux-appimage.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PACKAGE_SCRIPT="$SCRIPT_DIR/package-linux-appimage.sh"
 PUBLISH_DIR="$ROOT_DIR/artifacts/publish-linux-x64-appimage"
 OUTPUT_APPIMAGE="$ROOT_DIR/artifacts/DNSHop-linux-x86_64.AppImage"
-ICON_SOURCE="$ROOT_DIR/DNSHopLogo.png"
+ICON_SOURCE="$ROOT_DIR/assets/DNSHopLogo.png"
 mkdir -p "$PUBLISH_DIR"
 
 dotnet publish "$ROOT_DIR/src/DNSHop.App/DNSHop.App.csproj" \

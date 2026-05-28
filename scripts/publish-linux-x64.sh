@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_PATH="$ROOT_DIR/src/DNSHop.App/DNSHop.App.csproj"
 OUTPUT_PATH="$ROOT_DIR/artifacts/publish-linux-x64"
 

@@ -7,11 +7,8 @@ on:
     paths:
       - '.github/workflows/linux-appimage.yml'
       - 'DNSHop.sln'
-      - 'DNSHopLogo.png'
-      - 'New Public DNS Resolvers.ini'
-      - 'package-linux-appimage.sh'
-      - 'publish-linux-appimage.sh'
-      - 'publish-linux-x64.sh'
+      - 'assets/**'
+      - 'scripts/**'
       - 'src/DNSHop.App/**'
     tags:
       - 'v*'
@@ -38,10 +35,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Make scripts executable
-        run: chmod +x package-linux-appimage.sh publish-linux-appimage.sh publish-linux-x64.sh
+        run: chmod +x scripts/package-linux-appimage.sh scripts/publish-linux-appimage.sh scripts/publish-linux-x64.sh
 
       - name: Publish AppImage
-        run: ./publish-linux-appimage.sh
+        run: ./scripts/publish-linux-appimage.sh
 
       - name: Rename AppImage with tag suffix
         if: startsWith(github.ref, 'refs/tags/v')
