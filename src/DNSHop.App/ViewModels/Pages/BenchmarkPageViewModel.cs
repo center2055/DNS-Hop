@@ -177,9 +177,27 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
         _cts?.Cancel();
     }
 
+    public override void OnActivated()
+    {
+        // If the user navigated away during a long run and the page is now back on
+        // screen, restart the UI tick. The benchmark itself never stopped — only the
+        // DispatcherTimer that paints Elapsed / ETA does.
+        if (IsRunning && _tickTimer is null)
+        {
+            StartTickTimer();
+        }
+    }
+
     public override void OnDeactivated()
     {
-        StopTickTimer();
+        // Pause the UI tick but keep the stopwatch running so Elapsed stays accurate
+        // when the user comes back. Stopping the stopwatch on deactivate caused the
+        // counter to freeze at whatever value it had on tab change.
+        if (_tickTimer is not null)
+        {
+            _tickTimer.Stop();
+            _tickTimer = null;
+        }
     }
 
     private void StartTickTimer()
@@ -194,13 +212,11 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
 
     private void StopTickTimer()
     {
-        if (_tickTimer is null)
+        if (_tickTimer is not null)
         {
-            return;
+            _tickTimer.Stop();
+            _tickTimer = null;
         }
-
-        _tickTimer.Stop();
-        _tickTimer = null;
         _runStopwatch.Stop();
     }
 
