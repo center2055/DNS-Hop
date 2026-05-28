@@ -184,6 +184,7 @@ internal sealed partial class ProfilesPageViewModel : PageViewModel
             OutboundProxyHost = current.OutboundProxyHost,
             OutboundProxyPort = current.OutboundProxyPort,
             CustomServers = current.CustomServers,
+            SidelinedServerKeys = current.SidelinedServerKeys,
             ActiveProfileId = _services.AppState.ActiveProfileId,
             Profiles = Custom.ToArray(),
             ApplyHistory = _services.AppState.ApplyHistory.ToArray(),

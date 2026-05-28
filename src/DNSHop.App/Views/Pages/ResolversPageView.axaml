@@ -8,68 +8,123 @@
              x:Class="DNSHop.App.Views.Pages.ResolversPageView"
              x:DataType="vm:ResolversPageViewModel"
              mc:Ignorable="d"
-             d:DesignWidth="900"
+             d:DesignWidth="980"
              d:DesignHeight="700">
-  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12" Margin="0,0,40,0">
-    <TextBlock Grid.Row="0" Classes="PageTitle" Text="{l10n:Localize Key=Resolvers.Title}" />
+  <Grid>
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12" Margin="0,0,40,0">
+      <TextBlock Grid.Row="0" Classes="PageTitle" Text="{l10n:Localize Key=Resolvers.Title}" />
 
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-      <TextBox Grid.Column="0"
-               Watermark="{l10n:Localize Key=Resolvers.Filter}"
-               Text="{Binding FilterText, Mode=TwoWay}" />
-      <Button Grid.Column="1" Content="{l10n:Localize Key=Resolvers.Refresh}" Command="{Binding ReloadCommand}" />
-      <Button Grid.Column="2" Classes="accent" Content="{l10n:Localize Key=Resolvers.Apply}" Command="{Binding ApplyCommand}" />
+      <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBox Grid.Column="0"
+                 Watermark="{l10n:Localize Key=Resolvers.Filter}"
+                 Text="{Binding FilterText, Mode=TwoWay}" />
+        <Button Grid.Column="1" Content="Add custom" Command="{Binding StartAddCustomCommand}" />
+        <Button Grid.Column="2" Content="{l10n:Localize Key=Resolvers.Refresh}" Command="{Binding ReloadCommand}" />
+        <Button Grid.Column="3" Classes="accent" Content="{l10n:Localize Key=Resolvers.Apply}" Command="{Binding ApplyCommand}" />
+      </Grid>
+
+      <Border Grid.Row="2" Classes="CardSecondary">
+        <Grid ColumnDefinitions="Auto,180,Auto,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+          <TextBlock Grid.Column="0" Text="Sort by" VerticalAlignment="Center" Classes="Caption" />
+          <ComboBox Grid.Column="1"
+                    ItemsSource="{Binding AvailableSortModes}"
+                    SelectedItem="{Binding SortMode, Mode=TwoWay}" />
+          <CheckBox Grid.Column="2" Content="No-logs only" IsChecked="{Binding NoLogsOnly, Mode=TwoWay}" />
+          <CheckBox Grid.Column="3" Content="My region only" IsChecked="{Binding RegionOnly, Mode=TwoWay}" />
+          <CheckBox Grid.Column="4" Content="Included only" IsChecked="{Binding IncludedOnly, Mode=TwoWay}" />
+        </Grid>
+      </Border>
+
+      <ProgressBar Grid.Row="3" IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+
+      <Border Grid.Row="4" Classes="Card" Padding="6">
+        <ListBox ItemsSource="{Binding Filtered}"
+                 SelectedItem="{Binding Selected, Mode=TwoWay}"
+                 Background="Transparent"
+                 BorderThickness="0">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ResolverItemViewModel">
+              <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="8" ColumnSpacing="10" VerticalAlignment="Center">
+                <CheckBox Grid.Column="0"
+                          IsChecked="{Binding IsSidelined, Mode=TwoWay, Converter={x:Static BoolConverters.Not}}"
+                          ToolTip.Tip="Include in benchmark"
+                          VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="{Binding Endpoint}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding Provider}" Classes="Caption" />
+                </StackPanel>
+                <Border Grid.Column="2" Classes="Badge" VerticalAlignment="Center" IsVisible="{Binding IsCustom}">
+                  <TextBlock Text="Custom" />
+                </Border>
+                <Border Grid.Column="3" Classes="Badge" VerticalAlignment="Center" IsVisible="{Binding NoLogs}">
+                  <TextBlock Text="{l10n:Localize Key=Resolvers.Column.NoLogs}" />
+                </Border>
+                <Border Grid.Column="4" Classes="Badge" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Protocol}" />
+                </Border>
+                <Border Grid.Column="5" Classes="Badge Accent" VerticalAlignment="Center" IsVisible="{Binding BestForRegion}">
+                  <TextBlock Text="{l10n:Localize Key=Resolvers.RegionBadge}" />
+                </Border>
+                <Button Grid.Column="6"
+                        Content="Remove"
+                        Padding="10,4"
+                        IsVisible="{Binding IsCustom}"
+                        Command="{Binding ((vm:ResolversPageViewModel)DataContext).RemoveCustomCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding .}" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Border>
     </Grid>
 
-    <Border Grid.Row="2" Classes="CardSecondary">
-      <Grid ColumnDefinitions="Auto,180,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
-        <TextBlock Grid.Column="0" Text="Sort by" VerticalAlignment="Center" Classes="Caption" />
-        <ComboBox Grid.Column="1"
-                  ItemsSource="{Binding AvailableSortModes}"
-                  SelectedItem="{Binding SortMode, Mode=TwoWay}" />
-        <CheckBox Grid.Column="2" Content="No-logs only" IsChecked="{Binding NoLogsOnly, Mode=TwoWay}" />
-        <CheckBox Grid.Column="3" Content="My region only" IsChecked="{Binding RegionOnly, Mode=TwoWay}" />
-      </Grid>
-    </Border>
+    <!-- Add-custom overlay -->
+    <Border Background="#80000000" IsVisible="{Binding IsAdding}">
+      <Border Width="520" Padding="24" CornerRadius="8"
+              Background="{DynamicResource CardFillBrush}"
+              BorderBrush="{DynamicResource CardStrokeBrush}"
+              BorderThickness="1"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Add a custom DNS endpoint" FontSize="18" FontWeight="SemiBold" />
 
-    <ProgressBar Grid.Row="3" IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoading}" />
+          <TextBlock Text="Protocol" Classes="Caption" />
+          <ComboBox ItemsSource="{Binding AvailableProtocols}"
+                    SelectedItem="{Binding Draft.Protocol, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch" />
 
-    <Border Grid.Row="4" Classes="Card" Padding="6">
-      <ListBox ItemsSource="{Binding Filtered}"
-               SelectedItem="{Binding Selected, Mode=TwoWay}"
-               Background="Transparent"
-               BorderThickness="0">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:ResolverItemViewModel">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="8" ColumnSpacing="10">
-              <StackPanel Grid.Column="0">
-                <TextBlock Text="{Binding Endpoint}" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding Provider}" Classes="Caption" />
-              </StackPanel>
-              <Border Grid.Column="1"
-                      VerticalAlignment="Center"
-                      Padding="6,2" CornerRadius="4"
-                      Background="{DynamicResource SubtleFillBrush}"
-                      IsVisible="{Binding NoLogs}">
-                <TextBlock Text="{l10n:Localize Key=Resolvers.Column.NoLogs}" FontSize="11" />
-              </Border>
-              <Border Grid.Column="2"
-                      VerticalAlignment="Center"
-                      Padding="6,2" CornerRadius="4"
-                      Background="{DynamicResource SubtleFillBrush}">
-                <TextBlock Text="{Binding Protocol}" FontSize="11" />
-              </Border>
-              <Border Grid.Column="3"
-                      VerticalAlignment="Center"
-                      Padding="6,2" CornerRadius="4"
-                      Background="{DynamicResource SuccessAccentBrush}"
-                      IsVisible="{Binding BestForRegion}">
-                <TextBlock Text="{l10n:Localize Key=Resolvers.RegionBadge}" FontSize="11" Foreground="White" />
-              </Border>
-            </Grid>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+          <TextBlock Text="Provider label" Classes="Caption" />
+          <TextBox Text="{Binding Draft.Provider, Mode=TwoWay}" Watermark="Custom DNS" />
+
+          <TextBlock Text="Endpoint" Classes="Caption" />
+          <TextBox Text="{Binding Draft.Endpoint, Mode=TwoWay}"
+                   Watermark="IPv4 / IPv6 (UDP/TCP, DoT) or https URL (DoH)" />
+
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Port" Classes="Caption" />
+              <NumericUpDown Minimum="1" Maximum="65535" Increment="1"
+                             Value="{Binding Draft.Port, Mode=TwoWay}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="DoT TLS host (optional)" Classes="Caption" />
+              <TextBox Text="{Binding Draft.DotTlsHost, Mode=TwoWay}"
+                       Watermark="e.g. dns.quad9.net" />
+            </StackPanel>
+          </Grid>
+
+          <TextBlock Text="{Binding AddError}"
+                     Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                     IsVisible="{Binding AddError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     TextWrapping="Wrap" />
+
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="{l10n:Localize Key=Common.Cancel}" Command="{Binding CancelAddCustomCommand}" />
+            <Button Classes="accent" Content="{l10n:Localize Key=Common.Save}" Command="{Binding SaveCustomCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
     </Border>
   </Grid>
 </UserControl>

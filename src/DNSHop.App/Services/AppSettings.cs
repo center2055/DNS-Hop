@@ -30,6 +30,8 @@ internal sealed class AppSettings
 
     public DnsServerDefinition[] CustomServers { get; init; } = [];
 
+    public string[] SidelinedServerKeys { get; init; } = [];
+
     public string? ActiveProfileId { get; init; }
 
     public DnsProfile[] Profiles { get; init; } = [];

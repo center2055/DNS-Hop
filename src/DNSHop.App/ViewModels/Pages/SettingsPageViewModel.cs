@@ -144,6 +144,7 @@ internal sealed partial class SettingsPageViewModel : PageViewModel
             OutboundProxyHost = OutboundProxyHost,
             OutboundProxyPort = OutboundProxyPort,
             CustomServers = current.CustomServers,
+            SidelinedServerKeys = current.SidelinedServerKeys,
             ActiveProfileId = current.ActiveProfileId,
             Profiles = current.Profiles,
             ApplyHistory = current.ApplyHistory,

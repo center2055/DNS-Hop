@@ -5,7 +5,9 @@ using DNSHop.App.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,9 +21,17 @@ public enum ResolversSortMode
     Protocol,
 }
 
+public enum CustomDnsProtocol
+{
+    UdpTcp,
+    Doh,
+    Dot,
+}
+
 internal sealed partial class ResolversPageViewModel : PageViewModel
 {
     private readonly AppServices _services;
+    private readonly HashSet<string> _sidelinedKeys = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty]
     private string _filterText = string.Empty;
@@ -41,6 +51,18 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
     [ObservableProperty]
     private bool _regionOnly;
 
+    [ObservableProperty]
+    private bool _includedOnly;
+
+    [ObservableProperty]
+    private bool _isAdding;
+
+    [ObservableProperty]
+    private CustomDnsDraft? _draft;
+
+    [ObservableProperty]
+    private string _addError = string.Empty;
+
     public ResolversPageViewModel(AppServices services) : base("Resolvers", "Resolvers.Title")
     {
         _services = services;
@@ -51,6 +73,8 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
     public ObservableCollection<ResolverItemViewModel> Filtered { get; } = new();
 
     public ObservableCollection<ResolversSortMode> AvailableSortModes { get; } = new(Enum.GetValues<ResolversSortMode>());
+
+    public ObservableCollection<CustomDnsProtocol> AvailableProtocols { get; } = new(Enum.GetValues<CustomDnsProtocol>());
 
     public override async void OnActivated()
     {
@@ -83,10 +107,98 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
         }
     }
 
+    [RelayCommand]
+    private void StartAddCustom()
+    {
+        Draft = new CustomDnsDraft
+        {
+            Protocol = CustomDnsProtocol.UdpTcp,
+            Provider = "Custom DNS",
+            Port = 53,
+        };
+        AddError = string.Empty;
+        IsAdding = true;
+    }
+
+    [RelayCommand]
+    private void CancelAddCustom()
+    {
+        IsAdding = false;
+        Draft = null;
+        AddError = string.Empty;
+    }
+
+    [RelayCommand]
+    private void SaveCustom()
+    {
+        if (Draft is null)
+        {
+            return;
+        }
+
+        if (!TryBuildCustomServer(Draft, out var server, out var error))
+        {
+            AddError = error;
+            return;
+        }
+
+        server.IsCustom = true;
+
+        var current = _services.Settings.Load();
+        var existing = (current.CustomServers ?? Array.Empty<DnsServerDefinition>()).ToList();
+        var key = BuildServerKey(server);
+        if (existing.Any(s => string.Equals(BuildServerKey(s), key, StringComparison.OrdinalIgnoreCase)))
+        {
+            AddError = "An endpoint with this address is already in your custom list.";
+            return;
+        }
+        existing.Add(server);
+
+        Persist(current, existing.ToArray());
+
+        Items.Add(BuildItem(server, isCustom: true));
+        ApplyFilter();
+
+        IsAdding = false;
+        Draft = null;
+        AddError = string.Empty;
+    }
+
+    [RelayCommand]
+    private void RemoveCustom(ResolverItemViewModel? item)
+    {
+        if (item is null || !item.IsCustom)
+        {
+            return;
+        }
+
+        var current = _services.Settings.Load();
+        var key = BuildServerKey(item.Definition);
+        var remaining = (current.CustomServers ?? Array.Empty<DnsServerDefinition>())
+            .Where(s => !string.Equals(BuildServerKey(s), key, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        Persist(current, remaining);
+        Items.Remove(item);
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void ToggleSelectedSideline()
+    {
+        if (Selected is null)
+        {
+            return;
+        }
+
+        Selected.IsSidelined = !Selected.IsSidelined;
+    }
+
     partial void OnFilterTextChanged(string value) => ApplyFilter();
     partial void OnSortModeChanged(ResolversSortMode value) => ApplyFilter();
     partial void OnNoLogsOnlyChanged(bool value) => ApplyFilter();
     partial void OnRegionOnlyChanged(bool value) => ApplyFilter();
+    partial void OnIncludedOnlyChanged(bool value) => ApplyFilter();
 
     private async Task LoadAsync(bool forceRemote)
     {
@@ -94,19 +206,27 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
         {
             IsLoading = true;
             var settings = _services.Settings.Load();
+            _sidelinedKeys.Clear();
+            foreach (var k in settings.SidelinedServerKeys ?? Array.Empty<string>())
+            {
+                _sidelinedKeys.Add(k);
+            }
+
             var servers = await _services.ServerList.GetServersAsync(forceRemote || settings.AutoUpdateListOnStartup, CancellationToken.None).ConfigureAwait(false);
             var region = _services.AppState.DetectedRegion ?? _services.Geo.Region;
 
+            UnhookItems();
             Items.Clear();
             foreach (var s in servers)
             {
-                var meta = _services.Metadata.LookupByEndpoint(s.AddressOrHost, s.Provider);
-                Items.Add(new ResolverItemViewModel(s, meta, region));
+                Items.Add(BuildItem(s, isCustom: false, region));
             }
-            foreach (var s in settings.CustomServers)
+            foreach (var s in settings.CustomServers ?? Array.Empty<DnsServerDefinition>())
             {
-                Items.Add(new ResolverItemViewModel(s, null, region));
+                Items.Add(BuildItem(s, isCustom: true, region));
             }
+            HookItems();
+
             ApplyFilter();
         }
         catch (Exception ex)
@@ -117,6 +237,94 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private ResolverItemViewModel BuildItem(DnsServerDefinition definition, bool isCustom, string? region = null)
+    {
+        var meta = _services.Metadata.LookupByEndpoint(definition.AddressOrHost, definition.Provider);
+        var effectiveRegion = region ?? _services.AppState.DetectedRegion ?? _services.Geo.Region;
+        var item = new ResolverItemViewModel(definition, meta, effectiveRegion)
+        {
+            IsCustom = isCustom,
+        };
+        var key = BuildServerKey(definition);
+        item.IsSidelined = _sidelinedKeys.Contains(key);
+        return item;
+    }
+
+    private void HookItems()
+    {
+        foreach (var item in Items)
+        {
+            item.PropertyChanged += OnItemPropertyChanged;
+        }
+    }
+
+    private void UnhookItems()
+    {
+        foreach (var item in Items)
+        {
+            item.PropertyChanged -= OnItemPropertyChanged;
+        }
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is not ResolverItemViewModel item)
+        {
+            return;
+        }
+
+        if (!string.Equals(e.PropertyName, nameof(ResolverItemViewModel.IsSidelined), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var key = BuildServerKey(item.Definition);
+        if (item.IsSidelined)
+        {
+            _sidelinedKeys.Add(key);
+        }
+        else
+        {
+            _sidelinedKeys.Remove(key);
+        }
+
+        PersistSidelines();
+        if (IncludedOnly)
+        {
+            ApplyFilter();
+        }
+    }
+
+    private void PersistSidelines()
+    {
+        var current = _services.Settings.Load();
+        Persist(current, current.CustomServers, _sidelinedKeys.ToArray());
+    }
+
+    private void Persist(AppSettings current, DnsServerDefinition[] customServers, string[]? sidelinedOverride = null)
+    {
+        _services.Settings.Save(new AppSettings
+        {
+            Theme = current.Theme,
+            Language = current.Language,
+            UseMica = current.UseMica,
+            LastNavSection = current.LastNavSection,
+            TimeoutMilliseconds = current.TimeoutMilliseconds,
+            ConcurrencyLimit = current.ConcurrencyLimit,
+            AttemptsPerProbe = current.AttemptsPerProbe,
+            AutoUpdateListOnStartup = current.AutoUpdateListOnStartup,
+            CheckForAppUpdatesOnStartup = current.CheckForAppUpdatesOnStartup,
+            OutboundProxyType = current.OutboundProxyType,
+            OutboundProxyHost = current.OutboundProxyHost,
+            OutboundProxyPort = current.OutboundProxyPort,
+            CustomServers = customServers,
+            SidelinedServerKeys = sidelinedOverride ?? current.SidelinedServerKeys,
+            ActiveProfileId = current.ActiveProfileId,
+            Profiles = current.Profiles,
+            ApplyHistory = current.ApplyHistory,
+        });
     }
 
     private void ApplyFilter()
@@ -135,6 +343,10 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
         if (RegionOnly)
         {
             view = view.Where(i => i.BestForRegion);
+        }
+        if (IncludedOnly)
+        {
+            view = view.Where(i => !i.IsSidelined);
         }
 
         view = SortMode switch
@@ -156,10 +368,67 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
             Filtered.Add(item);
         }
     }
+
+    private static bool TryBuildCustomServer(CustomDnsDraft draft, out DnsServerDefinition server, out string error)
+    {
+        server = default!;
+        error = string.Empty;
+        var provider = string.IsNullOrWhiteSpace(draft.Provider) ? "Custom DNS" : draft.Provider!.Trim();
+
+        switch (draft.Protocol)
+        {
+            case CustomDnsProtocol.UdpTcp:
+            {
+                var addr = (draft.Endpoint ?? string.Empty).Trim();
+                if (!IPAddress.TryParse(addr, out var _))
+                {
+                    error = "Enter a valid IPv4 or IPv6 address (e.g. 1.1.1.1).";
+                    return false;
+                }
+                var port = draft.Port is >= 1 and <= 65535 ? draft.Port : 53;
+                server = DnsServerDefinition.CreateUdpTcp(addr, provider, port);
+                return true;
+            }
+            case CustomDnsProtocol.Doh:
+            {
+                var url = (draft.Endpoint ?? string.Empty).Trim();
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                    || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                {
+                    error = "Enter a full https:// URL (e.g. https://cloudflare-dns.com/dns-query).";
+                    return false;
+                }
+                server = DnsServerDefinition.CreateDoh(uri.AbsoluteUri, provider);
+                return true;
+            }
+            case CustomDnsProtocol.Dot:
+            {
+                var addr = (draft.Endpoint ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(addr))
+                {
+                    error = "Enter the DoT endpoint hostname or IP.";
+                    return false;
+                }
+                var tls = string.IsNullOrWhiteSpace(draft.DotTlsHost) ? addr : draft.DotTlsHost!.Trim();
+                var port = draft.Port is >= 1 and <= 65535 ? draft.Port : 853;
+                server = DnsServerDefinition.CreateDot(addr, tls, provider, port);
+                return true;
+            }
+        }
+
+        error = "Unsupported protocol.";
+        return false;
+    }
+
+    private static string BuildServerKey(DnsServerDefinition s)
+        => $"{s.Protocol}|{s.EndpointDisplay}";
 }
 
-internal sealed class ResolverItemViewModel
+internal sealed partial class ResolverItemViewModel : ObservableObject
 {
+    [ObservableProperty]
+    private bool _isSidelined;
+
     public ResolverItemViewModel(DnsServerDefinition definition, ResolverMetadata? metadata, string? userRegion)
     {
         Definition = definition;
@@ -180,6 +449,7 @@ internal sealed class ResolverItemViewModel
     public string? CountryCode { get; }
     public bool NoLogs { get; }
     public bool BestForRegion { get; }
+    public bool IsCustom { get; init; }
 
     public bool Matches(string needle)
     {
@@ -187,4 +457,22 @@ internal sealed class ResolverItemViewModel
             || Provider.Contains(needle, StringComparison.OrdinalIgnoreCase)
             || Protocol.Contains(needle, StringComparison.OrdinalIgnoreCase);
     }
+}
+
+public sealed partial class CustomDnsDraft : ObservableObject
+{
+    [ObservableProperty]
+    private CustomDnsProtocol _protocol = CustomDnsProtocol.UdpTcp;
+
+    [ObservableProperty]
+    private string? _provider = "Custom DNS";
+
+    [ObservableProperty]
+    private string? _endpoint;
+
+    [ObservableProperty]
+    private int _port = 53;
+
+    [ObservableProperty]
+    private string? _dotTlsHost;
 }

@@ -101,7 +101,26 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
             var baseList = await _services.ServerList.GetServersAsync(settings.AutoUpdateListOnStartup, _cts.Token).ConfigureAwait(false);
             var merged = new List<DnsServerDefinition>(baseList);
             merged.AddRange(settings.CustomServers);
+
+            // Drop everything the user excluded on the Resolvers page so the
+            // benchmark only spends time on what they actually want to test.
+            var sidelined = new HashSet<string>(
+                settings.SidelinedServerKeys ?? Array.Empty<string>(),
+                StringComparer.OrdinalIgnoreCase);
+            if (sidelined.Count > 0)
+            {
+                merged = merged
+                    .Where(s => !sidelined.Contains($"{s.Protocol}|{s.EndpointDisplay}"))
+                    .ToList();
+            }
+
             IsServerListLoading = false;
+
+            if (merged.Count == 0)
+            {
+                StatusMessage = "Every resolver is excluded. Re-include at least one on the Resolvers page.";
+                return;
+            }
 
             _totalServers = merged.Count;
             _queriesPerServer = Math.Max(1, AttemptsPerProbe * 5);
@@ -309,6 +328,7 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
             OutboundProxyHost = current.OutboundProxyHost,
             OutboundProxyPort = current.OutboundProxyPort,
             CustomServers = current.CustomServers,
+            SidelinedServerKeys = current.SidelinedServerKeys,
             ActiveProfileId = current.ActiveProfileId,
             Profiles = current.Profiles,
             ApplyHistory = current.ApplyHistory,

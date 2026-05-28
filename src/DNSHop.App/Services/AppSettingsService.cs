@@ -50,6 +50,7 @@ internal sealed class AppSettingsService
             string outboundProxyHost = TryGetString(root, "OutboundProxyHost") ?? string.Empty;
             int outboundProxyPort = TryGetInt(root, "OutboundProxyPort") ?? 1080;
             DnsServerDefinition[] customServers = TryGetCustomServers(root);
+            string[] sidelinedKeys = TryGetSidelinedKeys(root);
             string? activeProfileId = TryGetString(root, "ActiveProfileId");
             DnsProfile[] profiles = TryGetProfiles(root);
             AppliedDnsEntry[] applyHistory = TryGetApplyHistory(root);
@@ -69,6 +70,7 @@ internal sealed class AppSettingsService
                 OutboundProxyHost = NormalizeProxyHost(outboundProxyHost),
                 OutboundProxyPort = Math.Clamp(outboundProxyPort, 1, 65535),
                 CustomServers = customServers,
+                SidelinedServerKeys = sidelinedKeys,
                 ActiveProfileId = string.IsNullOrWhiteSpace(activeProfileId) ? null : activeProfileId,
                 Profiles = profiles,
                 ApplyHistory = applyHistory,
@@ -108,6 +110,7 @@ internal sealed class AppSettingsService
                 OutboundProxyHost = NormalizeProxyHost(settings.OutboundProxyHost),
                 OutboundProxyPort = Math.Clamp(settings.OutboundProxyPort, 1, 65535),
                 CustomServers = NormalizeCustomServers(settings.CustomServers),
+                SidelinedServerKeys = (settings.SidelinedServerKeys ?? []).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
                 ActiveProfileId = settings.ActiveProfileId,
                 Profiles = settings.Profiles ?? [],
                 ApplyHistory = TrimHistory(settings.ApplyHistory),
@@ -133,6 +136,17 @@ internal sealed class AppSettingsService
                 if (!string.IsNullOrEmpty(normalized.ActiveProfileId))
                 {
                     writer.WriteString("ActiveProfileId", normalized.ActiveProfileId);
+                }
+
+                if (normalized.SidelinedServerKeys.Length > 0)
+                {
+                    writer.WritePropertyName("SidelinedServerKeys");
+                    writer.WriteStartArray();
+                    foreach (var key in normalized.SidelinedServerKeys)
+                    {
+                        writer.WriteStringValue(key);
+                    }
+                    writer.WriteEndArray();
                 }
 
                 if (normalized.CustomServers.Length > 0)
@@ -440,6 +454,26 @@ internal sealed class AppSettingsService
     private static string BuildServerKey(DnsServerDefinition server)
     {
         return $"{server.Protocol}|{server.EndpointDisplay}";
+    }
+
+    private static string[] TryGetSidelinedKeys(JsonElement root)
+    {
+        if (!root.TryGetProperty("SidelinedServerKeys", out JsonElement value)
+            || value.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var keys = new List<string>();
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } s)
+            {
+                keys.Add(s);
+            }
+        }
+
+        return keys.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     private static DnsProfile[] TryGetProfiles(JsonElement root)
