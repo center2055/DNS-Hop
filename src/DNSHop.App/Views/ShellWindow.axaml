@@ -16,7 +16,9 @@
         MinHeight="660"
         Icon="/Assets/DNSHopLogoText.ico"
         Background="Transparent"
-        ExtendClientAreaToDecorationsHint="False"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
         Title="{l10n:Localize Key=App.Title}">
 
   <ui:NavigationView x:Name="Nav"
