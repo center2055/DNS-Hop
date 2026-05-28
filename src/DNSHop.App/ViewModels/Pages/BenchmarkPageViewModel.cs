@@ -22,6 +22,13 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
     private int _totalServers;
     private int _queriesPerServer = 15;
 
+    // Sliding window over the most recent progress callbacks. ETA is computed from the
+    // rate of CompletedQueries between the oldest and newest sample in this window so
+    // a stalled dead-server tail is reflected within seconds.
+    private readonly Queue<(TimeSpan At, int Completed)> _progressSamples = new();
+    private int _lastTotalQueries;
+    private int _lastCompletedQueries;
+
     [ObservableProperty]
     private bool _isRunning;
 
@@ -100,6 +107,9 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
             _queriesPerServer = Math.Max(1, AttemptsPerProbe * 5);
             ServersTotal = _totalServers;
             ServersCompleted = 0;
+            _progressSamples.Clear();
+            _lastTotalQueries = 0;
+            _lastCompletedQueries = 0;
 
             var options = new DnsBenchmarkOptions
             {
@@ -115,6 +125,9 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
             {
                 PercentCompleted = (int)p.PercentCompleted;
                 QueriesRemaining = p.QueriesRemaining;
+                _lastTotalQueries = p.TotalQueries;
+                _lastCompletedQueries = p.CompletedQueries;
+                RecordProgressSample(p.CompletedQueries);
                 if (_totalServers > 0 && p.TotalQueries > 0)
                 {
                     ServersCompleted = (int)((double)p.CompletedQueries / p.TotalQueries * _totalServers);
@@ -195,16 +208,60 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
     {
         var elapsed = _runStopwatch.Elapsed;
         Elapsed = elapsed.ToString(elapsed.TotalHours >= 1 ? @"hh\:mm\:ss" : @"mm\:ss");
+        Eta = ComputeEta(elapsed);
+    }
 
-        if (PercentCompleted is > 0 and < 100 && elapsed.TotalSeconds > 1)
+    private string ComputeEta(TimeSpan elapsed)
+    {
+        if (_lastTotalQueries <= 0 || _lastCompletedQueries >= _lastTotalQueries)
         {
-            var totalEstimate = elapsed.TotalSeconds * 100.0 / PercentCompleted;
-            var remaining = TimeSpan.FromSeconds(Math.Max(0, totalEstimate - elapsed.TotalSeconds));
-            Eta = remaining.ToString(remaining.TotalHours >= 1 ? @"hh\:mm\:ss" : @"mm\:ss");
+            return "—";
         }
-        else
+
+        if (_progressSamples.Count < 2 || elapsed.TotalSeconds < 1)
         {
-            Eta = "—";
+            return "—";
+        }
+
+        var oldest = _progressSamples.Peek();
+        (TimeSpan At, int Completed) newest = (elapsed, _lastCompletedQueries);
+        // The Queue exposes the head via Peek but no tail accessor; reuse the most
+        // recent callback values we cached instead of iterating.
+
+        var deltaQueries = newest.Completed - oldest.Completed;
+        var deltaSeconds = (newest.At - oldest.At).TotalSeconds;
+        if (deltaQueries <= 0 || deltaSeconds <= 0.05)
+        {
+            return "—";
+        }
+
+        var recentRate = deltaQueries / deltaSeconds; // queries per second
+        var remainingQueries = _lastTotalQueries - _lastCompletedQueries;
+        var remainingSeconds = remainingQueries / recentRate;
+        if (double.IsNaN(remainingSeconds) || double.IsInfinity(remainingSeconds) || remainingSeconds < 0)
+        {
+            return "—";
+        }
+
+        var remaining = TimeSpan.FromSeconds(Math.Min(remainingSeconds, 60 * 60 * 6));
+        return remaining.ToString(remaining.TotalHours >= 1 ? @"hh\:mm\:ss" : @"mm\:ss");
+    }
+
+    private void RecordProgressSample(int completed)
+    {
+        var sample = (_runStopwatch.Elapsed, completed);
+        _progressSamples.Enqueue(sample);
+
+        // Keep ~12 seconds of recent samples so the rate adapts quickly when the
+        // benchmark hits a dead-server batch.
+        while (_progressSamples.Count > 1 && (sample.Elapsed - _progressSamples.Peek().At).TotalSeconds > 12)
+        {
+            _progressSamples.Dequeue();
+        }
+
+        if (_progressSamples.Count > 64)
+        {
+            _progressSamples.Dequeue();
         }
     }
 
