@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
@@ -30,11 +32,49 @@ public partial class ShellWindow : Window
         };
         Activated += (_, _) => ApplyWindowChrome();
 
+        // Extended client area kills the OS-provided drag region. Add it back:
+        // any unhandled click in the top ~32px of the window starts a window drag,
+        // any double-click toggles maximize/restore. Children that handle the
+        // pointer (hamburger menu, etc.) still get their click because OnPointerPressed
+        // on the window only fires for unhandled bubbled events.
+        AddHandler(PointerPressedEvent, OnTitleBarPointerPressed, RoutingStrategies.Bubble, handledEventsToo: false);
+
         var nav = this.FindControl<NavigationView>("Nav");
         if (nav is not null)
         {
             nav.ItemInvoked += OnNavItemInvoked;
         }
+    }
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.Handled)
+        {
+            return;
+        }
+
+        var point = e.GetCurrentPoint(this);
+        if (!point.Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        if (point.Position.Y > 36)
+        {
+            return;
+        }
+
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+            e.Handled = true;
+            return;
+        }
+
+        BeginMoveDrag(e);
+        e.Handled = true;
     }
 
     private void OnNavItemInvoked(object? sender, NavigationViewItemInvokedEventArgs e)

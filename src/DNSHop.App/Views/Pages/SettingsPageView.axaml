@@ -22,7 +22,7 @@
       <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Appearance.Theme}"
                            IconSource="DarkTheme">
         <ui:SettingsExpander.Footer>
-          <ComboBox MinWidth="180"
+          <ComboBox MinWidth="220" Width="220"
                     ItemsSource="{Binding AvailableThemes}"
                     SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" />
         </ui:SettingsExpander.Footer>
@@ -31,7 +31,7 @@
       <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Appearance.Language}"
                            IconSource="Globe">
         <ui:SettingsExpander.Footer>
-          <ComboBox MinWidth="220"
+          <ComboBox MinWidth="220" Width="220"
                     ItemsSource="{Binding AvailableLanguages}"
                     SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}">
             <ComboBox.ItemTemplate>
@@ -55,18 +55,18 @@
       <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Network.ProxyType}"
                            IconSource="Globe">
         <ui:SettingsExpander.Footer>
-          <ComboBox MinWidth="160"
+          <ComboBox MinWidth="220" Width="220"
                     ItemsSource="{Binding AvailableProxyTypes}"
                     SelectedItem="{Binding OutboundProxyType, Mode=TwoWay}" />
         </ui:SettingsExpander.Footer>
         <ui:SettingsExpanderItem Content="{l10n:Localize Key=Settings.Network.ProxyHost}">
           <ui:SettingsExpanderItem.Footer>
-            <TextBox MinWidth="240" Text="{Binding OutboundProxyHost, Mode=TwoWay}" />
+            <TextBox MinWidth="220" Width="220" Text="{Binding OutboundProxyHost, Mode=TwoWay}" />
           </ui:SettingsExpanderItem.Footer>
         </ui:SettingsExpanderItem>
         <ui:SettingsExpanderItem Content="{l10n:Localize Key=Settings.Network.ProxyPort}">
           <ui:SettingsExpanderItem.Footer>
-            <NumericUpDown MinWidth="140" Minimum="1" Maximum="65535" Increment="1" Value="{Binding OutboundProxyPort}" />
+            <NumericUpDown MinWidth="220" Width="220" Minimum="1" Maximum="65535" Increment="1" Value="{Binding OutboundProxyPort}" />
           </ui:SettingsExpanderItem.Footer>
         </ui:SettingsExpanderItem>
       </ui:SettingsExpander>
