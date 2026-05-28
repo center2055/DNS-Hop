@@ -89,7 +89,11 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         var effectiveOptions = new DnsBenchmarkOptions
         {
             TimeoutMilliseconds = Math.Max(250, options.TimeoutMilliseconds),
-            ConcurrencyLimit = Math.Max(1, options.ConcurrencyLimit),
+            // Hard ceiling at 32: above that, simultaneous TLS handshakes (DoT) and
+            // fresh UDP/TCP sockets per LookupClient can exhaust native handles or
+            // crash the SslStream stack on some Windows builds, hard-killing the
+            // process before any managed handler runs.
+            ConcurrencyLimit = Math.Clamp(options.ConcurrencyLimit, 1, 32),
             AttemptsPerProbe = Math.Max(1, options.AttemptsPerProbe),
             AllowInsecureSsl = options.AllowInsecureSsl,
             OutboundProxyType = options.OutboundProxyType,
@@ -119,20 +123,42 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
             try
             {
-                return await BenchmarkSingleServerAsync(
-                    server,
-                    effectiveOptions,
-                    () =>
+                try
+                {
+                    return await BenchmarkSingleServerAsync(
+                        server,
+                        effectiveOptions,
+                        () =>
+                        {
+                            var completed = Interlocked.Increment(ref completedQueries);
+                            progress?.Report(
+                                new DnsBenchmarkProgress(
+                                    totalQueries,
+                                    completed,
+                                    benchmarkStopwatch.Elapsed,
+                                    server.EndpointDisplay));
+                        },
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // A single server crashing — out of sockets, native SslStream fault,
+                    // bad DoH endpoint, whatever — must not take down the entire run.
+                    // Surface it as a Dead result and keep going.
+                    AppDiagnostics.WriteWarning(
+                        "Benchmark",
+                        $"Server {server.EndpointDisplay} aborted with {ex.GetType().Name}: {ex.Message}");
+                    return new DnsBenchmarkResult
                     {
-                        var completed = Interlocked.Increment(ref completedQueries);
-                        progress?.Report(
-                            new DnsBenchmarkProgress(
-                                totalQueries,
-                                completed,
-                                benchmarkStopwatch.Elapsed,
-                                server.EndpointDisplay));
-                    },
-                    cancellationToken).ConfigureAwait(false);
+                        Server = server,
+                        Status = DnsServerStatus.Dead,
+                        LastError = ex.Message,
+                    };
+                }
             }
             finally
             {
