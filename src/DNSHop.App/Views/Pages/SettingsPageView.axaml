@@ -50,36 +50,6 @@
         </ui:SettingsExpander.Footer>
       </ui:SettingsExpander>
 
-      <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Benchmark.Title}" />
-
-      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.Timeout}"
-                           IconSource="Clock">
-        <ui:SettingsExpander.Footer>
-          <NumericUpDown MinWidth="140" Minimum="250" Maximum="10000" Increment="250" Value="{Binding TimeoutMilliseconds}" />
-        </ui:SettingsExpander.Footer>
-      </ui:SettingsExpander>
-
-      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.Concurrency}"
-                           IconSource="Switch">
-        <ui:SettingsExpander.Footer>
-          <NumericUpDown MinWidth="140" Minimum="1" Maximum="64" Increment="1" Value="{Binding ConcurrencyLimit}" />
-        </ui:SettingsExpander.Footer>
-      </ui:SettingsExpander>
-
-      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.Attempts}"
-                           IconSource="Refresh">
-        <ui:SettingsExpander.Footer>
-          <NumericUpDown MinWidth="140" Minimum="1" Maximum="5" Increment="1" Value="{Binding AttemptsPerProbe}" />
-        </ui:SettingsExpander.Footer>
-      </ui:SettingsExpander>
-
-      <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Benchmark.AutoUpdate}"
-                           IconSource="Download">
-        <ui:SettingsExpander.Footer>
-          <ToggleSwitch IsChecked="{Binding AutoUpdateListOnStartup, Mode=TwoWay}" />
-        </ui:SettingsExpander.Footer>
-      </ui:SettingsExpander>
-
       <TextBlock Classes="GroupHeader" Text="{l10n:Localize Key=Settings.Network.Title}" />
 
       <ui:SettingsExpander Header="{l10n:Localize Key=Settings.Network.ProxyType}"

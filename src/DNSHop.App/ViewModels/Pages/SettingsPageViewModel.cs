@@ -26,18 +26,6 @@ internal sealed partial class SettingsPageViewModel : PageViewModel
     private bool _useMica;
 
     [ObservableProperty]
-    private int _timeoutMilliseconds;
-
-    [ObservableProperty]
-    private int _concurrencyLimit;
-
-    [ObservableProperty]
-    private int _attemptsPerProbe;
-
-    [ObservableProperty]
-    private bool _autoUpdateListOnStartup;
-
-    [ObservableProperty]
     private bool _checkForAppUpdatesOnStartup;
 
     [ObservableProperty]
@@ -67,10 +55,6 @@ internal sealed partial class SettingsPageViewModel : PageViewModel
         SelectedLanguage = AvailableLanguages.FirstOrDefault(l => string.Equals(l.Culture, string.IsNullOrEmpty(settings.Language) ? LocalizationService.DetectSystemCulture() : settings.Language, StringComparison.OrdinalIgnoreCase))
                           ?? AvailableLanguages.First();
         UseMica = settings.UseMica;
-        TimeoutMilliseconds = settings.TimeoutMilliseconds;
-        ConcurrencyLimit = settings.ConcurrencyLimit;
-        AttemptsPerProbe = settings.AttemptsPerProbe;
-        AutoUpdateListOnStartup = settings.AutoUpdateListOnStartup;
         CheckForAppUpdatesOnStartup = settings.CheckForAppUpdatesOnStartup;
         OutboundProxyType = settings.OutboundProxyType;
         OutboundProxyHost = settings.OutboundProxyHost;
@@ -129,10 +113,6 @@ internal sealed partial class SettingsPageViewModel : PageViewModel
         Persist();
     }
 
-    partial void OnTimeoutMillisecondsChanged(int value) => Persist();
-    partial void OnConcurrencyLimitChanged(int value) => Persist();
-    partial void OnAttemptsPerProbeChanged(int value) => Persist();
-    partial void OnAutoUpdateListOnStartupChanged(bool value) => Persist();
     partial void OnCheckForAppUpdatesOnStartupChanged(bool value) => Persist();
     partial void OnOutboundProxyTypeChanged(string value) => Persist();
     partial void OnOutboundProxyHostChanged(string value) => Persist();
@@ -145,6 +125,9 @@ internal sealed partial class SettingsPageViewModel : PageViewModel
             return;
         }
 
+        // Read the latest persisted snapshot so values controlled by other pages
+        // (benchmark options, profiles, apply history, custom servers) are preserved
+        // verbatim instead of being clobbered with stale cached values.
         var current = _services.Settings.Load();
         _services.Settings.Save(new AppSettings
         {
@@ -152,10 +135,10 @@ internal sealed partial class SettingsPageViewModel : PageViewModel
             Language = SelectedLanguage?.Culture ?? string.Empty,
             UseMica = UseMica,
             LastNavSection = current.LastNavSection,
-            TimeoutMilliseconds = TimeoutMilliseconds,
-            ConcurrencyLimit = ConcurrencyLimit,
-            AttemptsPerProbe = AttemptsPerProbe,
-            AutoUpdateListOnStartup = AutoUpdateListOnStartup,
+            TimeoutMilliseconds = current.TimeoutMilliseconds,
+            ConcurrencyLimit = current.ConcurrencyLimit,
+            AttemptsPerProbe = current.AttemptsPerProbe,
+            AutoUpdateListOnStartup = current.AutoUpdateListOnStartup,
             CheckForAppUpdatesOnStartup = CheckForAppUpdatesOnStartup,
             OutboundProxyType = OutboundProxyType,
             OutboundProxyHost = OutboundProxyHost,
