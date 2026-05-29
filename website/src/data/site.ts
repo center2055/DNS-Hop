@@ -114,7 +114,7 @@ export const featureCards = [
   },
   {
     title: 'Logs you can read',
-    body: 'INFO / WARN / ERROR severity colouring, a filter, and a one-click export — diagnostics finally fit on screen.',
+    body: 'INFO / WARN / ERROR severity colouring, a filter, and a one-click export, so diagnostics finally fit on screen.',
     accent: 'sky' as const,
   },
   {
@@ -156,7 +156,7 @@ export const faqItems = [
   {
     question: 'Which languages does the UI support?',
     answer:
-      'English, German, French, Russian and Simplified Chinese, auto-detected from your OS UI language on first launch. You can override the language in Settings, and switching is reactive — no restart.',
+      'English, German, French, Russian and Simplified Chinese, auto-detected from your OS UI language on first launch. You can override the language in Settings, and switching is reactive, with no restart.',
   },
   {
     question: 'Does it benchmark encrypted DNS?',
