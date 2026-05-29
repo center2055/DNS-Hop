@@ -106,9 +106,7 @@ internal sealed partial class HomePageViewModel : PageViewModel
             var expectedIps = CollectExpectedIps();
             var result = await _services.LeakTest.RunAsync(expectedIps, CurrentResolver, System.Threading.CancellationToken.None).ConfigureAwait(false);
             _services.AppState.LastLeakTest = result;
-            LeakTestStatus = result.Passed
-                ? Localization["Network.LeakTest.Pass"]
-                : Localization["Network.LeakTest.Fail"];
+            LeakTestStatus = LeakTestStatusText.Describe(result, Localization);
         }
         finally
         {

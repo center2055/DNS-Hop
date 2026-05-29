@@ -94,9 +94,7 @@ internal sealed partial class NetworkPageViewModel : PageViewModel
 
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                LeakTestStatus = result.Passed
-                    ? Localization["Network.LeakTest.Pass"]
-                    : Localization["Network.LeakTest.Fail"];
+                LeakTestStatus = LeakTestStatusText.Describe(result, Localization);
                 LeakTestLastRun = string.Format(Localization["Network.LeakTest.LastRun"], result.CheckedAt.ToLocalTime().ToString("g"));
             });
         }

@@ -10,10 +10,10 @@ namespace DNSHop.App.Services;
 
 internal sealed class DnsLeakTestService
 {
-    // Compares the resolver IPs the user applied via DNS Hop against the resolver IP
-    // Windows / Linux is actually using right now. No external network call is needed
-    // — relying on whoami.cloudflare only worked when the system DNS was already a
-    // Cloudflare resolver, which made the test useless for anything else.
+    // Compares the resolver IPs the user applied via DNS Hop against the resolver the
+    // system is actually using right now. Three real outcomes plus an "undetectable"
+    // guard — crucially, "the user never applied anything in-app" is NOT a leak, it
+    // just means there is nothing to verify against.
     public Task<LeakTestResult> RunAsync(
         IReadOnlyList<string> expectedIps,
         string? detectedResolverAddress,
@@ -27,7 +27,7 @@ internal sealed class DnsLeakTestService
         {
             return Task.FromResult(new LeakTestResult
             {
-                Passed = false,
+                Outcome = LeakTestOutcome.Undetectable,
                 CheckedAt = DateTimeOffset.UtcNow,
                 ExpectedResolver = expectedIps.FirstOrDefault(),
                 ObservedResolver = null,
@@ -35,25 +35,32 @@ internal sealed class DnsLeakTestService
             });
         }
 
-        if (expectedIps.Count == 0)
+        var applied = expectedIps
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .ToArray();
+
+        if (applied.Length == 0)
         {
+            // Nothing was applied through DNS Hop (e.g. DNS set on the router or in
+            // Windows directly). There is no in-app target, so this is informational,
+            // not a leak.
             return Task.FromResult(new LeakTestResult
             {
-                Passed = false,
+                Outcome = LeakTestOutcome.NotApplicable,
                 CheckedAt = DateTimeOffset.UtcNow,
                 ObservedResolver = observed,
-                Note = "Apply a DNS profile or resolver first — there is nothing to compare against yet.",
+                Note = "No resolver was applied through DNS Hop, so there is nothing to compare against.",
             });
         }
 
-        foreach (var expected in expectedIps.Where(static s => !string.IsNullOrWhiteSpace(s)))
+        foreach (var expected in applied)
         {
             if (string.Equals(expected, observed, StringComparison.OrdinalIgnoreCase)
                 || ShareSubnet(observed, expected))
             {
                 return Task.FromResult(new LeakTestResult
                 {
-                    Passed = true,
+                    Outcome = LeakTestOutcome.Clear,
                     CheckedAt = DateTimeOffset.UtcNow,
                     ExpectedResolver = expected,
                     ObservedResolver = observed,
@@ -63,9 +70,9 @@ internal sealed class DnsLeakTestService
 
         return Task.FromResult(new LeakTestResult
         {
-            Passed = false,
+            Outcome = LeakTestOutcome.Override,
             CheckedAt = DateTimeOffset.UtcNow,
-            ExpectedResolver = expectedIps.FirstOrDefault(),
+            ExpectedResolver = applied[0],
             ObservedResolver = observed,
             Note = $"System resolver {observed} is not in the applied set.",
         });
