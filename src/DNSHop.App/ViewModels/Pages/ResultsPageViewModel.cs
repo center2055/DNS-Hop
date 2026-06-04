@@ -178,9 +178,20 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
         };
 
         Rows.Clear();
-        foreach (var r in ordered)
+        var orderedList = ordered.ToList();
+
+        // Shared scale so the red/green/blue bars are comparable across every row.
+        double scaleMs = orderedList
+            .SelectMany(r => new[] { r.CachedMilliseconds, r.UncachedMilliseconds, r.DotComMilliseconds })
+            .Where(v => v is not null)
+            .Select(v => v!.Value)
+            .DefaultIfEmpty(1)
+            .Max();
+        if (scaleMs <= 0) { scaleMs = 1; }
+
+        foreach (var r in orderedList)
         {
-            Rows.Add(new ResolverRowViewModel(r, range, fastest));
+            Rows.Add(new ResolverRowViewModel(r, range, fastest, scaleMs));
         }
 
         OnPropertyChanged(nameof(HasResults));
@@ -198,7 +209,7 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
 
 internal sealed class ResolverRowViewModel
 {
-    public ResolverRowViewModel(DnsBenchmarkResult result, double range, double fastest)
+    public ResolverRowViewModel(DnsBenchmarkResult result, double range, double fastest, double scaleMs)
     {
         Server = result.Server;
         Provider = result.Server.Provider;
@@ -221,6 +232,11 @@ internal sealed class ResolverRowViewModel
             : 0.0;
         LatencyFraction = fillFraction;
 
+        // GRC-style bar lengths: longer bar = slower probe, scaled against the slowest probe on screen.
+        CachedFraction = result.CachedMilliseconds is double cms && scaleMs > 0 ? Math.Clamp(cms / scaleMs, 0.0, 1.0) : 0.0;
+        UncachedFraction = result.UncachedMilliseconds is double ums && scaleMs > 0 ? Math.Clamp(ums / scaleMs, 0.0, 1.0) : 0.0;
+        DotComFraction = result.DotComMilliseconds is double dms && scaleMs > 0 ? Math.Clamp(dms / scaleMs, 0.0, 1.0) : 0.0;
+
         IsHealthy = result.Status == DnsServerStatus.Alive && !result.RedirectsNxDomain;
         IsRedirecting = result.Status == DnsServerStatus.Redirecting || result.RedirectsNxDomain;
         IsDead = result.Status == DnsServerStatus.Dead;
@@ -242,6 +258,9 @@ internal sealed class ResolverRowViewModel
     public double? DotComMs { get; }
     public string DotComDisplay { get; }
     public double LatencyFraction { get; }
+    public double CachedFraction { get; }
+    public double UncachedFraction { get; }
+    public double DotComFraction { get; }
     public bool IsHealthy { get; }
     public bool IsRedirecting { get; }
     public bool IsDead { get; }

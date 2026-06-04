@@ -11,8 +11,37 @@
              mc:Ignorable="d"
              d:DesignWidth="1000"
              d:DesignHeight="800">
-  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Spacing="14" MaxWidth="1100" Margin="0,0,40,0">
+  <UserControl.Resources>
+    <SolidColorBrush x:Key="BarCachedBrush" Color="#E0573E" />
+    <SolidColorBrush x:Key="BarUncachedBrush" Color="#2FB344" />
+    <SolidColorBrush x:Key="BarDotComBrush" Color="#3B82F6" />
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <!-- Hover effect on a result row: lift the surface and brighten its bars. -->
+    <Style Selector="Border.ResultRow">
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.12" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.ResultRow:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+    </Style>
+    <Style Selector="Border.ResultRow Border.MetricBar">
+      <Setter Property="Opacity" Value="0.85" />
+    </Style>
+    <Style Selector="Border.ResultRow:pointerover Border.MetricBar">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto"
+                AllowAutoHide="False">
+    <StackPanel Spacing="14" MaxWidth="1100" Margin="0,0,16,0">
       <TextBlock Classes="PageTitle" Text="{l10n:Localize Key=Results.Title}" />
 
       <TextBlock Text="{l10n:Localize Key=Results.NoData}"
@@ -133,6 +162,21 @@
           </Grid>
         </Border>
 
+        <StackPanel Orientation="Horizontal" Spacing="20" Margin="2,0,0,0">
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <Border Width="11" Height="11" CornerRadius="2" Background="{DynamicResource BarCachedBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="Cached" Classes="Caption" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <Border Width="11" Height="11" CornerRadius="2" Background="{DynamicResource BarUncachedBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="Uncached" Classes="Caption" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <Border Width="11" Height="11" CornerRadius="2" Background="{DynamicResource BarDotComBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="DotCom" Classes="Caption" VerticalAlignment="Center" />
+          </StackPanel>
+        </StackPanel>
+
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
@@ -141,7 +185,7 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:ResolverRowViewModel">
-              <Border Classes="SettingRow">
+              <Border Classes="SettingRow ResultRow">
                 <Grid ColumnDefinitions="Auto,2*,3*,Auto,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
                   <Border Grid.Column="0"
                           Classes="StatusDot"
@@ -152,17 +196,51 @@
                     <TextBlock Text="{Binding Provider}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="{Binding Endpoint}" Classes="Caption" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
-                  <Grid Grid.Column="2" VerticalAlignment="Center">
-                    <Border Height="6"
-                            HorizontalAlignment="Stretch"
-                            CornerRadius="3"
-                            Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
-                    <Border Height="6"
-                            HorizontalAlignment="Left"
-                            CornerRadius="3"
-                            Background="{DynamicResource AccentFillColorDefaultBrush}"
-                            Width="{Binding LatencyFraction, Converter={x:Static vm:FractionToWidthConverter.Default}, ConverterParameter=240}" />
-                  </Grid>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3" ToolTip.Placement="Top">
+                    <ToolTip.Tip>
+                      <StackPanel Spacing="6" Margin="2">
+                        <TextBlock Text="{Binding Provider}" FontWeight="SemiBold" />
+                        <Grid ColumnDefinitions="Auto,60" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="3">
+                          <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="7">
+                            <Border Width="9" Height="9" CornerRadius="2" Background="{DynamicResource BarCachedBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="Cached" />
+                          </StackPanel>
+                          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CachedDisplay}" TextAlignment="Right" />
+                          <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="7">
+                            <Border Width="9" Height="9" CornerRadius="2" Background="{DynamicResource BarUncachedBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="Uncached" />
+                          </StackPanel>
+                          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding UncachedDisplay}" TextAlignment="Right" />
+                          <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="7">
+                            <Border Width="9" Height="9" CornerRadius="2" Background="{DynamicResource BarDotComBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="DotCom" />
+                          </StackPanel>
+                          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DotComDisplay}" TextAlignment="Right" />
+                          <TextBlock Grid.Row="3" Grid.Column="0" Text="Average" Classes="Caption" VerticalAlignment="Center" />
+                          <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AverageDisplay}" TextAlignment="Right" FontWeight="SemiBold" />
+                        </Grid>
+                      </StackPanel>
+                    </ToolTip.Tip>
+
+                    <Grid>
+                      <Border Height="5" HorizontalAlignment="Stretch" CornerRadius="2.5" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                      <Border Classes="MetricBar" Height="5" HorizontalAlignment="Left" CornerRadius="2.5"
+                              Background="{DynamicResource BarCachedBrush}"
+                              Width="{Binding CachedFraction, Converter={x:Static vm:FractionToWidthConverter.Default}, ConverterParameter=260}" />
+                    </Grid>
+                    <Grid>
+                      <Border Height="5" HorizontalAlignment="Stretch" CornerRadius="2.5" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                      <Border Classes="MetricBar" Height="5" HorizontalAlignment="Left" CornerRadius="2.5"
+                              Background="{DynamicResource BarUncachedBrush}"
+                              Width="{Binding UncachedFraction, Converter={x:Static vm:FractionToWidthConverter.Default}, ConverterParameter=260}" />
+                    </Grid>
+                    <Grid>
+                      <Border Height="5" HorizontalAlignment="Stretch" CornerRadius="2.5" Background="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                      <Border Classes="MetricBar" Height="5" HorizontalAlignment="Left" CornerRadius="2.5"
+                              Background="{DynamicResource BarDotComBrush}"
+                              Width="{Binding DotComFraction, Converter={x:Static vm:FractionToWidthConverter.Default}, ConverterParameter=260}" />
+                    </Grid>
+                  </StackPanel>
                   <TextBlock Grid.Column="3" Text="{Binding AverageDisplay}" FontWeight="SemiBold" VerticalAlignment="Center" MinWidth="70" TextAlignment="Right" />
                   <Border Grid.Column="4" Classes="Badge" IsVisible="{Binding SupportsDnssec}" VerticalAlignment="Center">
                     <TextBlock Text="DNSSEC" />
