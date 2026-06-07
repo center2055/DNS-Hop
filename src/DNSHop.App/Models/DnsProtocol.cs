@@ -5,5 +5,6 @@ public enum DnsProtocol
     UdpTcp,
     Doh,
     Dot,
+    Doq,
 }
 

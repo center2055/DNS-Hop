@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Quic;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -839,6 +840,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                 DnsProtocol.Doh => await QueryDohAsync(server, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
                 DnsProtocol.Dot when dotSession is not null => await QueryDotOnStreamAsync(dotSession, domain, queryType, timeoutCts.Token).ConfigureAwait(false),
                 DnsProtocol.Dot => await QueryDotAsync(server, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
+                DnsProtocol.Doq => await QueryDoqAsync(server, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
                 _ => throw new NotSupportedException($"Protocol '{server.Protocol}' is not supported."),
             };
 
@@ -1081,6 +1083,87 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             tcpClient.Dispose();
         }
     }
+
+    // System.Net.Quic ships as a preview API in .NET 8 (CA2252) and carries platform
+    // annotations (CA1416); it's supported on every OS DNS Hop targets, so opt in here.
+#pragma warning disable CA2252, CA1416
+    private static async Task<QueryWireResult> QueryDoqAsync(
+        DnsServerDefinition server,
+        string domain,
+        QueryType queryType,
+        DnsBenchmarkOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (!QuicConnection.IsSupported)
+        {
+            throw new NotSupportedException("DNS over QUIC is not available on this system (QUIC/msquic unsupported).");
+        }
+
+        bool allowInsecureSsl = options.AllowInsecureSsl;
+        string sni = server.DotTlsHost ?? server.AddressOrHost;
+
+        var clientOptions = new QuicClientConnectionOptions
+        {
+            RemoteEndPoint = new DnsEndPoint(server.AddressOrHost, server.Port),
+            DefaultStreamErrorCode = 0,
+            DefaultCloseErrorCode = 0,
+            ClientAuthenticationOptions = new SslClientAuthenticationOptions
+            {
+                // RFC 9250: the DoQ ALPN token is "doq".
+                ApplicationProtocols = [new SslApplicationProtocol("doq")],
+                TargetHost = sni,
+                EnabledSslProtocols = SslProtocols.Tls13,
+                CertificateRevocationCheckMode = allowInsecureSsl ? X509RevocationMode.NoCheck : X509RevocationMode.Online,
+                RemoteCertificateValidationCallback = (_, _, _, errors) => allowInsecureSsl || errors == SslPolicyErrors.None,
+            },
+        };
+
+        QuicConnection connection = await QuicConnection.ConnectAsync(clientOptions, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            QuicStream stream = await connection
+                .OpenOutboundStreamAsync(QuicStreamType.Bidirectional, cancellationToken)
+                .ConfigureAwait(false);
+
+            await using (stream.ConfigureAwait(false))
+            {
+                byte[] requestPayload = BuildDnsWireQuestion(domain, ToWireType(queryType));
+
+                // RFC 9250 §4.2.1: the DNS message ID MUST be 0 in DoQ.
+                requestPayload[0] = 0;
+                requestPayload[1] = 0;
+
+                byte[] requestLengthPrefix =
+                [
+                    (byte)(requestPayload.Length >> 8),
+                    (byte)(requestPayload.Length & 0xFF),
+                ];
+
+                await stream.WriteAsync(requestLengthPrefix, cancellationToken).ConfigureAwait(false);
+                // completeWrites sends the QUIC FIN; the client sends exactly one query per stream.
+                await stream.WriteAsync(requestPayload, completeWrites: true, cancellationToken).ConfigureAwait(false);
+
+                byte[] responseLengthPrefix = new byte[2];
+                await ReadExactAsync(stream, responseLengthPrefix, cancellationToken).ConfigureAwait(false);
+
+                int responseLength = (responseLengthPrefix[0] << 8) | responseLengthPrefix[1];
+                if (responseLength <= 0 || responseLength > 65535)
+                {
+                    throw new InvalidDataException($"Invalid DoQ response size: {responseLength} bytes.");
+                }
+
+                byte[] responsePayload = new byte[responseLength];
+                await ReadExactAsync(stream, responsePayload, cancellationToken).ConfigureAwait(false);
+
+                return ParseDnsWireResponse(responsePayload);
+            }
+        }
+        finally
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+#pragma warning restore CA2252, CA1416
 
     private static async Task<(TcpClient, Stream)> ConnectViaProxyAsync(
         DnsServerDefinition server,

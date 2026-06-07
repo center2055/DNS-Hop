@@ -40,6 +40,18 @@
         </ui:SettingsExpander.Footer>
       </ui:SettingsExpander>
 
+      <ui:SettingsExpander Header="Discord" IconSource="People">
+        <ui:SettingsExpander.Footer>
+          <Button Content="Open Discord" Command="{Binding OpenDiscordCommand}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="Ko-fi" IconSource="Heart">
+        <ui:SettingsExpander.Footer>
+          <Button Content="Open Ko-fi" Command="{Binding OpenKoFiCommand}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
       <Border Classes="Card">
         <TextBlock Text="{l10n:Localize Key=About.Credits}" Classes="Muted" TextWrapping="Wrap" />
       </Border>

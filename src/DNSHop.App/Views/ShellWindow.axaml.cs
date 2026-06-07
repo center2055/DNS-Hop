@@ -175,6 +175,9 @@ public partial class ShellWindow : Window
         }
     }
 
+    private bool _chromeApplied;
+    private bool? _lastChromeDark;
+
     private void ApplyWindowChrome()
     {
         if (!OperatingSystem.IsWindows())
@@ -204,6 +207,20 @@ public partial class ShellWindow : Window
             int textColor = dark ? 0x00F0F0F0 : unchecked((int)0xFFFFFFFE);
             DwmSetWindowAttribute(hwnd.Value, DWMWA_CAPTION_COLOR, ref captionColor, sizeof(int));
             DwmSetWindowAttribute(hwnd.Value, DWMWA_TEXT_COLOR, ref textColor, sizeof(int));
+
+            // Only force the non-client repaint when something actually changed
+            // (first show or a theme/dark-state flip). The DWM attributes above are
+            // idempotent, so re-applying them on every window Activated is harmless,
+            // but firing SWP_FRAMECHANGED on each focus-regain triggers a full
+            // re-layout that clamps virtualized lists back to the top — which reset
+            // the Resolvers/Results scroll position whenever the user alt-tabbed away.
+            bool changed = !_chromeApplied || _lastChromeDark != dark;
+            _chromeApplied = true;
+            _lastChromeDark = dark;
+            if (!changed)
+            {
+                return;
+            }
 
             // The DWM attribute only takes effect at the next non-client paint.
             // SWP_FRAMECHANGED forces that repaint immediately so the title bar

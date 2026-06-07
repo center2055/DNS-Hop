@@ -22,12 +22,20 @@ internal sealed partial class AboutPageViewModel : PageViewModel
 
     public string RepositoryUrl => AppReleaseService.RepositoryUrl;
     public string IssuesUrl => AppReleaseService.IssuesUrl;
+    public string DiscordUrl => AppReleaseService.DiscordUrl;
+    public string KoFiUrl => AppReleaseService.KoFiUrl;
 
     [RelayCommand]
     private void OpenRepository() => OpenUrl(RepositoryUrl);
 
     [RelayCommand]
     private void OpenIssues() => OpenUrl(IssuesUrl);
+
+    [RelayCommand]
+    private void OpenDiscord() => OpenUrl(DiscordUrl);
+
+    [RelayCommand]
+    private void OpenKoFi() => OpenUrl(KoFiUrl);
 
     private static void OpenUrl(string url)
     {

@@ -140,6 +140,7 @@
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Content="{l10n:Localize Key=Results.ExportCsv}" Command="{Binding ExportCsvCommand}" />
           <Button Content="{l10n:Localize Key=Results.ExportJson}" Command="{Binding ExportJsonCommand}" />
+          <Button Content="Copy chart" Command="{Binding CopyChartCommand}" />
         </StackPanel>
 
         <TextBlock Text="{Binding ExportStatus}" Classes="Caption"

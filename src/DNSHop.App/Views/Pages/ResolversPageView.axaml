@@ -43,7 +43,14 @@
                BorderThickness="0">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:ResolverItemViewModel">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="8" ColumnSpacing="10" VerticalAlignment="Center">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" Margin="8" ColumnSpacing="10" VerticalAlignment="Center">
+              <Grid.ContextFlyout>
+                <MenuFlyout>
+                  <MenuItem Header="Pin to top" Command="{Binding TogglePinCommand}" />
+                  <MenuItem Header="Copy address" Command="{Binding CopyAddressCommand}" />
+                  <MenuItem Header="Copy provider" Command="{Binding CopyProviderCommand}" />
+                </MenuFlyout>
+              </Grid.ContextFlyout>
               <CheckBox Grid.Column="0"
                         IsChecked="{Binding IsSidelined, Mode=TwoWay, Converter={x:Static BoolConverters.Not}}"
                         ToolTip.Tip="Include in benchmark"
@@ -64,7 +71,10 @@
               <Border Grid.Column="5" Classes="Badge Accent" VerticalAlignment="Center" IsVisible="{Binding BestForRegion}">
                 <TextBlock Text="{l10n:Localize Key=Resolvers.RegionBadge}" />
               </Border>
-              <Button Grid.Column="6"
+              <Border Grid.Column="6" Classes="Badge Accent" VerticalAlignment="Center" IsVisible="{Binding IsPinned}">
+                <TextBlock Text="Pinned" />
+              </Border>
+              <Button Grid.Column="7"
                       Content="Remove"
                       Padding="10,4"
                       IsVisible="{Binding IsCustom}"

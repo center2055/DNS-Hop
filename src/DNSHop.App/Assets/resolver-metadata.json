@@ -50,5 +50,32 @@
 
   { "key": "Alekberg", "provider": "Alekberg", "countryCode": "NL", "regions": ["EU"], "noLogs": true },
   { "key": "BlahDNS", "provider": "BlahDNS", "countryCode": "DE", "regions": ["EU", "AS"], "noLogs": true, "blocksAds": true },
-  { "key": "tiar.app", "provider": "Tiar", "countryCode": "JP", "regions": ["AS"], "noLogs": true }
+  { "key": "tiar.app", "provider": "Tiar", "countryCode": "JP", "regions": ["AS"], "noLogs": true },
+
+  { "key": "CIRA Canadian Shield", "provider": "CIRA Canadian Shield", "countryCode": "CA", "regions": ["NA"], "noLogs": true, "privacyPolicyUrl": "https://www.cira.ca/en/canadian-shield/" },
+  { "key": "CIRA Canadian Shield Protected", "provider": "CIRA Canadian Shield Protected", "countryCode": "CA", "regions": ["NA"], "noLogs": true, "blocksMalware": true },
+  { "key": "CIRA Canadian Shield Family", "provider": "CIRA Canadian Shield Family", "countryCode": "CA", "regions": ["NA"], "noLogs": true, "blocksMalware": true, "blocksAdult": true },
+
+  { "key": "DNS4EU", "provider": "DNS4EU", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "privacyPolicyUrl": "https://www.joindns4.eu/" },
+  { "key": "DNS4EU No-Ads", "provider": "DNS4EU No-Ads", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true },
+  { "key": "DNS4EU Child", "provider": "DNS4EU Child", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAdult": true },
+  { "key": "DNS4EU Unfiltered", "provider": "DNS4EU Unfiltered", "countryCode": "EU", "regions": ["EU"], "noLogs": true },
+
+  { "key": "RethinkDNS Sky", "provider": "RethinkDNS Sky", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://rethinkdns.com/privacy" },
+  { "key": "RethinkDNS Max", "provider": "RethinkDNS Max", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://rethinkdns.com/privacy" },
+
+  { "key": "OpenBLD", "provider": "OpenBLD", "regions": ["GLOBAL", "EU"], "noLogs": true, "blocksAds": true, "blocksMalware": true },
+  { "key": "OpenBLD Strict", "provider": "OpenBLD Strict", "regions": ["GLOBAL", "EU"], "noLogs": true, "blocksAds": true, "blocksMalware": true },
+
+  { "key": "RESTENA", "provider": "RESTENA", "countryCode": "LU", "regions": ["EU"], "noLogs": true, "privacyPolicyUrl": "https://www.restena.lu/" },
+
+  { "key": "LibreDNS", "provider": "LibreDNS", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "LibreDNS No-Ads", "provider": "LibreDNS No-Ads", "countryCode": "DE", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+
+  { "key": "SWITCH", "provider": "SWITCH", "countryCode": "CH", "regions": ["EU"], "noLogs": true, "blocksMalware": true },
+
+  { "key": "AdGuard Unfiltered", "provider": "AdGuard Unfiltered", "countryCode": "CY", "regions": ["EU", "AS"], "noLogs": true },
+  { "key": "DNS0.EU", "provider": "DNS0.EU", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "privacyPolicyUrl": "https://www.dns0.eu/privacy" },
+  { "key": "DNS0.EU Zero", "provider": "DNS0.EU Zero", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true },
+  { "key": "DNS0.EU Open", "provider": "DNS0.EU Open", "countryCode": "EU", "regions": ["EU"], "noLogs": true }
 ]

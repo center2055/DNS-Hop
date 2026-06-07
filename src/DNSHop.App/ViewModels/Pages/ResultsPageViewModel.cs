@@ -19,6 +19,8 @@ public enum ResultsSortMode
     Uncached,
     DotCom,
     Provider,
+    Protocol,
+    Dnssec,
     Status,
 }
 
@@ -107,6 +109,21 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private async Task CopyChartAsync()
+    {
+        if (!HasResults) { return; }
+        try
+        {
+            var copied = await _services.Export.CopyChartToClipboardAsync(Results.ToList(), CancellationToken.None).ConfigureAwait(false);
+            ExportStatus = copied ? "Chart copied to clipboard." : "Clipboard is unavailable on this platform.";
+        }
+        catch (Exception ex)
+        {
+            ExportStatus = ex.Message;
+        }
+    }
+
+    [RelayCommand]
     private async Task ApplyRowAsync(ResolverRowViewModel? row)
     {
         if (row is null)
@@ -173,6 +190,12 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
             ResultsSortMode.Uncached => filtered.OrderBy(r => r.UncachedMilliseconds ?? double.MaxValue),
             ResultsSortMode.DotCom => filtered.OrderBy(r => r.DotComMilliseconds ?? double.MaxValue),
             ResultsSortMode.Provider => filtered.OrderBy(r => r.Server.Provider, StringComparer.OrdinalIgnoreCase),
+            ResultsSortMode.Protocol => filtered
+                .OrderBy(r => r.Server.Protocol.ToString(), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(r => r.AverageMilliseconds ?? double.MaxValue),
+            ResultsSortMode.Dnssec => filtered
+                .OrderByDescending(r => r.SupportsDnssec)
+                .ThenBy(r => r.AverageMilliseconds ?? double.MaxValue),
             ResultsSortMode.Status => filtered.OrderBy(r => StatusOrder(r)),
             _ => filtered.OrderBy(r => r.AverageMilliseconds ?? double.MaxValue),
         };

@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DNSHop.App.Models;
@@ -26,12 +28,14 @@ public enum CustomDnsProtocol
     UdpTcp,
     Doh,
     Dot,
+    Doq,
 }
 
 internal sealed partial class ResolversPageViewModel : PageViewModel
 {
     private readonly AppServices _services;
     private readonly HashSet<string> _sidelinedKeys = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _pinnedKeys = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty]
     private string _filterText = string.Empty;
@@ -249,6 +253,7 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
         };
         var key = BuildServerKey(definition);
         item.IsSidelined = _sidelinedKeys.Contains(key);
+        item.IsPinned = _pinnedKeys.Contains(key);
         return item;
     }
 
@@ -272,6 +277,22 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
     {
         if (sender is not ResolverItemViewModel item)
         {
+            return;
+        }
+
+        if (string.Equals(e.PropertyName, nameof(ResolverItemViewModel.IsPinned), StringComparison.Ordinal))
+        {
+            var pinKey = BuildServerKey(item.Definition);
+            if (item.IsPinned)
+            {
+                _pinnedKeys.Add(pinKey);
+            }
+            else
+            {
+                _pinnedKeys.Remove(pinKey);
+            }
+
+            ApplyFilter();
             return;
         }
 
@@ -362,6 +383,10 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
             _ => view,
         };
 
+        // Pinned resolvers always float to the top. OrderBy is stable, so the
+        // active sort order is preserved within the pinned and unpinned groups.
+        view = view.OrderByDescending(i => i.IsPinned);
+
         Filtered.Clear();
         foreach (var item in view)
         {
@@ -414,6 +439,19 @@ internal sealed partial class ResolversPageViewModel : PageViewModel
                 server = DnsServerDefinition.CreateDot(addr, tls, provider, port);
                 return true;
             }
+            case CustomDnsProtocol.Doq:
+            {
+                var host = (draft.Endpoint ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(host))
+                {
+                    error = "Enter the DoQ endpoint hostname or IP (e.g. dns.adguard-dns.com).";
+                    return false;
+                }
+                var tls = string.IsNullOrWhiteSpace(draft.DotTlsHost) ? host : draft.DotTlsHost!.Trim();
+                var port = draft.Port is >= 1 and <= 65535 ? draft.Port : 853;
+                server = DnsServerDefinition.CreateDoq(host, provider, tls, port);
+                return true;
+            }
         }
 
         error = "Unsupported protocol.";
@@ -428,6 +466,9 @@ internal sealed partial class ResolverItemViewModel : ObservableObject
 {
     [ObservableProperty]
     private bool _isSidelined;
+
+    [ObservableProperty]
+    private bool _isPinned;
 
     public ResolverItemViewModel(DnsServerDefinition definition, ResolverMetadata? metadata, string? userRegion)
     {
@@ -456,6 +497,29 @@ internal sealed partial class ResolverItemViewModel : ObservableObject
         return Endpoint.Contains(needle, StringComparison.OrdinalIgnoreCase)
             || Provider.Contains(needle, StringComparison.OrdinalIgnoreCase)
             || Protocol.Contains(needle, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [RelayCommand]
+    private void TogglePin() => IsPinned = !IsPinned;
+
+    [RelayCommand]
+    private Task CopyAddress() => CopyToClipboardAsync(Definition.AddressOrHost);
+
+    [RelayCommand]
+    private Task CopyProvider() => CopyToClipboardAsync(Provider);
+
+    private static async Task CopyToClipboardAsync(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(text).ConfigureAwait(false);
+        }
     }
 }
 

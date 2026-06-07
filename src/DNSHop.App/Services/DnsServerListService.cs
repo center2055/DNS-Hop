@@ -281,6 +281,78 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("176.34.8.52", "WatchGuard DNSWatch (managed)"),
             DnsServerDefinition.CreateUdpTcp("13.237.104.38", "WatchGuard DNSWatch (managed)"),
             DnsServerDefinition.CreateUdpTcp("13.237.109.176", "WatchGuard DNSWatch (managed)"),
+
+            // --- CIRA Canadian Shield (Canada) ---
+            DnsServerDefinition.CreateUdpTcp("149.112.121.10", "CIRA Canadian Shield"),
+            DnsServerDefinition.CreateUdpTcp("149.112.122.10", "CIRA Canadian Shield"),
+            DnsServerDefinition.CreateUdpTcp("2620:10a:80bb::10", "CIRA Canadian Shield"),
+            DnsServerDefinition.CreateUdpTcp("2620:10a:80bc::10", "CIRA Canadian Shield"),
+            DnsServerDefinition.CreateDoh("https://private.canadianshield.cira.ca/dns-query", "CIRA Canadian Shield"),
+            DnsServerDefinition.CreateDot("private.canadianshield.cira.ca", "private.canadianshield.cira.ca", "CIRA Canadian Shield"),
+            DnsServerDefinition.CreateUdpTcp("149.112.121.20", "CIRA Canadian Shield Protected"),
+            DnsServerDefinition.CreateUdpTcp("149.112.122.20", "CIRA Canadian Shield Protected"),
+            DnsServerDefinition.CreateDoh("https://protected.canadianshield.cira.ca/dns-query", "CIRA Canadian Shield Protected"),
+            DnsServerDefinition.CreateDot("protected.canadianshield.cira.ca", "protected.canadianshield.cira.ca", "CIRA Canadian Shield Protected"),
+            DnsServerDefinition.CreateUdpTcp("149.112.121.30", "CIRA Canadian Shield Family"),
+            DnsServerDefinition.CreateUdpTcp("149.112.122.30", "CIRA Canadian Shield Family"),
+            DnsServerDefinition.CreateDoh("https://family.canadianshield.cira.ca/dns-query", "CIRA Canadian Shield Family"),
+            DnsServerDefinition.CreateDot("family.canadianshield.cira.ca", "family.canadianshield.cira.ca", "CIRA Canadian Shield Family"),
+
+            // --- DNS4EU (European Union public resolver) ---
+            DnsServerDefinition.CreateUdpTcp("86.54.11.1", "DNS4EU"),
+            DnsServerDefinition.CreateUdpTcp("86.54.11.201", "DNS4EU"),
+            DnsServerDefinition.CreateUdpTcp("2a13:1001::86:54:11:1", "DNS4EU"),
+            DnsServerDefinition.CreateDoh("https://protective.joindns4.eu/dns-query", "DNS4EU"),
+            DnsServerDefinition.CreateDot("protective.joindns4.eu", "protective.joindns4.eu", "DNS4EU"),
+            DnsServerDefinition.CreateUdpTcp("86.54.11.13", "DNS4EU No-Ads"),
+            DnsServerDefinition.CreateDoh("https://noads.joindns4.eu/dns-query", "DNS4EU No-Ads"),
+            DnsServerDefinition.CreateDot("noads.joindns4.eu", "noads.joindns4.eu", "DNS4EU No-Ads"),
+            DnsServerDefinition.CreateUdpTcp("86.54.11.12", "DNS4EU Child"),
+            DnsServerDefinition.CreateDoh("https://child.joindns4.eu/dns-query", "DNS4EU Child"),
+            DnsServerDefinition.CreateDot("child.joindns4.eu", "child.joindns4.eu", "DNS4EU Child"),
+            DnsServerDefinition.CreateUdpTcp("86.54.11.100", "DNS4EU Unfiltered"),
+            DnsServerDefinition.CreateDoh("https://unfiltered.joindns4.eu/dns-query", "DNS4EU Unfiltered"),
+            DnsServerDefinition.CreateDot("unfiltered.joindns4.eu", "unfiltered.joindns4.eu", "DNS4EU Unfiltered"),
+
+            // --- RethinkDNS (serverless, configurable blocklists) ---
+            DnsServerDefinition.CreateDoh("https://sky.rethinkdns.com/dns-query", "RethinkDNS Sky"),
+            DnsServerDefinition.CreateDoh("https://max.rethinkdns.com/dns-query", "RethinkDNS Max"),
+            DnsServerDefinition.CreateDot("sky.rethinkdns.com", "sky.rethinkdns.com", "RethinkDNS Sky"),
+
+            // --- OpenBLD.net (ad / tracker / malware blocking, DoH+DoT only) ---
+            DnsServerDefinition.CreateDoh("https://ada.openbld.net/dns-query", "OpenBLD"),
+            DnsServerDefinition.CreateDot("ada.openbld.net", "ada.openbld.net", "OpenBLD"),
+            DnsServerDefinition.CreateDoh("https://ric.openbld.net/dns-query", "OpenBLD Strict"),
+            DnsServerDefinition.CreateDot("ric.openbld.net", "ric.openbld.net", "OpenBLD Strict"),
+
+            // --- RESTENA (Luxembourg) ---
+            DnsServerDefinition.CreateUdpTcp("158.64.1.29", "RESTENA"),
+            DnsServerDefinition.CreateUdpTcp("2001:a18:1::29", "RESTENA"),
+            DnsServerDefinition.CreateDoh("https://dnspub.restena.lu/dns-query", "RESTENA"),
+            DnsServerDefinition.CreateDot("dnspub.restena.lu", "dnspub.restena.lu", "RESTENA"),
+
+            // --- LibreDNS (LibreOps) ---
+            DnsServerDefinition.CreateUdpTcp("116.202.176.26", "LibreDNS"),
+            DnsServerDefinition.CreateUdpTcp("2a01:4f8:1c0c:8274::1", "LibreDNS"),
+            DnsServerDefinition.CreateDoh("https://doh.libredns.gr/dns-query", "LibreDNS"),
+            DnsServerDefinition.CreateDoh("https://doh.libredns.gr/noads", "LibreDNS No-Ads"),
+            DnsServerDefinition.CreateDot("dot.libredns.gr", "dot.libredns.gr", "LibreDNS"),
+
+            // --- SWITCH Public DNS (Switzerland) ---
+            DnsServerDefinition.CreateUdpTcp("130.59.31.248", "SWITCH"),
+            DnsServerDefinition.CreateUdpTcp("130.59.31.251", "SWITCH"),
+            DnsServerDefinition.CreateUdpTcp("2001:620:0:ff::2", "SWITCH"),
+            DnsServerDefinition.CreateUdpTcp("2001:620:0:ff::3", "SWITCH"),
+            DnsServerDefinition.CreateDoh("https://dns.switch.ch/dns-query", "SWITCH"),
+            DnsServerDefinition.CreateDot("dns.switch.ch", "dns.switch.ch", "SWITCH"),
+
+            // --- DNS over QUIC (RFC 9250) ---
+            DnsServerDefinition.CreateDoq("dns.adguard-dns.com", "AdGuard"),
+            DnsServerDefinition.CreateDoq("unfiltered.adguard-dns.com", "AdGuard Unfiltered"),
+            DnsServerDefinition.CreateDoq("family.adguard-dns.com", "AdGuard Family"),
+            DnsServerDefinition.CreateDoq("dns0.eu", "DNS0.EU"),
+            DnsServerDefinition.CreateDoq("zero.dns0.eu", "DNS0.EU Zero"),
+            DnsServerDefinition.CreateDoq("open.dns0.eu", "DNS0.EU Open"),
         ];
     }
 

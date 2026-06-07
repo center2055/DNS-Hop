@@ -29,6 +29,7 @@ public sealed class DnsServerDefinition
     public string EndpointDisplay => Protocol switch
     {
         DnsProtocol.Doh => DohEndpoint ?? AddressOrHost,
+        DnsProtocol.Doq => $"quic://{AddressOrHost}:{Port}",
         _ => $"{AddressOrHost}:{Port}",
     };
 
@@ -68,6 +69,21 @@ public sealed class DnsServerDefinition
             Protocol = DnsProtocol.Dot,
             AddressOrHost = ipOrHost,
             DotTlsHost = tlsHost,
+            Port = port,
+        };
+    }
+
+    // DNS over QUIC (RFC 9250). host is the QUIC endpoint (resolved + used for SNI
+    // unless tlsHost overrides it); the standard DoQ port is 853.
+    public static DnsServerDefinition CreateDoq(string host, string provider, string? tlsHost = null, int port = 853)
+    {
+        return new DnsServerDefinition
+        {
+            DisplayName = host,
+            Provider = provider,
+            Protocol = DnsProtocol.Doq,
+            AddressOrHost = host,
+            DotTlsHost = tlsHost ?? host,
             Port = port,
         };
     }
