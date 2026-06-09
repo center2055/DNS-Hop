@@ -21,7 +21,13 @@ public sealed class LocalizationService : ILocalizationService
         new("fr", "Français", "French"),
         new("ru", "Русский", "Russian"),
         new("zh-CN", "简体中文", "Chinese (Simplified)"),
+        new("fa", "فارسی", "Persian"),
+        new("ckb", "کوردیی ناوەندی", "Central Kurdish"),
+        new("azb", "تۆرکجه", "South Azerbaijani"),
     ];
+
+    private static readonly HashSet<string> RightToLeftCultures =
+        new(StringComparer.OrdinalIgnoreCase) { "fa", "ckb", "azb" };
 
     private readonly Dictionary<string, Dictionary<string, string>> _bundles = new(StringComparer.OrdinalIgnoreCase);
     private string _currentCulture = "en";
@@ -52,6 +58,8 @@ public sealed class LocalizationService : ILocalizationService
     public event EventHandler? CultureChanged;
 
     public string CurrentCulture => _currentCulture;
+
+    public bool IsRightToLeft => RightToLeftCultures.Contains(_currentCulture);
 
     public IReadOnlyList<LanguageDescriptor> AvailableLanguages => Languages;
 
@@ -110,9 +118,21 @@ public sealed class LocalizationService : ILocalizationService
     public static string DetectSystemCulture()
     {
         var ui = CultureInfo.CurrentUICulture;
-        if (ui.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+        var name = ui.Name;
+        if (name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
         {
             return "zh-CN";
+        }
+
+        // Three-letter / script-qualified codes win before the two-letter fallback below.
+        if (name.StartsWith("ckb", StringComparison.OrdinalIgnoreCase))
+        {
+            return "ckb";
+        }
+
+        if (name.StartsWith("azb", StringComparison.OrdinalIgnoreCase))
+        {
+            return "azb";
         }
 
         return ui.TwoLetterISOLanguageName.ToLowerInvariant() switch
@@ -120,6 +140,9 @@ public sealed class LocalizationService : ILocalizationService
             "de" => "de",
             "fr" => "fr",
             "ru" => "ru",
+            "fa" => "fa",
+            "az" => "azb",
+            "ku" => "ckb",
             _ => "en",
         };
     }

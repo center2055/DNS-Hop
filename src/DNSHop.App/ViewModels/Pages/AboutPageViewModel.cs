@@ -1,8 +1,11 @@
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DNSHop.App.Services;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace DNSHop.App.ViewModels.Pages;
 
@@ -24,6 +27,8 @@ internal sealed partial class AboutPageViewModel : PageViewModel
     public string IssuesUrl => AppReleaseService.IssuesUrl;
     public string DiscordUrl => AppReleaseService.DiscordUrl;
     public string KoFiUrl => AppReleaseService.KoFiUrl;
+    public string TelegramUrl => AppReleaseService.TelegramUrl;
+    public string DonationAddress => AppReleaseService.DonationAddress;
 
     [RelayCommand]
     private void OpenRepository() => OpenUrl(RepositoryUrl);
@@ -36,6 +41,24 @@ internal sealed partial class AboutPageViewModel : PageViewModel
 
     [RelayCommand]
     private void OpenKoFi() => OpenUrl(KoFiUrl);
+
+    [RelayCommand]
+    private void OpenTelegram() => OpenUrl(TelegramUrl);
+
+    [RelayCommand]
+    private async Task CopyDonationAddressAsync()
+    {
+        if (string.IsNullOrWhiteSpace(DonationAddress))
+        {
+            return;
+        }
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(DonationAddress).ConfigureAwait(false);
+        }
+    }
 
     private static void OpenUrl(string url)
     {

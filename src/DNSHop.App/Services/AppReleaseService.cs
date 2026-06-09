@@ -19,6 +19,8 @@ internal sealed class AppReleaseService
     public const string IssuesUrl = "https://github.com/center2055/DNS-Hop/issues";
     public const string DiscordUrl = "https://discord.gg/y3MVspPzKQ";
     public const string KoFiUrl = "https://ko-fi.com/center2055";
+    public const string TelegramUrl = "https://t.me/centerhop";
+    public const string DonationAddress = "bc1q0gvnvrr0a64kpxylwgqkvlp5gt4c48jqxy9jy2";
 
     private const string ReleasesApiUrl = "https://api.github.com/repos/center2055/DNS-Hop/releases?per_page=12";
     private static readonly Regex VersionRegex = new(

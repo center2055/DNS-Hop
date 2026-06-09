@@ -10,6 +10,8 @@ public interface ILocalizationService : INotifyPropertyChanged
 
     string CurrentCulture { get; }
 
+    bool IsRightToLeft { get; }
+
     IReadOnlyList<LanguageDescriptor> AvailableLanguages { get; }
 
     void SetCulture(string culture);

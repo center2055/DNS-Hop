@@ -77,5 +77,7 @@
   { "key": "AdGuard Unfiltered", "provider": "AdGuard Unfiltered", "countryCode": "CY", "regions": ["EU", "AS"], "noLogs": true },
   { "key": "DNS0.EU", "provider": "DNS0.EU", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "privacyPolicyUrl": "https://www.dns0.eu/privacy" },
   { "key": "DNS0.EU Zero", "provider": "DNS0.EU Zero", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true },
-  { "key": "DNS0.EU Open", "provider": "DNS0.EU Open", "countryCode": "EU", "regions": ["EU"], "noLogs": true }
+  { "key": "DNS0.EU Open", "provider": "DNS0.EU Open", "countryCode": "EU", "regions": ["EU"], "noLogs": true },
+
+  { "key": "ControlD Unfiltered", "provider": "ControlD Unfiltered", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://controld.com/privacy" }
 ]

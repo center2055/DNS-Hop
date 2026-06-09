@@ -100,7 +100,8 @@
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Text="{l10n:Localize Key=Home.QuickActions.CheckTampering}" FontWeight="SemiBold" />
                 <TextBlock Text="{l10n:Localize Key=Home.QuickActions.CheckTampering.Description}" Classes="Caption" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding LeakTestStatus}" Classes="Caption" />
+                <TextBlock Text="{Binding LeakTestStatus}" Classes="Caption"
+                           IsVisible="{Binding LeakTestStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>
               <ui:FontIcon Grid.Column="2" Glyph="" FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             </Grid>

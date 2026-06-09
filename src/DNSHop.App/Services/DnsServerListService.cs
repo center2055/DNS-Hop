@@ -126,7 +126,6 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("149.112.112.112", "Quad9"),
             DnsServerDefinition.CreateUdpTcp("208.67.222.222", "OpenDNS"),
             DnsServerDefinition.CreateUdpTcp("208.67.220.220", "OpenDNS"),
-            DnsServerDefinition.CreateUdpTcp("76.76.2.0", "ControlD"),
             DnsServerDefinition.CreateUdpTcp("95.85.95.85", "Gcore"),
             DnsServerDefinition.CreateUdpTcp("2.56.220.2", "Gcore"),
             DnsServerDefinition.CreateUdpTcp("194.169.169.169", "Surfshark"),
@@ -345,6 +344,13 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("2001:620:0:ff::3", "SWITCH"),
             DnsServerDefinition.CreateDoh("https://dns.switch.ch/dns-query", "SWITCH"),
             DnsServerDefinition.CreateDot("dns.switch.ch", "dns.switch.ch", "SWITCH"),
+
+            // --- ControlD (free unfiltered resolver, "more public than public") ---
+            DnsServerDefinition.CreateUdpTcp("76.76.2.0", "ControlD Unfiltered"),
+            DnsServerDefinition.CreateUdpTcp("76.76.10.0", "ControlD Unfiltered"),
+            DnsServerDefinition.CreateDoh("https://freedns.controld.com/p0", "ControlD Unfiltered"),
+            DnsServerDefinition.CreateDot("p0.freedns.controld.com", "p0.freedns.controld.com", "ControlD Unfiltered"),
+            DnsServerDefinition.CreateDoq("p0.freedns.controld.com", "ControlD Unfiltered"),
 
             // --- DNS over QUIC (RFC 9250) ---
             DnsServerDefinition.CreateDoq("dns.adguard-dns.com", "AdGuard"),

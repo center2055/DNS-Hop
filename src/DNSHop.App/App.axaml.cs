@@ -39,6 +39,13 @@ public partial class App : Application
                 DataContext = shell,
             };
 
+            // Mirror the layout for right-to-left languages (Persian/Kurdish/Azerbaijani) and keep it
+            // in sync when the language changes at runtime. FlowDirection is inherited, so setting it
+            // on the window flips the whole control tree.
+            ApplyFlowDirection(window, services.Localization);
+            services.Localization.CultureChanged += (_, _) =>
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyFlowDirection(window, services.Localization));
+
             window.Closing += (_, _) =>
             {
                 Task.Run(shell.PersistAll);
@@ -95,6 +102,13 @@ public partial class App : Application
             LeakTest = new DnsLeakTestService(),
             AppState = appState,
         };
+    }
+
+    private static void ApplyFlowDirection(Avalonia.Controls.Window window, ILocalizationService localization)
+    {
+        window.FlowDirection = localization.IsRightToLeft
+            ? Avalonia.Media.FlowDirection.RightToLeft
+            : Avalonia.Media.FlowDirection.LeftToRight;
     }
 
     private static void DisableAvaloniaDataAnnotationValidation()
