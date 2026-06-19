@@ -317,6 +317,7 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://sky.rethinkdns.com/dns-query", "RethinkDNS Sky"),
             DnsServerDefinition.CreateDoh("https://max.rethinkdns.com/dns-query", "RethinkDNS Max"),
             DnsServerDefinition.CreateDot("sky.rethinkdns.com", "sky.rethinkdns.com", "RethinkDNS Sky"),
+            DnsServerDefinition.CreateDot("max.rethinkdns.com", "max.rethinkdns.com", "RethinkDNS Max"),
 
             // --- OpenBLD.net (ad / tracker / malware blocking, DoH+DoT only) ---
             DnsServerDefinition.CreateDoh("https://ada.openbld.net/dns-query", "OpenBLD"),
@@ -345,6 +346,39 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://dns.switch.ch/dns-query", "SWITCH"),
             DnsServerDefinition.CreateDot("dns.switch.ch", "dns.switch.ch", "SWITCH"),
 
+            // --- Mullvad (additional filtered profiles over DoH + DoT) ---
+            DnsServerDefinition.CreateDoh("https://base.dns.mullvad.net/dns-query", "Mullvad Base"),
+            DnsServerDefinition.CreateDot("base.dns.mullvad.net", "base.dns.mullvad.net", "Mullvad Base"),
+            DnsServerDefinition.CreateDoh("https://extended.dns.mullvad.net/dns-query", "Mullvad Extended"),
+            DnsServerDefinition.CreateDot("extended.dns.mullvad.net", "extended.dns.mullvad.net", "Mullvad Extended"),
+            DnsServerDefinition.CreateDoh("https://family.dns.mullvad.net/dns-query", "Mullvad Family"),
+            DnsServerDefinition.CreateDot("family.dns.mullvad.net", "family.dns.mullvad.net", "Mullvad Family"),
+            DnsServerDefinition.CreateDoh("https://all.dns.mullvad.net/dns-query", "Mullvad All"),
+            DnsServerDefinition.CreateDot("all.dns.mullvad.net", "all.dns.mullvad.net", "Mullvad All"),
+
+            // --- NordVPN (Nord Threat Protection public encrypted DNS) ---
+            // CyberSec: blocks ads, malware and tracking.
+            DnsServerDefinition.CreateUdpTcp("103.86.96.108", "NordVPN CyberSec"),
+            DnsServerDefinition.CreateUdpTcp("103.86.99.108", "NordVPN CyberSec"),
+            DnsServerDefinition.CreateDoh("https://dns-cybersec.nordthreatprotection.com/dns-query", "NordVPN CyberSec"),
+            DnsServerDefinition.CreateDot("dns-cybersec.nordthreatprotection.com", "dns-cybersec.nordthreatprotection.com", "NordVPN CyberSec"),
+            DnsServerDefinition.CreateDoq("dns-cybersec.nordthreatprotection.com", "NordVPN CyberSec"),
+            // MalwareSec: blocks malware only (allows ads).
+            DnsServerDefinition.CreateUdpTcp("103.86.96.107", "NordVPN MalwareSec"),
+            DnsServerDefinition.CreateUdpTcp("103.86.99.107", "NordVPN MalwareSec"),
+            DnsServerDefinition.CreateDoh("https://dns-malwaresec.nordthreatprotection.com/dns-query", "NordVPN MalwareSec"),
+            DnsServerDefinition.CreateDot("dns-malwaresec.nordthreatprotection.com", "dns-malwaresec.nordthreatprotection.com", "NordVPN MalwareSec"),
+            DnsServerDefinition.CreateDoq("dns-malwaresec.nordthreatprotection.com", "NordVPN MalwareSec"),
+            // Family: blocks ads, malware and adult content.
+            DnsServerDefinition.CreateUdpTcp("103.86.96.111", "NordVPN Family"),
+            DnsServerDefinition.CreateUdpTcp("103.86.99.111", "NordVPN Family"),
+            DnsServerDefinition.CreateDoh("https://dns-adultsites-cybersec.nordthreatprotection.com/dns-query", "NordVPN Family"),
+            DnsServerDefinition.CreateDot("dns-adultsites-cybersec.nordthreatprotection.com", "dns-adultsites-cybersec.nordthreatprotection.com", "NordVPN Family"),
+            DnsServerDefinition.CreateDoq("dns-adultsites-cybersec.nordthreatprotection.com", "NordVPN Family"),
+            // Standard NordVPN resolver pair (no third-party filtering).
+            DnsServerDefinition.CreateUdpTcp("103.86.96.100", "NordVPN"),
+            DnsServerDefinition.CreateUdpTcp("103.86.99.100", "NordVPN"),
+
             // --- ControlD (free unfiltered resolver, "more public than public") ---
             DnsServerDefinition.CreateUdpTcp("76.76.2.0", "ControlD Unfiltered"),
             DnsServerDefinition.CreateUdpTcp("76.76.10.0", "ControlD Unfiltered"),
@@ -353,6 +387,10 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoq("p0.freedns.controld.com", "ControlD Unfiltered"),
 
             // --- DNS over QUIC (RFC 9250) ---
+            DnsServerDefinition.CreateDoq("dns.quad9.net", "Quad9"),
+            DnsServerDefinition.CreateDoq("dns9.quad9.net", "Quad9 (No ECS)"),
+            DnsServerDefinition.CreateDoq("dns10.quad9.net", "Quad9 Unsecured"),
+            DnsServerDefinition.CreateDoq("dns11.quad9.net", "Quad9 (ECS)"),
             DnsServerDefinition.CreateDoq("dns.adguard-dns.com", "AdGuard"),
             DnsServerDefinition.CreateDoq("unfiltered.adguard-dns.com", "AdGuard Unfiltered"),
             DnsServerDefinition.CreateDoq("family.adguard-dns.com", "AdGuard Family"),
@@ -812,6 +850,12 @@ public sealed partial class DnsServerListService
         if (ipAddress.StartsWith("76.76.", StringComparison.Ordinal))
         {
             return "ControlD";
+        }
+
+        if (ipAddress.StartsWith("103.86.96.", StringComparison.Ordinal)
+            || ipAddress.StartsWith("103.86.99.", StringComparison.Ordinal))
+        {
+            return "NordVPN";
         }
 
         if (ipAddress.StartsWith("94.140.", StringComparison.Ordinal))

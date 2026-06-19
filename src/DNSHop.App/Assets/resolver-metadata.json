@@ -79,5 +79,19 @@
   { "key": "DNS0.EU Zero", "provider": "DNS0.EU Zero", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true },
   { "key": "DNS0.EU Open", "provider": "DNS0.EU Open", "countryCode": "EU", "regions": ["EU"], "noLogs": true },
 
-  { "key": "ControlD Unfiltered", "provider": "ControlD Unfiltered", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://controld.com/privacy" }
+  { "key": "ControlD Unfiltered", "provider": "ControlD Unfiltered", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://controld.com/privacy" },
+
+  { "key": "NordVPN", "provider": "NordVPN", "countryCode": "PA", "regions": ["GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://nordvpn.com/privacy-policy/" },
+  { "key": "NordVPN CyberSec", "provider": "NordVPN CyberSec", "countryCode": "PA", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true, "blocksMalware": true },
+  { "key": "NordVPN MalwareSec", "provider": "NordVPN MalwareSec", "countryCode": "PA", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
+  { "key": "NordVPN Family", "provider": "NordVPN Family", "countryCode": "PA", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true, "blocksMalware": true, "blocksAdult": true },
+
+  { "key": "Mullvad Base", "provider": "Mullvad Base", "countryCode": "SE", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+  { "key": "Mullvad Extended", "provider": "Mullvad Extended", "countryCode": "SE", "regions": ["EU"], "noLogs": true, "blocksAds": true, "blocksMalware": true },
+  { "key": "Mullvad Family", "provider": "Mullvad Family", "countryCode": "SE", "regions": ["EU"], "noLogs": true, "blocksAds": true, "blocksMalware": true, "blocksAdult": true },
+  { "key": "Mullvad All", "provider": "Mullvad All", "countryCode": "SE", "regions": ["EU"], "noLogs": true, "blocksAds": true, "blocksMalware": true, "blocksAdult": true },
+
+  { "key": "Quad9 (No ECS)", "provider": "Quad9 (No ECS)", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
+  { "key": "Quad9 Unsecured", "provider": "Quad9 Unsecured", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true },
+  { "key": "Quad9 (ECS)", "provider": "Quad9 (ECS)", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true }
 ]
