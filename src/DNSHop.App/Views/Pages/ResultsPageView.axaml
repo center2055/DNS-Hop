@@ -149,11 +149,14 @@
         <TextBlock Classes="GroupHeader" Text="All resolvers" />
 
         <Border Classes="CardSecondary">
-          <Grid ColumnDefinitions="Auto,180,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+          <Grid ColumnDefinitions="Auto,180,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Sort by" VerticalAlignment="Center" Classes="Caption" />
             <ComboBox Grid.Row="0" Grid.Column="1"
                       ItemsSource="{Binding AvailableSortModes}"
                       SelectedItem="{Binding SortMode, Mode=TwoWay}" />
+            <TextBox Grid.Row="0" Grid.Column="2"
+                     Text="{Binding SearchText, Mode=TwoWay}"
+                     Watermark="{l10n:Localize Key=Resolvers.Filter}" />
             <WrapPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" ItemSpacing="14" ItemHeight="32">
               <CheckBox Content="Hide dead" IsChecked="{Binding HideDead, Mode=TwoWay}" />
               <CheckBox Content="Hide redirecting" IsChecked="{Binding HideRedirecting, Mode=TwoWay}" />
@@ -188,6 +191,13 @@
             <DataTemplate x:DataType="vm:ResolverRowViewModel">
               <Border Classes="SettingRow ResultRow">
                 <Grid ColumnDefinitions="Auto,2*,3*,Auto,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+                  <Grid.ContextFlyout>
+                    <MenuFlyout>
+                      <MenuItem Header="{l10n:Localize Key=Resolvers.Action.CopyIp}" Command="{Binding CopyAddressCommand}" />
+                      <MenuItem Header="Copy endpoint" Command="{Binding CopyEndpointCommand}" />
+                      <MenuItem Header="Copy provider" Command="{Binding CopyProviderCommand}" />
+                    </MenuFlyout>
+                  </Grid.ContextFlyout>
                   <Border Grid.Column="0"
                           Classes="StatusDot"
                           Classes.Healthy="{Binding IsHealthy}"

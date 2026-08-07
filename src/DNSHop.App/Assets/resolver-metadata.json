@@ -93,5 +93,53 @@
 
   { "key": "Quad9 (No ECS)", "provider": "Quad9 (No ECS)", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
   { "key": "Quad9 Unsecured", "provider": "Quad9 Unsecured", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true },
-  { "key": "Quad9 (ECS)", "provider": "Quad9 (ECS)", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true }
+  { "key": "Quad9 (ECS)", "provider": "Quad9 (ECS)", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
+  { "key": "Quad9 (ECS, malware)", "provider": "Quad9 (ECS, malware)", "countryCode": "CH", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
+
+  { "key": "UncensoredDNS", "provider": "UncensoredDNS", "countryCode": "DK", "regions": ["EU", "GLOBAL"], "noLogs": true, "privacyPolicyUrl": "https://blog.uncensoreddns.org/" },
+  { "key": "UncensoredDNS Unicast", "provider": "UncensoredDNS Unicast", "countryCode": "DK", "regions": ["EU"], "noLogs": true },
+  { "key": "Digitalcourage", "provider": "Digitalcourage", "countryCode": "DE", "regions": ["EU"], "noLogs": true, "privacyPolicyUrl": "https://digitalcourage.de/support/zensurfreier-dns-server" },
+  { "key": "Artikel10", "provider": "Artikel10", "countryCode": "DE", "regions": ["EU"], "noLogs": true, "privacyPolicyUrl": "https://dns.artikel10.org/" },
+  { "key": "DNSFilter", "provider": "DNSFilter", "countryCode": "US", "regions": ["GLOBAL"], "blocksMalware": true },
+  { "key": "FlashStart", "provider": "FlashStart", "countryCode": "IT", "regions": ["EU", "GLOBAL"], "blocksMalware": true },
+
+  { "key": "Cloudflare Security", "provider": "Cloudflare Security", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
+  { "key": "Cloudflare Family", "provider": "Cloudflare Family", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true, "blocksAdult": true },
+  { "key": "Cloudflare DNS64", "provider": "Cloudflare DNS64", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true },
+  { "key": "Google DNS64", "provider": "Google DNS64", "countryCode": "US", "regions": ["GLOBAL"] },
+
+  { "key": "CleanBrowsing Security", "provider": "CleanBrowsing Security", "countryCode": "US", "regions": ["GLOBAL"], "blocksMalware": true },
+  { "key": "CleanBrowsing Family", "provider": "CleanBrowsing Family", "countryCode": "US", "regions": ["GLOBAL"], "blocksMalware": true, "blocksAdult": true },
+  { "key": "CleanBrowsing Adult", "provider": "CleanBrowsing Adult", "countryCode": "US", "regions": ["GLOBAL"], "blocksAdult": true },
+
+  { "key": "ControlD Uncensored", "provider": "ControlD Uncensored", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true },
+  { "key": "ControlD Ad Blocking", "provider": "ControlD Ad Blocking", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true },
+  { "key": "ControlD Ads + Tracking", "provider": "ControlD Ads + Tracking", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true },
+  { "key": "ControlD Family", "provider": "ControlD Family", "countryCode": "CA", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true, "blocksAdult": true },
+
+  { "key": "CZ.NIC ODVR", "provider": "CZ.NIC ODVR", "countryCode": "CZ", "regions": ["EU"], "noLogs": true },
+  { "key": "CERT Estonia", "provider": "CERT Estonia", "countryCode": "EE", "regions": ["EU"], "blocksMalware": true },
+  { "key": "Belnet", "provider": "Belnet", "countryCode": "BE", "regions": ["EU"] },
+  { "key": "DNS4all", "provider": "DNS4all", "countryCode": "NL", "regions": ["EU"], "noLogs": true },
+  { "key": "Sunet", "provider": "Sunet", "countryCode": "SE", "regions": ["EU"], "noLogs": true },
+  { "key": "NIC.LV", "provider": "NIC.LV", "countryCode": "LV", "regions": ["EU"] },
+  { "key": "domreg.lt", "provider": "domreg.lt", "countryCode": "LT", "regions": ["EU"] },
+  { "key": "Andrews & Arnold", "provider": "Andrews & Arnold", "countryCode": "GB", "regions": ["EU"], "noLogs": true },
+
+  { "key": "La Contre-Voie", "provider": "La Contre-Voie", "countryCode": "FR", "regions": ["EU"], "noLogs": true },
+  { "key": "Aquilenet", "provider": "Aquilenet", "countryCode": "FR", "regions": ["EU"], "noLogs": true },
+  { "key": "Hostux", "provider": "Hostux", "countryCode": "LU", "regions": ["EU"], "noLogs": true },
+  { "key": "Hostux No-Ads", "provider": "Hostux No-Ads", "countryCode": "LU", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+  { "key": "Njalla", "provider": "Njalla", "countryCode": "SE", "regions": ["EU"], "noLogs": true },
+  { "key": "Comss.one", "provider": "Comss.one", "countryCode": "RU", "regions": ["EU"], "blocksAds": true },
+  { "key": "Usable Privacy", "provider": "Usable Privacy", "countryCode": "AT", "regions": ["EU"], "noLogs": true, "blocksAds": true },
+  { "key": "Telekom", "provider": "Telekom", "countryCode": "DE", "regions": ["EU"] },
+  { "key": "Seby", "provider": "Seby", "countryCode": "AU", "regions": ["AS"], "noLogs": true },
+  { "key": "Tiarap", "provider": "Tiarap", "countryCode": "SG", "regions": ["AS"], "noLogs": true, "blocksAds": true },
+  { "key": "In-Berlin", "provider": "In-Berlin", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "dnsHome.de", "provider": "dnsHome.de", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "Kernel Error", "provider": "Kernel Error", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
+  { "key": "Disconnect", "provider": "Disconnect", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true },
+  { "key": "Blue Shield Umbrella", "provider": "Blue Shield Umbrella", "countryCode": "AT", "regions": ["EU"], "blocksMalware": true },
+  { "key": "DNS4EU Child No-Ads", "provider": "DNS4EU Child No-Ads", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true, "blocksAdult": true }
 ]

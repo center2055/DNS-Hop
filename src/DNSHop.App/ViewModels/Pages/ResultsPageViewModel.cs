@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DNSHop.App.Models;
@@ -63,6 +65,9 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
 
     [ObservableProperty]
     private bool _hidePoisoned;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
 
     public ResultsPageViewModel(AppServices services) : base("Results", "Results.Title")
     {
@@ -150,6 +155,7 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
     partial void OnHideRedirectingChanged(bool value) => Refresh();
     partial void OnDnssecOnlyChanged(bool value) => Refresh();
     partial void OnHidePoisonedChanged(bool value) => Refresh();
+    partial void OnSearchTextChanged(string value) => Refresh();
 
     private void Refresh()
     {
@@ -179,6 +185,16 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
         if (HideRedirecting) { filtered = filtered.Where(r => r.Status != DnsServerStatus.Redirecting && !r.RedirectsNxDomain); }
         if (DnssecOnly) { filtered = filtered.Where(r => r.SupportsDnssec); }
         if (HidePoisoned) { filtered = filtered.Where(r => r.PoisoningConfidence < 0.5); }
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim();
+            filtered = filtered.Where(r =>
+                r.Server.Provider.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || r.Server.EndpointDisplay.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || r.Server.AddressOrHost.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || r.Server.Protocol.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
 
         var ordered = SortMode switch
         {
@@ -230,7 +246,7 @@ internal sealed partial class ResultsPageViewModel : PageViewModel
     }
 }
 
-internal sealed class ResolverRowViewModel
+internal sealed partial class ResolverRowViewModel
 {
     public ResolverRowViewModel(DnsBenchmarkResult result, double range, double fastest, double scaleMs)
     {
@@ -287,6 +303,29 @@ internal sealed class ResolverRowViewModel
     public bool IsHealthy { get; }
     public bool IsRedirecting { get; }
     public bool IsDead { get; }
+
+    [RelayCommand]
+    private Task CopyAddress() => CopyToClipboardAsync(Server.AddressOrHost);
+
+    [RelayCommand]
+    private Task CopyEndpoint() => CopyToClipboardAsync(Endpoint);
+
+    [RelayCommand]
+    private Task CopyProvider() => CopyToClipboardAsync(Provider);
+
+    private static async Task CopyToClipboardAsync(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(text).ConfigureAwait(false);
+        }
+    }
 }
 
 internal sealed class ResolverPickViewModel

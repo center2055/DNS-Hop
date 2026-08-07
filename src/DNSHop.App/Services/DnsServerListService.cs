@@ -16,7 +16,7 @@ public sealed partial class DnsServerListService
 {
     private static readonly Uri PublicResolverFeed = new("https://public-dns.info/nameservers-all.json");
     private static readonly TimeSpan RemoteFeedTimeout = TimeSpan.FromSeconds(4);
-    private const int MaxNormalizedServers = 260;
+    private const int MaxNormalizedServers = 420;
     private const int MaxRemoteFeedServers = 18;
     private const int CancellationCheckInterval = 64;
 
@@ -134,8 +134,8 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("68.105.29.16", "Cox"),
             DnsServerDefinition.CreateUdpTcp("216.146.35.35", "Dyn (Oracle)"),
             DnsServerDefinition.CreateUdpTcp("216.146.36.36", "Dyn (Oracle)"),
-            DnsServerDefinition.CreateUdpTcp("64.6.64.6", "UltraDNS"),
-            DnsServerDefinition.CreateUdpTcp("64.6.65.6", "UltraDNS"),
+            DnsServerDefinition.CreateUdpTcp("64.6.64.6", "Verisign"),
+            DnsServerDefinition.CreateUdpTcp("64.6.65.6", "Verisign"),
             DnsServerDefinition.CreateUdpTcp("46.227.200.54", "FAELIX"),
             DnsServerDefinition.CreateUdpTcp("46.227.200.55", "FAELIX"),
             DnsServerDefinition.CreateUdpTcp("2a01:9e00::54", "FAELIX"),
@@ -148,8 +148,6 @@ public sealed partial class DnsServerListService
             // --- Providers from publicdns.xyz ---
             DnsServerDefinition.CreateUdpTcp("209.244.0.3", "Level3"),
             DnsServerDefinition.CreateUdpTcp("209.244.0.4", "Level3"),
-            DnsServerDefinition.CreateUdpTcp("64.6.64.6", "UltraDNS"),
-            DnsServerDefinition.CreateUdpTcp("64.6.65.6", "UltraDNS"),
             DnsServerDefinition.CreateUdpTcp("8.26.56.26", "Comodo Secure"),
             DnsServerDefinition.CreateUdpTcp("8.20.247.20", "Comodo Secure"),
             DnsServerDefinition.CreateUdpTcp("84.200.69.80", "DNS.WATCH"),
@@ -166,8 +164,6 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("208.76.51.51", "SmartViper"),
             DnsServerDefinition.CreateUdpTcp("80.80.80.80", "Freenom World"),
             DnsServerDefinition.CreateUdpTcp("80.80.81.81", "Freenom World"),
-            DnsServerDefinition.CreateUdpTcp("216.146.35.35", "Dyn"),
-            DnsServerDefinition.CreateUdpTcp("216.146.36.36", "Dyn"),
             DnsServerDefinition.CreateUdpTcp("37.235.1.174", "FreeDNS"),
             DnsServerDefinition.CreateUdpTcp("37.235.1.177", "FreeDNS"),
             DnsServerDefinition.CreateUdpTcp("198.101.242.72", "Alternate DNS"),
@@ -385,6 +381,107 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://freedns.controld.com/p0", "ControlD Unfiltered"),
             DnsServerDefinition.CreateDot("p0.freedns.controld.com", "p0.freedns.controld.com", "ControlD Unfiltered"),
             DnsServerDefinition.CreateDoq("p0.freedns.controld.com", "ControlD Unfiltered"),
+
+            // --- UncensoredDNS (Denmark, no filtering or logging) ---
+            DnsServerDefinition.CreateUdpTcp("2001:67c:28a4::", "UncensoredDNS"),
+            DnsServerDefinition.CreateDoh("https://anycast.uncensoreddns.org/dns-query", "UncensoredDNS"),
+            DnsServerDefinition.CreateDot("anycast.uncensoreddns.org", "anycast.uncensoreddns.org", "UncensoredDNS"),
+            DnsServerDefinition.CreateUdpTcp("2a01:3a0:53:53::", "UncensoredDNS Unicast"),
+            DnsServerDefinition.CreateDoh("https://unicast.uncensoreddns.org/dns-query", "UncensoredDNS Unicast"),
+            DnsServerDefinition.CreateDot("unicast.uncensoreddns.org", "unicast.uncensoreddns.org", "UncensoredDNS Unicast"),
+
+            // --- Digitalcourage (Germany, censorship-free). DoT only: the operator does not run
+            // this resolver on port 53, so there is deliberately no plain-DNS entry. The IP-addressed
+            // DoT entry still works when the bootstrap lookup of the hostname itself is blocked. ---
+            DnsServerDefinition.CreateDot("dns3.digitalcourage.de", "dns3.digitalcourage.de", "Digitalcourage"),
+            DnsServerDefinition.CreateDot("5.9.164.112", "dns3.digitalcourage.de", "Digitalcourage"),
+
+            // --- Artikel10 e.V. (Germany, non-profit, no query logging) ---
+            DnsServerDefinition.CreateUdpTcp("217.197.91.153", "Artikel10"),
+            DnsServerDefinition.CreateUdpTcp("2001:67c:1401:2120::1", "Artikel10"),
+            DnsServerDefinition.CreateDoh("https://dns.artikel10.org/dns-query", "Artikel10"),
+            DnsServerDefinition.CreateDot("dns.artikel10.org", "dns.artikel10.org", "Artikel10"),
+
+            // --- DNSFilter ---
+            DnsServerDefinition.CreateUdpTcp("103.247.36.36", "DNSFilter"),
+            DnsServerDefinition.CreateUdpTcp("103.247.37.37", "DNSFilter"),
+            DnsServerDefinition.CreateUdpTcp("2402:5c40:5c40::3636", "DNSFilter"),
+            DnsServerDefinition.CreateUdpTcp("2402:5c40:5c41::3737", "DNSFilter"),
+
+            // --- FlashStart (Italy) ---
+            DnsServerDefinition.CreateUdpTcp("185.236.104.104", "FlashStart"),
+            DnsServerDefinition.CreateUdpTcp("185.236.105.105", "FlashStart"),
+            DnsServerDefinition.CreateUdpTcp("2a12:7bc0:104:104::", "FlashStart"),
+            DnsServerDefinition.CreateUdpTcp("2a12:7bc0:105:105::", "FlashStart"),
+
+            // --- Cloudflare filtered variants ---
+            DnsServerDefinition.CreateUdpTcp("1.1.1.2", "Cloudflare Security"),
+            DnsServerDefinition.CreateUdpTcp("1.0.0.2", "Cloudflare Security"),
+            DnsServerDefinition.CreateDoh("https://security.cloudflare-dns.com/dns-query", "Cloudflare Security"),
+            DnsServerDefinition.CreateDot("security.cloudflare-dns.com", "security.cloudflare-dns.com", "Cloudflare Security"),
+            DnsServerDefinition.CreateUdpTcp("1.1.1.3", "Cloudflare Family"),
+            DnsServerDefinition.CreateUdpTcp("1.0.0.3", "Cloudflare Family"),
+            DnsServerDefinition.CreateDoh("https://family.cloudflare-dns.com/dns-query", "Cloudflare Family"),
+            DnsServerDefinition.CreateDot("family.cloudflare-dns.com", "family.cloudflare-dns.com", "Cloudflare Family"),
+            DnsServerDefinition.CreateDoh("https://dns64.cloudflare-dns.com/dns-query", "Cloudflare DNS64"),
+            DnsServerDefinition.CreateDoh("https://dns64.dns.google/dns-query", "Google DNS64"),
+
+            // --- CleanBrowsing (filter tiers) ---
+            DnsServerDefinition.CreateUdpTcp("185.228.168.9", "CleanBrowsing Security"),
+            DnsServerDefinition.CreateUdpTcp("185.228.169.9", "CleanBrowsing Security"),
+            DnsServerDefinition.CreateDoh("https://doh.cleanbrowsing.org/doh/security-filter/", "CleanBrowsing Security"),
+            DnsServerDefinition.CreateUdpTcp("185.228.168.168", "CleanBrowsing Family"),
+            DnsServerDefinition.CreateUdpTcp("185.228.169.168", "CleanBrowsing Family"),
+            DnsServerDefinition.CreateDoh("https://doh.cleanbrowsing.org/doh/family-filter/", "CleanBrowsing Family"),
+            DnsServerDefinition.CreateUdpTcp("185.228.168.10", "CleanBrowsing Adult"),
+            DnsServerDefinition.CreateUdpTcp("185.228.169.11", "CleanBrowsing Adult"),
+            DnsServerDefinition.CreateDoh("https://doh.cleanbrowsing.org/doh/adult-filter/", "CleanBrowsing Adult"),
+
+            // --- ControlD additional free profiles (uncensored bypasses upstream blocklists) ---
+            DnsServerDefinition.CreateDoh("https://freedns.controld.com/uncensored", "ControlD Uncensored"),
+            DnsServerDefinition.CreateDot("uncensored.freedns.controld.com", "uncensored.freedns.controld.com", "ControlD Uncensored"),
+            DnsServerDefinition.CreateDoq("uncensored.freedns.controld.com", "ControlD Uncensored"),
+            DnsServerDefinition.CreateDoh("https://freedns.controld.com/p1", "ControlD Ad Blocking"),
+            DnsServerDefinition.CreateDot("p1.freedns.controld.com", "p1.freedns.controld.com", "ControlD Ad Blocking"),
+            DnsServerDefinition.CreateDoh("https://freedns.controld.com/p2", "ControlD Ads + Tracking"),
+            DnsServerDefinition.CreateDot("p2.freedns.controld.com", "p2.freedns.controld.com", "ControlD Ads + Tracking"),
+            DnsServerDefinition.CreateDoh("https://freedns.controld.com/family", "ControlD Family"),
+            DnsServerDefinition.CreateDot("family.freedns.controld.com", "family.freedns.controld.com", "ControlD Family"),
+
+            // --- National / research-network resolvers (curl DoH list) ---
+            DnsServerDefinition.CreateUdpTcp("193.17.47.1", "CZ.NIC ODVR"),
+            DnsServerDefinition.CreateUdpTcp("185.43.135.1", "CZ.NIC ODVR"),
+            DnsServerDefinition.CreateDoh("https://odvr.nic.cz/dns-query", "CZ.NIC ODVR"),
+            DnsServerDefinition.CreateDot("odvr.nic.cz", "odvr.nic.cz", "CZ.NIC ODVR"),
+            DnsServerDefinition.CreateDoh("https://dns.cert.ee/dns-query", "CERT Estonia"),
+            DnsServerDefinition.CreateDot("dns.cert.ee", "dns.cert.ee", "CERT Estonia"),
+            DnsServerDefinition.CreateDoh("https://dns.belnet.be/dns-query", "Belnet"),
+            DnsServerDefinition.CreateDoh("https://doh.dns4all.eu/dns-query", "DNS4all"),
+            DnsServerDefinition.CreateDoh("https://resolver.sunet.se/dns-query", "Sunet"),
+            DnsServerDefinition.CreateDoh("https://doh.lv/dns-query", "NIC.LV"),
+            DnsServerDefinition.CreateDoh("https://doh.domreg.lt/dns-query", "domreg.lt"),
+            DnsServerDefinition.CreateDoh("https://dns.aa.net.uk/dns-query", "Andrews & Arnold"),
+
+            // --- Independent / association-run resolvers (curl DoH list) ---
+            DnsServerDefinition.CreateDoh("https://doh.lacontrevoie.fr/dns-query", "La Contre-Voie"),
+            DnsServerDefinition.CreateDoh("https://dns.aquilenet.fr/dns-query", "Aquilenet"),
+            DnsServerDefinition.CreateDoh("https://dns.hostux.net/dns-query", "Hostux"),
+            DnsServerDefinition.CreateDoh("https://dns.hostux.net/ads", "Hostux No-Ads"),
+            DnsServerDefinition.CreateDoh("https://dns.njal.la/dns-query", "Njalla"),
+            DnsServerDefinition.CreateDoh("https://dns.comss.one/dns-query", "Comss.one"),
+            DnsServerDefinition.CreateDoh("https://adfree.usableprivacy.net/dns-query", "Usable Privacy"),
+            DnsServerDefinition.CreateDoh("https://dns.telekom.de/dns-query", "Telekom"),
+            DnsServerDefinition.CreateDoh("https://doh.seby.io/dns-query", "Seby"),
+            DnsServerDefinition.CreateDoh("https://doh.tiar.app/dns-query", "Tiarap"),
+            DnsServerDefinition.CreateDoh("https://dns1.in-berlin.de/dns-query", "In-Berlin"),
+            DnsServerDefinition.CreateDoh("https://dns2.in-berlin.de/dns-query", "In-Berlin"),
+            DnsServerDefinition.CreateDoh("https://dns.dnshome.de/dns-query", "dnsHome.de"),
+            DnsServerDefinition.CreateDoh("https://dns.kernel-error.de/dns-query", "Kernel Error"),
+            DnsServerDefinition.CreateDoh("https://doh.disconnect.app/dns-query", "Disconnect"),
+            DnsServerDefinition.CreateDoh("https://rfree1.blue-shield.at/dns-query", "Blue Shield Umbrella"),
+            DnsServerDefinition.CreateDoh("https://rfree2.blue-shield.at/dns-query", "Blue Shield Umbrella"),
+            DnsServerDefinition.CreateDoh("https://dns12.quad9.net/dns-query", "Quad9 (ECS, malware)"),
+            DnsServerDefinition.CreateDoh("https://child-noads.joindns4.eu/dns-query", "DNS4EU Child No-Ads"),
 
             // --- DNS over QUIC (RFC 9250) ---
             DnsServerDefinition.CreateDoq("dns.quad9.net", "Quad9"),
@@ -727,6 +824,36 @@ public sealed partial class DnsServerListService
             {
                 return "Cox";
             }
+
+            if (host.Contains("verisign", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Verisign";
+            }
+
+            if (host.Contains("uncensoreddns", StringComparison.OrdinalIgnoreCase))
+            {
+                return "UncensoredDNS";
+            }
+
+            if (host.Contains("digitalcourage", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Digitalcourage";
+            }
+
+            if (host.Contains("artikel10", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Artikel10";
+            }
+
+            if (host.Contains("flashstart", StringComparison.OrdinalIgnoreCase))
+            {
+                return "FlashStart";
+            }
+
+            if (host.Contains("cleanbrowsing", StringComparison.OrdinalIgnoreCase))
+            {
+                return "CleanBrowsing";
+            }
         }
 
         if (ipAddress is "194.242.2.2" or "194.242.2.3"
@@ -815,8 +942,13 @@ public sealed partial class DnsServerListService
             return "Dyn (Oracle)";
         }
 
-        if (ipAddress is "64.6.64.6" or "64.6.65.6"
-            || ipAddress.StartsWith("156.154.7", StringComparison.Ordinal))
+        // 64.6.64.6/64.6.65.6 are Verisign Public DNS; UltraDNS (Neustar) is the 156.154.7x pair.
+        if (ipAddress is "64.6.64.6" or "64.6.65.6")
+        {
+            return "Verisign";
+        }
+
+        if (ipAddress.StartsWith("156.154.7", StringComparison.Ordinal))
         {
             return "UltraDNS";
         }
@@ -858,6 +990,46 @@ public sealed partial class DnsServerListService
             return "NordVPN";
         }
 
+        if (ipAddress is "91.239.100.100" or "89.233.43.71"
+            || ipAddress.StartsWith("2001:67c:28a4:", StringComparison.OrdinalIgnoreCase)
+            || ipAddress.StartsWith("2a01:3a0:53:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "UncensoredDNS";
+        }
+
+        if (ipAddress is "5.9.164.112" || ipAddress.StartsWith("2a01:4f8:251:554:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Digitalcourage";
+        }
+
+        if (ipAddress is "217.197.91.153" || ipAddress.StartsWith("2001:67c:1401:2120:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Artikel10";
+        }
+
+        if (ipAddress.StartsWith("185.228.168.", StringComparison.Ordinal)
+            || ipAddress.StartsWith("185.228.169.", StringComparison.Ordinal))
+        {
+            return "CleanBrowsing";
+        }
+
+        if (ipAddress.StartsWith("185.236.104.", StringComparison.Ordinal)
+            || ipAddress.StartsWith("185.236.105.", StringComparison.Ordinal))
+        {
+            return "FlashStart";
+        }
+
+        if (ipAddress.StartsWith("103.247.36.", StringComparison.Ordinal)
+            || ipAddress.StartsWith("103.247.37.", StringComparison.Ordinal))
+        {
+            return "DNSFilter";
+        }
+
+        if (ipAddress is "193.17.47.1" or "185.43.135.1")
+        {
+            return "CZ.NIC ODVR";
+        }
+
         if (ipAddress.StartsWith("94.140.", StringComparison.Ordinal))
         {
             return "AdGuard";
@@ -865,7 +1037,7 @@ public sealed partial class DnsServerListService
 
         if (ipAddress.StartsWith("64.6.6", StringComparison.Ordinal))
         {
-            return "UltraDNS";
+            return "Verisign";
         }
 
         if (ipAddress.StartsWith("68.105.", StringComparison.Ordinal)
