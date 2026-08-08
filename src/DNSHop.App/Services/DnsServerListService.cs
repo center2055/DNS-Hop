@@ -462,7 +462,20 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://doh.domreg.lt/dns-query", "domreg.lt"),
             DnsServerDefinition.CreateDoh("https://dns.aa.net.uk/dns-query", "Andrews & Arnold"),
 
+            // --- FDN (French Data Network): open recursive resolvers run explicitly as an
+            // anti-censorship measure. Metadata existed for these but the endpoints themselves
+            // were never in the list, so they were never actually benchmarked. ---
+            DnsServerDefinition.CreateUdpTcp("80.67.169.12", "FDN"),
+            DnsServerDefinition.CreateUdpTcp("80.67.169.40", "FDN"),
+            DnsServerDefinition.CreateUdpTcp("2001:910:800::12", "FDN"),
+            DnsServerDefinition.CreateUdpTcp("2001:910:800::40", "FDN"),
+            DnsServerDefinition.CreateDoh("https://ns0.fdn.fr/dns-query", "FDN"),
+            DnsServerDefinition.CreateDoh("https://ns1.fdn.fr/dns-query", "FDN"),
+            DnsServerDefinition.CreateDot("ns0.fdn.fr", "ns0.fdn.fr", "FDN"),
+            DnsServerDefinition.CreateDot("ns1.fdn.fr", "ns1.fdn.fr", "FDN"),
+
             // --- Independent / association-run resolvers (curl DoH list) ---
+            DnsServerDefinition.CreateDoh("https://dns.w3ctag.org/dns-query", "W3C TAG"),
             DnsServerDefinition.CreateDoh("https://doh.lacontrevoie.fr/dns-query", "La Contre-Voie"),
             DnsServerDefinition.CreateDoh("https://dns.aquilenet.fr/dns-query", "Aquilenet"),
             DnsServerDefinition.CreateDoh("https://dns.hostux.net/dns-query", "Hostux"),
@@ -830,6 +843,11 @@ public sealed partial class DnsServerListService
                 return "Verisign";
             }
 
+            if (host.Contains("fdn.fr", StringComparison.OrdinalIgnoreCase))
+            {
+                return "FDN";
+            }
+
             if (host.Contains("uncensoreddns", StringComparison.OrdinalIgnoreCase))
             {
                 return "UncensoredDNS";
@@ -1028,6 +1046,12 @@ public sealed partial class DnsServerListService
         if (ipAddress is "193.17.47.1" or "185.43.135.1")
         {
             return "CZ.NIC ODVR";
+        }
+
+        if (ipAddress is "80.67.169.12" or "80.67.169.40"
+            || ipAddress.StartsWith("2001:910:800:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "FDN";
         }
 
         if (ipAddress.StartsWith("94.140.", StringComparison.Ordinal))

@@ -141,5 +141,7 @@
   { "key": "Kernel Error", "provider": "Kernel Error", "countryCode": "DE", "regions": ["EU"], "noLogs": true },
   { "key": "Disconnect", "provider": "Disconnect", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "blocksAds": true },
   { "key": "Blue Shield Umbrella", "provider": "Blue Shield Umbrella", "countryCode": "AT", "regions": ["EU"], "blocksMalware": true },
-  { "key": "DNS4EU Child No-Ads", "provider": "DNS4EU Child No-Ads", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true, "blocksAdult": true }
+  { "key": "DNS4EU Child No-Ads", "provider": "DNS4EU Child No-Ads", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true, "blocksAdult": true },
+
+  { "key": "W3C TAG", "provider": "W3C TAG", "regions": ["GLOBAL"], "noLogs": true }
 ]
