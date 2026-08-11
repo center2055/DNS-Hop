@@ -979,6 +979,12 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/dns-message");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/dns-message"));
 
+        // Some RFC 8484 resolvers (e.g. FDN) strictly require HTTP/2 per section 5.2 and return
+        // HTTP 400 to HTTP/1.1 requests. Prefer HTTP/2 and fall back to 1.1 for resolvers that only
+        // speak it, so those endpoints aren't wrongly reported as failing/blocked.
+        request.Version = HttpVersion.Version20;
+        request.VersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+
         var client = GetDohHttpClient(options);
 
         using HttpResponseMessage response = await client
