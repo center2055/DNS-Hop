@@ -1,5 +1,6 @@
 using DNSHop.App.Models;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -1064,10 +1065,17 @@ public sealed partial class DnsServerListService
             return "Verisign";
         }
 
-        if (ipAddress.StartsWith("68.105.", StringComparison.Ordinal)
-            || ipAddress.StartsWith("2001:578:3f:", StringComparison.OrdinalIgnoreCase))
+        if (ipAddress.StartsWith("2001:578:3f:", StringComparison.OrdinalIgnoreCase))
         {
             return "Cox";
+        }
+
+        // ISP-operated resolvers that publish no reverse DNS name, so they cannot be identified by
+        // hostname and would otherwise fall through to the generic "Public DNS" label.
+        string? networkOwner = LookupNetworkOwner(ipAddress);
+        if (networkOwner is not null)
+        {
+            return networkOwner;
         }
 
         if (ipAddress.StartsWith("156.154.", StringComparison.Ordinal))
@@ -1082,6 +1090,74 @@ public sealed partial class DnsServerListService
 
         string? inferredProvider = BuildProviderFromHost(hostName);
         return string.IsNullOrWhiteSpace(inferredProvider) ? "Public DNS" : inferredProvider;
+    }
+
+    // IPv4 networks belonging to operators whose resolvers have no reverse DNS name. Ordered
+    // longest-prefix-first is unnecessary here because the ranges do not overlap.
+    private static readonly (string Network, int PrefixLength, string Provider)[] NetworkOwners =
+    [
+        // Cox Communications
+        ("68.1.0.0", 16, "Cox"),
+        ("68.2.0.0", 15, "Cox"),
+        ("68.4.0.0", 14, "Cox"),
+        ("68.8.0.0", 14, "Cox"),
+        ("68.12.0.0", 15, "Cox"),
+        ("68.96.0.0", 13, "Cox"),
+        ("68.104.0.0", 14, "Cox"),
+        ("68.108.0.0", 14, "Cox"),
+        ("70.160.0.0", 11, "Cox"),
+        ("72.192.0.0", 11, "Cox"),
+        ("98.160.0.0", 12, "Cox"),
+        ("24.248.0.0", 16, "Cox"),
+        // Comcast
+        ("68.86.0.0", 15, "Comcast"),
+        ("75.75.0.0", 16, "Comcast"),
+        // Norton ConnectSafe (legacy Symantec addresses)
+        ("198.153.192.0", 18, "Norton ConnectSafe"),
+        // Suddenlink (Optimum)
+        ("209.55.0.0", 16, "Suddenlink"),
+        // ThreatTrack Security
+        ("74.118.212.0", 22, "ThreatTrack Security"),
+    ];
+
+    /// <summary>
+    /// Map an IPv4 address to the operator of its network, if known.
+    /// </summary>
+    private static string? LookupNetworkOwner(string ipAddress)
+    {
+        if (!IPAddress.TryParse(ipAddress, out var parsed)
+            || parsed.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+        {
+            return null;
+        }
+
+        Span<byte> addressBytes = stackalloc byte[4];
+        if (!parsed.TryWriteBytes(addressBytes, out _))
+        {
+            return null;
+        }
+
+        uint address = BinaryPrimitives.ReadUInt32BigEndian(addressBytes);
+
+        // Reused across iterations: allocating inside the loop risks exhausting the stack (CA2014).
+        Span<byte> networkBytes = stackalloc byte[4];
+
+        foreach (var (network, prefixLength, provider) in NetworkOwners)
+        {
+            if (!IPAddress.TryParse(network, out var networkAddress)
+                || !networkAddress.TryWriteBytes(networkBytes, out _))
+            {
+                continue;
+            }
+
+            uint mask = prefixLength == 0 ? 0u : uint.MaxValue << (32 - prefixLength);
+            if ((address & mask) == (BinaryPrimitives.ReadUInt32BigEndian(networkBytes) & mask))
+            {
+                return provider;
+            }
+        }
+
+        return null;
     }
 
     private static string? BuildProviderFromHost(string? hostName)

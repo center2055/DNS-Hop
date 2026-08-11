@@ -189,15 +189,18 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:ResolverRowViewModel">
+              <!-- The context flyout lives on the Border, not the inner Grid: a bare Grid has a null
+                   background and is not hit-testable, so right-clicks anywhere except directly on a
+                   text run would fall through and never open the menu. -->
               <Border Classes="SettingRow ResultRow">
+                <Border.ContextFlyout>
+                  <MenuFlyout>
+                    <MenuItem Header="{l10n:Localize Key=Resolvers.Action.CopyIp}" Command="{Binding CopyAddressCommand}" />
+                    <MenuItem Header="Copy endpoint" Command="{Binding CopyEndpointCommand}" />
+                    <MenuItem Header="Copy provider" Command="{Binding CopyProviderCommand}" />
+                  </MenuFlyout>
+                </Border.ContextFlyout>
                 <Grid ColumnDefinitions="Auto,2*,3*,Auto,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
-                  <Grid.ContextFlyout>
-                    <MenuFlyout>
-                      <MenuItem Header="{l10n:Localize Key=Resolvers.Action.CopyIp}" Command="{Binding CopyAddressCommand}" />
-                      <MenuItem Header="Copy endpoint" Command="{Binding CopyEndpointCommand}" />
-                      <MenuItem Header="Copy provider" Command="{Binding CopyProviderCommand}" />
-                    </MenuFlyout>
-                  </Grid.ContextFlyout>
                   <Border Grid.Column="0"
                           Classes="StatusDot"
                           Classes.Healthy="{Binding IsHealthy}"

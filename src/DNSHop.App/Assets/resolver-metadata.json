@@ -143,5 +143,11 @@
   { "key": "Blue Shield Umbrella", "provider": "Blue Shield Umbrella", "countryCode": "AT", "regions": ["EU"], "blocksMalware": true },
   { "key": "DNS4EU Child No-Ads", "provider": "DNS4EU Child No-Ads", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true, "blocksAdult": true },
 
-  { "key": "W3C TAG", "provider": "W3C TAG", "regions": ["GLOBAL"], "noLogs": true }
+  { "key": "W3C TAG", "provider": "W3C TAG", "regions": ["GLOBAL"], "noLogs": true },
+
+  { "key": "Cox", "provider": "Cox Communications", "countryCode": "US", "regions": ["NA"] },
+  { "key": "Comcast", "provider": "Comcast", "countryCode": "US", "regions": ["NA"] },
+  { "key": "Suddenlink", "provider": "Suddenlink", "countryCode": "US", "regions": ["NA"] },
+  { "key": "ThreatTrack Security", "provider": "ThreatTrack Security", "countryCode": "US", "regions": ["NA"], "blocksMalware": true },
+  { "key": "Norton ConnectSafe", "provider": "Norton ConnectSafe", "countryCode": "US", "regions": ["NA"], "blocksMalware": true }
 ]

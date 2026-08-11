@@ -24,7 +24,11 @@ namespace DNSHop.App.Services;
 
 public sealed class DnsBenchmarkService : IDnsBenchmarkService
 {
-    private const string CachedDomain = "google.com";
+    // The cached probe rotates across several high-traffic domains rather than leaning on a single
+    // one: a resolver may hold google.com hot while being slower for other popular names, so
+    // measuring all three gives a fairer cached-latency figure. With the default 3 attempts per
+    // probe each domain is queried once.
+    private static readonly string[] CachedDomains = ["google.com", "apple.com", "microsoft.com"];
     private const string DotComDomain = "com";
     private const string DnssecProbeDomain = "dnssec-failed.org";
     private const int MinRedirectProbeCount = 3;
@@ -211,7 +215,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
         {
             var cached = await MeasureProbeAsync(
                 server,
-                static _ => CachedDomain,
+                static attempt => CachedDomains[attempt % CachedDomains.Length],
                 QueryType.A,
                 options,
                 onAttemptCompleted,
