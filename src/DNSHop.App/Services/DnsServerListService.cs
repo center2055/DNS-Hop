@@ -487,6 +487,9 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://dns.telekom.de/dns-query", "Telekom"),
             DnsServerDefinition.CreateDoh("https://doh.seby.io/dns-query", "Seby"),
             DnsServerDefinition.CreateDoh("https://doh.tiar.app/dns-query", "Tiarap"),
+            // VIA Technologies (Taiwan): ad-blocking resolver on a Cloudflare upstream, useful as a
+            // nearby endpoint for users in Taiwan and the surrounding region.
+            DnsServerDefinition.CreateDoh("https://doh.viatech.com.tw/dns-query", "VIA Technologies"),
             DnsServerDefinition.CreateDoh("https://dns1.in-berlin.de/dns-query", "In-Berlin"),
             DnsServerDefinition.CreateDoh("https://dns2.in-berlin.de/dns-query", "In-Berlin"),
             DnsServerDefinition.CreateDoh("https://dns.dnshome.de/dns-query", "dnsHome.de"),
@@ -496,6 +499,39 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://rfree2.blue-shield.at/dns-query", "Blue Shield Umbrella"),
             DnsServerDefinition.CreateDoh("https://dns12.quad9.net/dns-query", "Quad9 (ECS, malware)"),
             DnsServerDefinition.CreateDoh("https://child-noads.joindns4.eu/dns-query", "DNS4EU Child No-Ads"),
+
+            // --- Further public DoH resolvers (curl DoH list). Every endpoint below was queried
+            // over HTTP/2 and confirmed to return a valid NOERROR answer before being listed. ---
+
+            // Large operators not previously covered.
+            DnsServerDefinition.CreateDoh("https://dns.alidns.com/dns-query", "AliDNS (Alibaba)"),
+            DnsServerDefinition.CreateDoh("https://dns.pub/dns-query", "DNSPod (Tencent)"),
+            DnsServerDefinition.CreateDoh("https://dns.nextdns.io", "NextDNS"),
+            DnsServerDefinition.CreateDoh("https://doh.umbrella.com/dns-query", "Cisco Umbrella"),
+            DnsServerDefinition.CreateDoh("https://mozilla.cloudflare-dns.com/dns-query", "Cloudflare (Mozilla)"),
+            // Google's alternate DoH hostname: worth probing separately, since it can stay reachable
+            // where dns.google itself is filtered.
+            DnsServerDefinition.CreateDoh("https://8888.google/dns-query", "Google (8888.google)"),
+
+            // Family / parental filtering.
+            DnsServerDefinition.CreateDoh("https://doh.familyshield.opendns.com/dns-query", "OpenDNS FamilyShield"),
+            DnsServerDefinition.CreateDoh("https://family.adguard-dns.com/dns-query", "AdGuard Family"),
+            DnsServerDefinition.CreateDoh("https://unfiltered.adguard-dns.com/dns-query", "AdGuard Unfiltered"),
+
+            // Registry-, ISP- and hoster-operated resolvers.
+            DnsServerDefinition.CreateDoh("https://doh.nic.lv/dns-query", "NIC.LV (.lv registry)"),
+            DnsServerDefinition.CreateDoh("https://doh-01.spectrum.com/dns-query", "Charter Spectrum"),
+            DnsServerDefinition.CreateDoh("https://doh-02.spectrum.com/dns-query", "Charter Spectrum"),
+            DnsServerDefinition.CreateDoh("https://safeservedns.com/dns-query", "SafeServe (Namecheap)"),
+
+            // Filtering / privacy projects and regional endpoints.
+            DnsServerDefinition.CreateDoh("https://root.hagezi.org/dns-query", "HaGeZi DNS"),
+            DnsServerDefinition.CreateDoh("https://dns.blokada.org/dns-query", "Blokada"),
+            DnsServerDefinition.CreateDoh("https://dnslow.me/dns-query", "dnslow.me"),
+            DnsServerDefinition.CreateDoh("https://per.adfilter.net/dns-query", "AdFilter (Perth)"),
+            DnsServerDefinition.CreateDoh("https://syd.adfilter.net/dns-query", "AdFilter (Sydney)"),
+            DnsServerDefinition.CreateDoh("https://dns.digitalsize.net/dns-query", "digitalsize.net"),
+            DnsServerDefinition.CreateDoh("https://dns.flatuslifir.is/dns-query", "flatuslifir.is"),
 
             // --- DNS over QUIC (RFC 9250) ---
             DnsServerDefinition.CreateDoq("dns.quad9.net", "Quad9"),
