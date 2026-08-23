@@ -129,6 +129,12 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("208.67.220.220", "OpenDNS"),
             DnsServerDefinition.CreateUdpTcp("95.85.95.85", "Gcore"),
             DnsServerDefinition.CreateUdpTcp("2.56.220.2", "Gcore"),
+            DnsServerDefinition.CreateUdpTcp("2a03:90c0:999d::1", "Gcore"),
+            DnsServerDefinition.CreateUdpTcp("2a03:90c0:9992::1", "Gcore"),
+            DnsServerDefinition.CreateDoh("https://95.85.95.85/dns-query", "Gcore"),
+            DnsServerDefinition.CreateDoh("https://2.56.220.2/dns-query", "Gcore"),
+            DnsServerDefinition.CreateDot("95.85.95.85", "95.85.95.85", "Gcore"),
+            DnsServerDefinition.CreateDot("2.56.220.2", "2.56.220.2", "Gcore"),
             DnsServerDefinition.CreateUdpTcp("194.169.169.169", "Surfshark"),
             // Cox public resolver pair (ISP-assigned in many regions).
             DnsServerDefinition.CreateUdpTcp("68.105.28.16", "Cox"),
@@ -214,26 +220,20 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://dns.surfsharkdns.com/dns-query", "Surfshark"),
             DnsServerDefinition.CreateDoh("https://dns.mullvad.net/dns-query", "Mullvad"),
             DnsServerDefinition.CreateDoh("https://adblock.dns.mullvad.net/dns-query", "Mullvad"),
-            DnsServerDefinition.CreateDoh("https://rdns.faelix.net/", "FAELIX"),
-            DnsServerDefinition.CreateDoh("https://pdns.faelix.net/", "FAELIX"),
             DnsServerDefinition.CreateDoh("https://dns.digitale-gesellschaft.ch/dns-query", "Digitale Gesellschaft"),
             DnsServerDefinition.CreateDoh("https://doh.applied-privacy.net/query", "Applied Privacy"),
             DnsServerDefinition.CreateDoh("https://doh.dns.sb/dns-query", "DNS.SB"),
             DnsServerDefinition.CreateDoh("https://public.dns.iij.jp/dns-query", "IIJ"),
-            DnsServerDefinition.CreateDoh("https://dns.snopyta.org/", "Snopyta"),
 
             // --- DoT endpoints ---
             DnsServerDefinition.CreateDot("1.1.1.1", "cloudflare-dns.com", "Cloudflare"),
             DnsServerDefinition.CreateDot("8.8.8.8", "dns.google", "Google"),
             DnsServerDefinition.CreateDot("9.9.9.9", "dns.quad9.net", "Quad9"),
+            DnsServerDefinition.CreateUdpTcp("94.140.15.15", "AdGuard"),
             DnsServerDefinition.CreateDot("94.140.14.14", "dns.adguard-dns.com", "AdGuard"),
             DnsServerDefinition.CreateDot("194.169.169.169", "dns.surfsharkdns.com", "Surfshark"),
             DnsServerDefinition.CreateDot("194.242.2.2", "dns.mullvad.net", "Mullvad"),
             DnsServerDefinition.CreateDot("194.242.2.3", "adblock.dns.mullvad.net", "Mullvad"),
-            DnsServerDefinition.CreateDot("46.227.200.54", "rdns.faelix.net", "FAELIX"),
-            DnsServerDefinition.CreateDot("46.227.200.55", "rdns.faelix.net", "FAELIX"),
-            DnsServerDefinition.CreateDot("46.227.200.54", "pdns.faelix.net", "FAELIX"),
-            DnsServerDefinition.CreateDot("46.227.200.55", "pdns.faelix.net", "FAELIX"),
             DnsServerDefinition.CreateDot("dns.digitale-gesellschaft.ch", "dns.digitale-gesellschaft.ch", "Digitale Gesellschaft"),
             DnsServerDefinition.CreateDot("146.255.56.98", "dot1.applied-privacy.net", "Applied Privacy"),
             DnsServerDefinition.CreateDot("185.222.222.222", "dot.sb", "DNS.SB"),
@@ -266,8 +266,6 @@ public sealed partial class DnsServerListService
 
             DnsServerDefinition.CreateUdpTcp("96.45.45.45", "FortiGuard (managed)"),
             DnsServerDefinition.CreateUdpTcp("96.45.46.46", "FortiGuard (managed)"),
-            DnsServerDefinition.CreateDot("96.45.45.45", "globalsdns.fortinet.net", "FortiGuard (managed)"),
-            DnsServerDefinition.CreateDot("96.45.46.46", "globalsdns.fortinet.net", "FortiGuard (managed)"),
 
             DnsServerDefinition.CreateUdpTcp("54.174.40.213", "WatchGuard DNSWatch (managed)"),
             DnsServerDefinition.CreateUdpTcp("52.3.100.184", "WatchGuard DNSWatch (managed)"),
@@ -313,7 +311,6 @@ public sealed partial class DnsServerListService
             // --- RethinkDNS (serverless, configurable blocklists) ---
             DnsServerDefinition.CreateDoh("https://sky.rethinkdns.com/dns-query", "RethinkDNS Sky"),
             DnsServerDefinition.CreateDoh("https://max.rethinkdns.com/dns-query", "RethinkDNS Max"),
-            DnsServerDefinition.CreateDot("sky.rethinkdns.com", "sky.rethinkdns.com", "RethinkDNS Sky"),
             DnsServerDefinition.CreateDot("max.rethinkdns.com", "max.rethinkdns.com", "RethinkDNS Max"),
 
             // --- OpenBLD.net (ad / tracker / malware blocking, DoH+DoT only) ---
@@ -424,8 +421,6 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateUdpTcp("1.0.0.3", "Cloudflare Family"),
             DnsServerDefinition.CreateDoh("https://family.cloudflare-dns.com/dns-query", "Cloudflare Family"),
             DnsServerDefinition.CreateDot("family.cloudflare-dns.com", "family.cloudflare-dns.com", "Cloudflare Family"),
-            DnsServerDefinition.CreateDoh("https://dns64.cloudflare-dns.com/dns-query", "Cloudflare DNS64"),
-            DnsServerDefinition.CreateDoh("https://dns64.dns.google/dns-query", "Google DNS64"),
 
             // --- CleanBrowsing (filter tiers) ---
             DnsServerDefinition.CreateUdpTcp("185.228.168.9", "CleanBrowsing Security"),
@@ -532,6 +527,9 @@ public sealed partial class DnsServerListService
             DnsServerDefinition.CreateDoh("https://syd.adfilter.net/dns-query", "AdFilter (Sydney)"),
             DnsServerDefinition.CreateDoh("https://dns.digitalsize.net/dns-query", "digitalsize.net"),
             DnsServerDefinition.CreateDoh("https://dns.flatuslifir.is/dns-query", "flatuslifir.is"),
+
+            DnsServerDefinition.CreateDoh("https://doh-de.blahdns.com/dns-query", "BlahDNS"),
+            DnsServerDefinition.CreateDot("dot-de.blahdns.com", "dot-de.blahdns.com", "BlahDNS"),
 
             // --- DNS over QUIC (RFC 9250) ---
             DnsServerDefinition.CreateDoq("dns.quad9.net", "Quad9"),

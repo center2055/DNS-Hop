@@ -41,16 +41,15 @@
   { "key": "80.67.169.12", "provider": "FDN", "countryCode": "FR", "regions": ["EU"], "noLogs": true },
   { "key": "80.67.169.40", "provider": "FDN", "countryCode": "FR", "regions": ["EU"], "noLogs": true },
 
-  { "key": "Yandex", "provider": "Yandex", "countryCode": "RU", "regions": ["EU", "AS"] },
-  { "key": "77.88.8.8", "provider": "Yandex", "countryCode": "RU", "regions": ["EU"] },
+  { "key": "Yandex.DNS", "provider": "Yandex.DNS", "countryCode": "RU", "regions": ["EU", "AS"] },
+  { "key": "77.88.8.8", "provider": "Yandex.DNS", "countryCode": "RU", "regions": ["EU"] },
 
   { "key": "OpenNIC", "provider": "OpenNIC", "regions": ["GLOBAL"] },
   { "key": "Hurricane Electric", "provider": "Hurricane Electric", "countryCode": "US", "regions": ["NA"] },
   { "key": "Wikimedia DNS", "provider": "Wikimedia", "regions": ["GLOBAL"], "noLogs": true },
 
-  { "key": "Alekberg", "provider": "Alekberg", "countryCode": "NL", "regions": ["EU"], "noLogs": true },
   { "key": "BlahDNS", "provider": "BlahDNS", "countryCode": "DE", "regions": ["EU", "AS"], "noLogs": true, "blocksAds": true },
-  { "key": "tiar.app", "provider": "Tiar", "countryCode": "JP", "regions": ["AS"], "noLogs": true },
+  { "key": "Tiarap", "provider": "Tiarap", "countryCode": "JP", "regions": ["AS"], "noLogs": true },
 
   { "key": "CIRA Canadian Shield", "provider": "CIRA Canadian Shield", "countryCode": "CA", "regions": ["NA"], "noLogs": true, "privacyPolicyUrl": "https://www.cira.ca/en/canadian-shield/" },
   { "key": "CIRA Canadian Shield Protected", "provider": "CIRA Canadian Shield Protected", "countryCode": "CA", "regions": ["NA"], "noLogs": true, "blocksMalware": true },
@@ -105,8 +104,6 @@
 
   { "key": "Cloudflare Security", "provider": "Cloudflare Security", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true },
   { "key": "Cloudflare Family", "provider": "Cloudflare Family", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true, "blocksMalware": true, "blocksAdult": true },
-  { "key": "Cloudflare DNS64", "provider": "Cloudflare DNS64", "countryCode": "US", "regions": ["GLOBAL"], "noLogs": true },
-  { "key": "Google DNS64", "provider": "Google DNS64", "countryCode": "US", "regions": ["GLOBAL"] },
 
   { "key": "CleanBrowsing Security", "provider": "CleanBrowsing Security", "countryCode": "US", "regions": ["GLOBAL"], "blocksMalware": true },
   { "key": "CleanBrowsing Family", "provider": "CleanBrowsing Family", "countryCode": "US", "regions": ["GLOBAL"], "blocksMalware": true, "blocksAdult": true },
@@ -144,6 +141,7 @@
   { "key": "DNS4EU Child No-Ads", "provider": "DNS4EU Child No-Ads", "countryCode": "EU", "regions": ["EU"], "noLogs": true, "blocksMalware": true, "blocksAds": true, "blocksAdult": true },
 
   { "key": "W3C TAG", "provider": "W3C TAG", "regions": ["GLOBAL"], "noLogs": true },
+  { "key": "Gcore", "provider": "Gcore", "countryCode": "LU", "regions": ["GLOBAL", "EU"], "noLogs": true, "privacyPolicyUrl": "https://gcore.com/public-dns" },
 
   { "key": "Cox", "provider": "Cox Communications", "countryCode": "US", "regions": ["NA"] },
   { "key": "Comcast", "provider": "Comcast", "countryCode": "US", "regions": ["NA"] },

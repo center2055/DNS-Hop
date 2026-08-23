@@ -171,6 +171,14 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
                 StatusMessage = $"Benchmarked {results.Count} resolvers in {_runStopwatch.Elapsed:mm\\:ss}";
                 ServersCompleted = _totalServers;
                 Eta = "—";
+
+                // A finished run is only useful once you can see it, so jump straight to Results
+                // rather than leaving a completed progress bar on screen. Cancelled and failed
+                // runs fall through to the catch blocks below and stay where they are.
+                if (results.Count > 0)
+                {
+                    _services.Navigator?.NavigateTo("Results");
+                }
             });
         }
         catch (OperationCanceledException)
