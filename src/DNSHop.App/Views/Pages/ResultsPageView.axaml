@@ -63,6 +63,9 @@
                 <Border Classes="Badge" IsVisible="{Binding SupportsDnssec}">
                   <TextBlock Text="DNSSEC" />
                 </Border>
+                <Border Classes="Badge" IsVisible="{Binding SupportsEcs}">
+                  <TextBlock Text="ECS" />
+                </Border>
               </StackPanel>
               <TextBlock Text="{Binding Provider}" FontSize="20" FontWeight="SemiBold" />
               <TextBlock Text="{Binding Endpoint}" Classes="Muted" FontSize="14" TextTrimming="CharacterEllipsis" />
@@ -94,6 +97,9 @@
                 </Border>
                 <Border Classes="Badge" IsVisible="{Binding SupportsDnssec}">
                   <TextBlock Text="DNSSEC" />
+                </Border>
+                <Border Classes="Badge" IsVisible="{Binding SupportsEcs}">
+                  <TextBlock Text="ECS" />
                 </Border>
               </StackPanel>
               <TextBlock Text="{Binding Provider}" FontSize="20" FontWeight="SemiBold" />
@@ -256,9 +262,14 @@
                     </Grid>
                   </StackPanel>
                   <TextBlock Grid.Column="3" Text="{Binding AverageDisplay}" FontWeight="SemiBold" VerticalAlignment="Center" MinWidth="70" TextAlignment="Right" />
-                  <Border Grid.Column="4" Classes="Badge" IsVisible="{Binding SupportsDnssec}" VerticalAlignment="Center">
-                    <TextBlock Text="DNSSEC" />
-                  </Border>
+                  <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Border Classes="Badge" IsVisible="{Binding SupportsDnssec}">
+                      <TextBlock Text="DNSSEC" />
+                    </Border>
+                    <Border Classes="Badge" IsVisible="{Binding SupportsEcs}" ToolTip.Tip="Honours EDNS Client Subnet">
+                      <TextBlock Text="ECS" />
+                    </Border>
+                  </StackPanel>
                   <Button Grid.Column="5"
                           Content="{l10n:Localize Key=Common.Apply}"
                           Command="{Binding ((vm:ResultsPageViewModel)DataContext).ApplyRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

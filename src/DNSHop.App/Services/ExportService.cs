@@ -45,7 +45,7 @@ public sealed class ExportService
         await using var streamWriter = new StreamWriter(path, append: false, Encoding.UTF8);
 
         await streamWriter.WriteLineAsync(
-            "Endpoint,Provider,Protocol,Status,SupportsDnssec,RedirectsNxDomain,PoisoningConfidence,PoisoningEvidence,CachedMs,UncachedMs,DotComMs,AverageMs,CachedStdDevMs,UncachedStdDevMs,DotComStdDevMs,MeanProbeStdDevMs,SuccessfulQueries,FailedQueries,LastError");
+            "Endpoint,Provider,Protocol,Status,SupportsDnssec,SupportsEcs,RedirectsNxDomain,PoisoningConfidence,PoisoningEvidence,CachedMs,UncachedMs,DotComMs,AverageMs,CachedStdDevMs,UncachedStdDevMs,DotComStdDevMs,MeanProbeStdDevMs,SuccessfulQueries,FailedQueries,LastError");
 
         foreach (var row in rows)
         {
@@ -56,6 +56,7 @@ public sealed class ExportService
                 EscapeCsv(row.Protocol),
                 EscapeCsv(row.Status),
                 row.SupportsDnssec ? "true" : "false",
+                row.SupportsEcs ? "true" : "false",
                 row.RedirectsNxDomain ? "true" : "false",
                 row.PoisoningConfidence.ToString("0.###", CultureInfo.InvariantCulture),
                 EscapeCsv(row.PoisoningEvidence),

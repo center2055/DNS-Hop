@@ -257,6 +257,7 @@ internal sealed partial class ResolverRowViewModel
         Status = result.Status;
         StatusLabel = result.Status.ToString();
         SupportsDnssec = result.SupportsDnssec;
+        SupportsEcs = result.SupportsEcs;
         AverageMs = result.AverageMilliseconds;
         AverageDisplay = result.AverageMilliseconds is double v ? $"{v:F0} ms" : "—";
         CachedMs = result.CachedMilliseconds;
@@ -288,6 +289,7 @@ internal sealed partial class ResolverRowViewModel
     public DnsServerStatus Status { get; }
     public string StatusLabel { get; }
     public bool SupportsDnssec { get; }
+    public bool SupportsEcs { get; }
     public double? AverageMs { get; }
     public string AverageDisplay { get; }
     public double? CachedMs { get; }
@@ -338,6 +340,7 @@ internal sealed class ResolverPickViewModel
         Protocol = result.Server.Protocol.ToString();
         AverageDisplay = result.AverageMilliseconds is double v ? $"{v:F1} ms" : "—";
         SupportsDnssec = result.SupportsDnssec;
+        SupportsEcs = result.SupportsEcs;
 
         var meta = services.Metadata.LookupByEndpoint(result.Server.AddressOrHost, result.Server.Provider);
         NoLogs = meta?.NoLogs == true;
@@ -350,6 +353,7 @@ internal sealed class ResolverPickViewModel
     public string Protocol { get; }
     public string AverageDisplay { get; }
     public bool SupportsDnssec { get; }
+    public bool SupportsEcs { get; }
     public bool NoLogs { get; }
     public string? CountryCode { get; }
 }

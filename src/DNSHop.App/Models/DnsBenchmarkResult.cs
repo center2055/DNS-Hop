@@ -23,6 +23,9 @@ public sealed class DnsBenchmarkResult
 
     public bool SupportsDnssec { get; init; }
 
+    // Whether the resolver honours EDNS Client Subnet (RFC 7871).
+    public bool SupportsEcs { get; init; }
+
     public bool RedirectsNxDomain { get; init; }
 
     public double PoisoningConfidence { get; init; }

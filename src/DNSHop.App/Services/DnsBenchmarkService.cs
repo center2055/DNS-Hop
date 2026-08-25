@@ -30,7 +30,11 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
     // probe each domain is queried once.
     private static readonly string[] CachedDomains = ["google.com", "apple.com", "microsoft.com"];
     private const string DotComDomain = "com";
+    // DNSSEC is decided from two probes. The first domain carries a deliberately broken
+    // signature; the second is correctly signed and widely reachable, and acts as a control.
     private const string DnssecProbeDomain = "dnssec-failed.org";
+    private const string DnssecControlDomain = "iana.org";
+    private const string EcsProbeDomain = "www.google.com";
     private const int MinRedirectProbeCount = 3;
     private const int ControlResolverCount = 2;
 
@@ -262,7 +266,68 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
             bool redirecting = redirectAnalysis.IsRedirecting;
 
-            bool supportsDnssec = dnssecProbe.FirstResponseCode == ResponseCodeServFail;
+            // A validating resolver answers the broken-signature domain with SERVFAIL; one that does
+            // not simply hands the bad answer back. SERVFAIL alone is not enough to conclude
+            // validation though, because a resolver that is blocking or failing that name would look
+            // identical, so a correctly signed control domain must still resolve before the result
+            // counts as validating. Judging on the single broken-signature probe is what previously
+            // reported the same provider inconsistently across its addresses.
+            bool servedBrokenSignature = dnssecProbe.FirstResponseCode == ResponseCodeNoError
+                && dnssecProbe.FirstHasAnswers;
+            bool rejectedBrokenSignature = dnssecProbe.FirstResponseCode == ResponseCodeServFail;
+
+            // No answer at all is not evidence of anything. This probe runs last, so on a busy run
+            // it is the one most likely to be squeezed out by a slow or rate-limiting resolver, and
+            // treating that silence as "no DNSSEC" is what made a provider look inconsistent across
+            // its own addresses. Ask once more, on a fresh connection with a longer timeout, before
+            // drawing any conclusion.
+            if (!servedBrokenSignature && !rejectedBrokenSignature)
+            {
+                var dnssecRetryOptions = new DnsBenchmarkOptions
+                {
+                    TimeoutMilliseconds = Math.Max(options.TimeoutMilliseconds * 2, 4000),
+                    ConcurrencyLimit = options.ConcurrencyLimit,
+                    AttemptsPerProbe = 2,
+                    AllowInsecureSsl = options.AllowInsecureSsl,
+                    OutboundProxyType = options.OutboundProxyType,
+                    OutboundProxyHost = options.OutboundProxyHost,
+                    OutboundProxyPort = options.OutboundProxyPort,
+                };
+
+                var dnssecRetry = await MeasureProbeAsync(
+                    server,
+                    static _ => DnssecProbeDomain,
+                    QueryType.A,
+                    dnssecRetryOptions,
+                    onAttemptCompleted,
+                    cancellationToken,
+                    dotSession: null).ConfigureAwait(false);
+
+                servedBrokenSignature = dnssecRetry.FirstResponseCode == ResponseCodeNoError
+                    && dnssecRetry.FirstHasAnswers;
+                rejectedBrokenSignature = dnssecRetry.FirstResponseCode == ResponseCodeServFail;
+            }
+
+            bool supportsDnssec = false;
+
+            if (rejectedBrokenSignature)
+            {
+                var dnssecControlProbe = await MeasureProbeAsync(
+                    server,
+                    static _ => DnssecControlDomain,
+                    QueryType.A,
+                    options,
+                    onAttemptCompleted,
+                    cancellationToken,
+                    dotSession).ConfigureAwait(false);
+
+                supportsDnssec = dnssecControlProbe.FirstResponseCode == ResponseCodeNoError
+                    && dnssecControlProbe.FirstHasAnswers;
+            }
+
+            // Only worth asking of a resolver that is actually answering.
+            bool supportsEcs = !dead
+                && await ProbeEcsSupportAsync(server, options, cancellationToken).ConfigureAwait(false);
 
             DnsServerStatus status = dead
                 ? DnsServerStatus.Dead
@@ -281,6 +346,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                 DotComStandardDeviationMilliseconds = dotCom.StandardDeviationMilliseconds,
                 Status = status,
                 SupportsDnssec = supportsDnssec,
+                SupportsEcs = supportsEcs,
                 RedirectsNxDomain = redirecting,
                 PoisoningConfidence = redirectAnalysis.Confidence,
                 PoisoningEvidence = redirectAnalysis.Evidence,
@@ -302,7 +368,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             };
 
             string summary =
-                $"{server.Provider} {server.EndpointDisplay} => status={result.Status}, avg={result.AverageMilliseconds?.ToString("0.###") ?? "n/a"}ms, dnssec={(supportsDnssec ? "yes" : "no")}, poisoning={result.PoisoningConfidence:0.##}, evidence={result.PoisoningEvidence ?? "none"}";
+                $"{server.Provider} {server.EndpointDisplay} => status={result.Status}, avg={result.AverageMilliseconds?.ToString("0.###") ?? "n/a"}ms, dnssec={(supportsDnssec ? "yes" : servedBrokenSignature ? "no (served broken signature)" : "no")}, ecs={(supportsEcs ? "yes" : "no")}, poisoning={result.PoisoningConfidence:0.##}, evidence={result.PoisoningEvidence ?? "none"}";
 
             if (result.Status is DnsServerStatus.Dead or DnsServerStatus.Redirecting
                 || result.PoisoningConfidence >= SuspiciousConfidenceLogThreshold
@@ -842,7 +908,7 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             {
                 DnsProtocol.UdpTcp => await QueryClassicDnsAsync(server, domain, queryType, options.TimeoutMilliseconds, timeoutCts.Token).ConfigureAwait(false),
                 DnsProtocol.Doh => await QueryDohAsync(server, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
-                DnsProtocol.Dot when dotSession is not null => await QueryDotOnStreamAsync(dotSession, domain, queryType, timeoutCts.Token).ConfigureAwait(false),
+                DnsProtocol.Dot when dotSession is not null => await QueryDotOnPooledSessionAsync(server, dotSession, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
                 DnsProtocol.Dot => await QueryDotAsync(server, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
                 DnsProtocol.Doq => await QueryDoqAsync(server, domain, queryType, options, timeoutCts.Token).ConfigureAwait(false),
                 _ => throw new NotSupportedException($"Protocol '{server.Protocol}' is not supported."),
@@ -995,6 +1061,41 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
         byte[] payload = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         return ParseDnsWireResponse(payload);
+    }
+
+    /// <summary>
+    /// Query over the session established at the start of the run, falling back to a fresh
+    /// connection if that session has gone away.
+    /// </summary>
+    /// <remarks>
+    /// A DoT resolver is free to close a connection once it has served a number of queries, and by
+    /// the time the last probes of a server run the pooled session has already carried a dozen or
+    /// more. Without this fallback every remaining probe on that server fails, which showed up as
+    /// the same provider reporting DNSSEC support on one address and not on another purely
+    /// depending on when its connection was dropped.
+    /// </remarks>
+    private static async Task<QueryWireResult> QueryDotOnPooledSessionAsync(
+        DnsServerDefinition server,
+        SslStream dotSession,
+        string domain,
+        QueryType queryType,
+        DnsBenchmarkOptions options,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await QueryDotOnStreamAsync(dotSession, domain, queryType, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            AppDiagnostics.WriteInfo(
+                "Benchmark",
+                $"Pooled DoT session for {server.EndpointDisplay} failed ({ex.Message}); retrying on a fresh connection.");
+
+            return await QueryDotAsync(server, domain, queryType, options, cancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 
     private static async Task<(TcpClient, SslStream)> EstablishDotConnectionAsync(
@@ -1480,6 +1581,225 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
 
             offset += bytesRead;
         }
+    }
+
+    /// <summary>
+    /// Build a query carrying an EDNS Client Subnet option (RFC 7871) for a documentation subnet.
+    /// </summary>
+    /// <summary>
+    /// Ask the resolver a question carrying an EDNS Client Subnet option and report whether it
+    /// echoes that option back, which is what separates a resolver that takes the client's network
+    /// into account from one that ignores it.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately self-contained rather than routed through the normal query path: the classic
+    /// transport uses a DNS library that owns its own wire format, and this probe needs to control
+    /// the additional section byte for byte. DoQ is not probed, so those endpoints report no ECS.
+    /// </remarks>
+    private static async Task<bool> ProbeEcsSupportAsync(
+        DnsServerDefinition server,
+        DnsBenchmarkOptions options,
+        CancellationToken cancellationToken)
+    {
+        byte[] question = BuildEcsProbeQuestion(EcsProbeDomain, ToWireType(QueryType.A));
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(options.TimeoutMilliseconds);
+
+        try
+        {
+            switch (server.Protocol)
+            {
+                case DnsProtocol.UdpTcp:
+                {
+                    if (!IPAddress.TryParse(server.AddressOrHost, out var address))
+                    {
+                        return false;
+                    }
+
+                    using var udp = new UdpClient(address.AddressFamily);
+                    await udp.SendAsync(question, new IPEndPoint(address, server.Port), timeoutCts.Token)
+                        .ConfigureAwait(false);
+                    var received = await udp.ReceiveAsync(timeoutCts.Token).ConfigureAwait(false);
+                    return ResponseCarriesEcsOption(received.Buffer);
+                }
+
+                case DnsProtocol.Doh:
+                {
+                    if (string.IsNullOrWhiteSpace(server.DohEndpoint))
+                    {
+                        return false;
+                    }
+
+                    using var request = new HttpRequestMessage(HttpMethod.Post, server.DohEndpoint)
+                    {
+                        Content = new ByteArrayContent(question),
+                    };
+                    request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/dns-message");
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/dns-message"));
+                    request.Version = HttpVersion.Version20;
+                    request.VersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+
+                    using HttpResponseMessage response = await GetDohHttpClient(options)
+                        .SendAsync(request, HttpCompletionOption.ResponseContentRead, timeoutCts.Token)
+                        .ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return false;
+                    }
+
+                    return ResponseCarriesEcsOption(
+                        await response.Content.ReadAsByteArrayAsync(timeoutCts.Token).ConfigureAwait(false));
+                }
+
+                case DnsProtocol.Dot:
+                {
+                    var (tcpClient, tlsStream) = await EstablishDotConnectionAsync(server, options, timeoutCts.Token)
+                        .ConfigureAwait(false);
+                    using (tcpClient)
+                    await using (tlsStream)
+                    {
+                        byte[] framed = new byte[question.Length + 2];
+                        framed[0] = (byte)(question.Length >> 8);
+                        framed[1] = (byte)(question.Length & 0xFF);
+                        question.CopyTo(framed, 2);
+
+                        await tlsStream.WriteAsync(framed, timeoutCts.Token).ConfigureAwait(false);
+                        await tlsStream.FlushAsync(timeoutCts.Token).ConfigureAwait(false);
+
+                        byte[] lengthPrefix = new byte[2];
+                        await ReadExactAsync(tlsStream, lengthPrefix, timeoutCts.Token).ConfigureAwait(false);
+                        byte[] payload = new byte[(lengthPrefix[0] << 8) | lengthPrefix[1]];
+                        await ReadExactAsync(tlsStream, payload, timeoutCts.Token).ConfigureAwait(false);
+                        return ResponseCarriesEcsOption(payload);
+                    }
+                }
+
+                default:
+                    return false;
+            }
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            AppDiagnostics.WriteInfo(
+                "Benchmark",
+                $"ECS probe for {server.EndpointDisplay} did not complete: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static byte[] BuildEcsProbeQuestion(string domain, ushort queryType)
+    {
+        // family = IPv4, source prefix /24, scope 0, 203.0.113.0 (TEST-NET-3, reserved for docs).
+        byte[] optionData = [0, 1, 24, 0, 203, 0, 113];
+
+        List<byte> option =
+        [
+            0, 8,                                   // OPTION-CODE = 8 (Client Subnet)
+            (byte)(optionData.Length >> 8), (byte)(optionData.Length & 0xFF),
+            .. optionData,
+        ];
+
+        List<byte> payload = [.. BuildDnsWireQuestion(domain, queryType)];
+
+        // Announce the additional record we are about to append.
+        payload[10] = 0;
+        payload[11] = 1;
+
+        payload.Add(0x00);                          // OPT NAME = root
+        payload.Add(0x00); payload.Add(41);         // TYPE = OPT
+        payload.Add(0x10); payload.Add(0x00);       // CLASS = 4096 byte UDP payload
+        payload.Add(0x00); payload.Add(0x00); payload.Add(0x00); payload.Add(0x00); // TTL
+        payload.Add((byte)(option.Count >> 8));
+        payload.Add((byte)(option.Count & 0xFF));   // RDLENGTH
+        payload.AddRange(option);
+
+        return payload.ToArray();
+    }
+
+    /// <summary>
+    /// Whether the response echoes back an EDNS Client Subnet option, which is what distinguishes a
+    /// resolver that takes client subnet into account from one that ignores it entirely.
+    /// </summary>
+    private static bool ResponseCarriesEcsOption(byte[] response)
+    {
+        if (response.Length < 12)
+        {
+            return false;
+        }
+
+        int questions = (response[4] << 8) | response[5];
+        int answers = (response[6] << 8) | response[7];
+        int authorities = (response[8] << 8) | response[9];
+        int additionals = (response[10] << 8) | response[11];
+
+        int index = 12;
+
+        for (int i = 0; i < questions; i++)
+        {
+            index = SkipWireName(response, index);
+            index += 4;
+        }
+
+        for (int i = 0; i < answers + authorities; i++)
+        {
+            index = SkipWireName(response, index);
+            if (index + 10 > response.Length)
+            {
+                return false;
+            }
+
+            index += 10 + ((response[index + 8] << 8) | response[index + 9]);
+        }
+
+        for (int i = 0; i < additionals; i++)
+        {
+            index = SkipWireName(response, index);
+            if (index + 10 > response.Length)
+            {
+                return false;
+            }
+
+            int recordType = (response[index] << 8) | response[index + 1];
+            int dataLength = (response[index + 8] << 8) | response[index + 9];
+            int dataStart = index + 10;
+
+            if (recordType == 41)
+            {
+                int cursor = dataStart;
+                while (cursor + 4 <= dataStart + dataLength && cursor + 4 <= response.Length)
+                {
+                    int optionCode = (response[cursor] << 8) | response[cursor + 1];
+                    int optionLength = (response[cursor + 2] << 8) | response[cursor + 3];
+                    if (optionCode == 8 && optionLength >= 4)
+                    {
+                        return true;
+                    }
+
+                    cursor += 4 + optionLength;
+                }
+            }
+
+            index = dataStart + dataLength;
+        }
+
+        return false;
+    }
+
+    private static int SkipWireName(byte[] buffer, int index)
+    {
+        while (index < buffer.Length && buffer[index] != 0)
+        {
+            if ((buffer[index] & 0xC0) == 0xC0)
+            {
+                return index + 2;
+            }
+
+            index += 1 + buffer[index];
+        }
+
+        return index + 1;
     }
 
     private static byte[] BuildDnsWireQuestion(string domain, ushort queryType)
