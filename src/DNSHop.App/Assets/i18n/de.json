@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "Parallelität",
   "Benchmark.Options.Attempts": "Versuche pro Test",
   "Benchmark.Options.AutoUpdate": "Öffentliche Liste beim Start aktualisieren",
+  "Benchmark.Options.IpVersion": "IP-Version",
+  "Benchmark.Options.Dnssec": "DNSSEC-Unterstützung testen",
   "Benchmark.Probes.Cached": "Cache-Test",
   "Benchmark.Probes.Cached.Description": "Abfrage von google.com für die ideale Antwortzeit aus dem Cache.",
   "Benchmark.Probes.Uncached": "Uncached-Test",

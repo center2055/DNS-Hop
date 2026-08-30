@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "هاوکاتی",
   "Benchmark.Options.Attempts": "ژمارەی هەوڵ بۆ هەر پشکنین",
   "Benchmark.Options.AutoUpdate": "نوێکردنەوەی لیستی گشتی لە کاتی کردنەوە",
+  "Benchmark.Options.IpVersion": "وەشانی IP",
+  "Benchmark.Options.Dnssec": "تاقیکردنەوەی پشتگیری DNSSEC",
   "Benchmark.Probes.Cached": "پشکنینی کاش‌کراو",
   "Benchmark.Probes.Cached.Description": "google.com داوا دەکات بۆ باشترین دۆخی دواکەوتنی گەڕانی کاش‌کراو.",
   "Benchmark.Probes.Uncached": "پشکنینی بێ‌کاش",

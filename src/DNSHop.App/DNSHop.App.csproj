@@ -7,10 +7,10 @@
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>2.4.7</Version>
-    <AssemblyVersion>2.4.7.0</AssemblyVersion>
-    <FileVersion>2.4.7.0</FileVersion>
-    <InformationalVersion>2.4.7</InformationalVersion>
+    <Version>2.4.8</Version>
+    <AssemblyVersion>2.4.8.0</AssemblyVersion>
+    <FileVersion>2.4.8.0</FileVersion>
+    <InformationalVersion>2.4.8</InformationalVersion>
     <Product>DNS Hop</Product>
     <ApplicationManifest Condition="'$(EnableWindowsDesktopPackaging)' == 'true'">app.manifest</ApplicationManifest>
     <ApplicationIcon Condition="'$(EnableWindowsDesktopPackaging)' == 'true'">Assets\DNSHopLogoText.ico</ApplicationIcon>

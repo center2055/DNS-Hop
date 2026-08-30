@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "هم‌زمانلیق",
   "Benchmark.Options.Attempts": "هر یوخلامادا جهد سایی",
   "Benchmark.Options.AutoUpdate": "آچیلیشدا عمومی لیستی یئنیله",
+  "Benchmark.Options.IpVersion": "IP وئرسیاسی",
+  "Benchmark.Options.Dnssec": "DNSSEC دستگینی یوخلا",
   "Benchmark.Probes.Cached": "کش‌له‌نمیش یوخلاما",
   "Benchmark.Probes.Cached.Description": "google.com-و ان یاخشی حالدا کش‌له‌نمیش آختاریش تأخیری اوچون سوروشور.",
   "Benchmark.Probes.Uncached": "کش‌سیز یوخلاما",

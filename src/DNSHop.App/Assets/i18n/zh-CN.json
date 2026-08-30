@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "并发数",
   "Benchmark.Options.Attempts": "每项探测尝试次数",
   "Benchmark.Options.AutoUpdate": "启动时更新公共列表",
+  "Benchmark.Options.IpVersion": "IP 版本",
+  "Benchmark.Options.Dnssec": "测试 DNSSEC 支持",
   "Benchmark.Probes.Cached": "缓存探测",
   "Benchmark.Probes.Cached.Description": "查询 google.com,衡量最佳缓存响应。",
   "Benchmark.Probes.Uncached": "未缓存探测",

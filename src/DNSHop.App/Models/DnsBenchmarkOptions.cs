@@ -11,6 +11,9 @@ public sealed class DnsBenchmarkOptions
     // Attempts per probe type. Higher improves stability but increases runtime.
     public int AttemptsPerProbe { get; init; } = 3;
 
+    // Whether to run the DNSSEC validation probes.
+    public bool EnableDnssecProbe { get; init; } = true;
+
     // Whether to skip SSL certificate validation for DoT/DoH.
     public bool AllowInsecureSsl { get; init; } = false;
 

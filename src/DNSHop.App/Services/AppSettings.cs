@@ -20,6 +20,10 @@ internal sealed class AppSettings
 
     public bool AutoUpdateListOnStartup { get; init; } = true;
 
+    public string IpVersionFilter { get; init; } = "Both";
+
+    public bool EnableDnssecProbe { get; init; } = true;
+
     public bool CheckForAppUpdatesOnStartup { get; init; } = true;
 
     public string OutboundProxyType { get; init; } = "None";

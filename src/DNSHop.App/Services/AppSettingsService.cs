@@ -45,6 +45,8 @@ internal sealed class AppSettingsService
             int concurrencyLimit = TryGetInt(root, "ConcurrencyLimit") ?? 8;
             int attemptsPerProbe = TryGetInt(root, "AttemptsPerProbe") ?? 3;
             bool autoUpdateListOnStartup = TryGetBool(root, "AutoUpdateListOnStartup") ?? true;
+            string ipVersionFilter = TryGetString(root, "IpVersionFilter") ?? "Both";
+            bool enableDnssecProbe = TryGetBool(root, "EnableDnssecProbe") ?? true;
             bool checkForAppUpdatesOnStartup = TryGetBool(root, "CheckForAppUpdatesOnStartup") ?? true;
             string outboundProxyType = TryGetString(root, "OutboundProxyType") ?? "None";
             string outboundProxyHost = TryGetString(root, "OutboundProxyHost") ?? string.Empty;
@@ -65,6 +67,8 @@ internal sealed class AppSettingsService
                 ConcurrencyLimit = Math.Clamp(concurrencyLimit, 1, 32),
                 AttemptsPerProbe = Math.Clamp(attemptsPerProbe, 1, 5),
                 AutoUpdateListOnStartup = autoUpdateListOnStartup,
+                IpVersionFilter = NormalizeIpVersionFilter(ipVersionFilter),
+                EnableDnssecProbe = enableDnssecProbe,
                 CheckForAppUpdatesOnStartup = checkForAppUpdatesOnStartup,
                 OutboundProxyType = NormalizeProxyType(outboundProxyType),
                 OutboundProxyHost = NormalizeProxyHost(outboundProxyHost),
@@ -104,6 +108,8 @@ internal sealed class AppSettingsService
                 TimeoutMilliseconds = Math.Clamp(settings.TimeoutMilliseconds, 250, 10000),
                 ConcurrencyLimit = Math.Clamp(settings.ConcurrencyLimit, 1, 32),
                 AttemptsPerProbe = Math.Clamp(settings.AttemptsPerProbe, 1, 5),
+                IpVersionFilter = NormalizeIpVersionFilter(settings.IpVersionFilter),
+                EnableDnssecProbe = settings.EnableDnssecProbe,
                 AutoUpdateListOnStartup = settings.AutoUpdateListOnStartup,
                 CheckForAppUpdatesOnStartup = settings.CheckForAppUpdatesOnStartup,
                 OutboundProxyType = NormalizeProxyType(settings.OutboundProxyType),
@@ -128,6 +134,8 @@ internal sealed class AppSettingsService
                 writer.WriteNumber("ConcurrencyLimit", normalized.ConcurrencyLimit);
                 writer.WriteNumber("AttemptsPerProbe", normalized.AttemptsPerProbe);
                 writer.WriteBoolean("AutoUpdateListOnStartup", normalized.AutoUpdateListOnStartup);
+                writer.WriteString("IpVersionFilter", normalized.IpVersionFilter);
+                writer.WriteBoolean("EnableDnssecProbe", normalized.EnableDnssecProbe);
                 writer.WriteBoolean("CheckForAppUpdatesOnStartup", normalized.CheckForAppUpdatesOnStartup);
                 writer.WriteString("OutboundProxyType", normalized.OutboundProxyType);
                 writer.WriteString("OutboundProxyHost", normalized.OutboundProxyHost);
@@ -234,6 +242,17 @@ internal sealed class AppSettingsService
         }
 
         return "System";
+    }
+
+
+    private static string NormalizeIpVersionFilter(string? value)
+    {
+        return (value ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "ipv4" => "IPv4",
+            "ipv6" => "IPv6",
+            _ => "Both",
+        };
     }
 
     private static string NormalizeProxyType(string? proxyType)

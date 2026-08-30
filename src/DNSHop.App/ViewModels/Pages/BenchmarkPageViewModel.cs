@@ -68,6 +68,12 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
     [ObservableProperty]
     private bool _autoUpdateListOnStartup = true;
 
+    [ObservableProperty]
+    private string _ipVersionFilter = "Both";
+
+    [ObservableProperty]
+    private bool _enableDnssecProbe = true;
+
     public BenchmarkPageViewModel(AppServices services) : base("Benchmark", "Benchmark.Title")
     {
         _services = services;
@@ -76,7 +82,11 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
         ConcurrencyLimit = settings.ConcurrencyLimit;
         AttemptsPerProbe = settings.AttemptsPerProbe;
         AutoUpdateListOnStartup = settings.AutoUpdateListOnStartup;
+        IpVersionFilter = settings.IpVersionFilter;
+        EnableDnssecProbe = settings.EnableDnssecProbe;
     }
+
+    public ObservableCollection<string> AvailableIpVersions { get; } = new() { "Both", "IPv4", "IPv6" };
 
     public ObservableCollection<DnsBenchmarkResult> LiveResults => _services.AppState.LastResults;
 
@@ -114,11 +124,33 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
                     .ToList();
             }
 
+            // Address-family filter: resolvers reached by hostname are not tied to a family, so
+            // they stay in the IPv4 and mixed runs; an IPv6-only run keeps just the literal
+            // IPv6 endpoints.
+            if (!string.Equals(IpVersionFilter, "Both", StringComparison.OrdinalIgnoreCase))
+            {
+                bool wantIpv6 = string.Equals(IpVersionFilter, "IPv6", StringComparison.OrdinalIgnoreCase);
+                merged = merged
+                    .Where(s =>
+                    {
+                        if (!System.Net.IPAddress.TryParse(s.AddressOrHost, out var parsed))
+                        {
+                            return !wantIpv6;
+                        }
+
+                        bool isIpv6 = parsed.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6;
+                        return isIpv6 == wantIpv6;
+                    })
+                    .ToList();
+            }
+
             IsServerListLoading = false;
 
             if (merged.Count == 0)
             {
-                StatusMessage = "Every resolver is excluded. Re-include at least one on the Resolvers page.";
+                StatusMessage = string.Equals(IpVersionFilter, "Both", StringComparison.OrdinalIgnoreCase)
+                    ? "Every resolver is excluded. Re-include at least one on the Resolvers page."
+                    : $"No resolver matches the {IpVersionFilter} filter. Choose a different IP version.";
                 return;
             }
 
@@ -135,6 +167,7 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
                 TimeoutMilliseconds = TimeoutMilliseconds,
                 ConcurrencyLimit = ConcurrencyLimit,
                 AttemptsPerProbe = AttemptsPerProbe,
+                EnableDnssecProbe = EnableDnssecProbe,
                 OutboundProxyType = ParseProxy(settings.OutboundProxyType),
                 OutboundProxyHost = settings.OutboundProxyHost,
                 OutboundProxyPort = settings.OutboundProxyPort,
@@ -324,6 +357,10 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
     partial void OnAttemptsPerProbeChanged(int value) => PersistOptions();
     partial void OnAutoUpdateListOnStartupChanged(bool value) => PersistOptions();
 
+    partial void OnIpVersionFilterChanged(string value) => PersistOptions();
+
+    partial void OnEnableDnssecProbeChanged(bool value) => PersistOptions();
+
     private void PersistOptions()
     {
         var current = _services.Settings.Load();
@@ -337,6 +374,8 @@ internal sealed partial class BenchmarkPageViewModel : PageViewModel
             ConcurrencyLimit = ConcurrencyLimit,
             AttemptsPerProbe = AttemptsPerProbe,
             AutoUpdateListOnStartup = AutoUpdateListOnStartup,
+            IpVersionFilter = IpVersionFilter,
+            EnableDnssecProbe = EnableDnssecProbe,
             CheckForAppUpdatesOnStartup = current.CheckForAppUpdatesOnStartup,
             OutboundProxyType = current.OutboundProxyType,
             OutboundProxyHost = current.OutboundProxyHost,

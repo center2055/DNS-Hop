@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "Concurrency",
   "Benchmark.Options.Attempts": "Attempts per probe",
   "Benchmark.Options.AutoUpdate": "Update public list on launch",
+  "Benchmark.Options.IpVersion": "IP version",
+  "Benchmark.Options.Dnssec": "Test DNSSEC support",
   "Benchmark.Probes.Cached": "Cached probe",
   "Benchmark.Probes.Cached.Description": "Queries google.com for best-case cached lookup latency.",
   "Benchmark.Probes.Uncached": "Uncached probe",

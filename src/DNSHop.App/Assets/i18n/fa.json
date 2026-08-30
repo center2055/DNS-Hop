@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "هم‌زمانی",
   "Benchmark.Options.Attempts": "تعداد تلاش در هر کاوش",
   "Benchmark.Options.AutoUpdate": "به‌روزرسانی فهرست عمومی هنگام اجرا",
+  "Benchmark.Options.IpVersion": "نسخه IP",
+  "Benchmark.Options.Dnssec": "آزمایش پشتیبانی از DNSSEC",
   "Benchmark.Probes.Cached": "کاوش حافظه‌پنهان",
   "Benchmark.Probes.Cached.Description": "google.com را برای بهترین حالت تأخیر جستجوی حافظه‌پنهان پرس‌وجو می‌کند.",
   "Benchmark.Probes.Uncached": "کاوش بدون حافظه‌پنهان",

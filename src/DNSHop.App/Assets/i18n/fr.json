@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "Parallélisme",
   "Benchmark.Options.Attempts": "Essais par sonde",
   "Benchmark.Options.AutoUpdate": "Mettre à jour la liste publique au lancement",
+  "Benchmark.Options.IpVersion": "Version IP",
+  "Benchmark.Options.Dnssec": "Tester la prise en charge DNSSEC",
   "Benchmark.Probes.Cached": "Sonde en cache",
   "Benchmark.Probes.Cached.Description": "Interroge google.com pour la latence en cache idéale.",
   "Benchmark.Probes.Uncached": "Sonde sans cache",

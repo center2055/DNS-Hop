@@ -251,14 +251,18 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                 cancellationToken,
                 dotSession).ConfigureAwait(false);
 
-            var dnssecProbe = await MeasureProbeAsync(
-                server,
-                static _ => DnssecProbeDomain,
-                QueryType.A,
-                options,
-                onAttemptCompleted,
-                cancellationToken,
-                dotSession).ConfigureAwait(false);
+            // Skipped entirely when the user has turned the DNSSEC check off, which saves two
+            // probes per resolver on a large run.
+            ProbeAggregate? dnssecProbe = options.EnableDnssecProbe
+                ? await MeasureProbeAsync(
+                    server,
+                    static _ => DnssecProbeDomain,
+                    QueryType.A,
+                    options,
+                    onAttemptCompleted,
+                    cancellationToken,
+                    dotSession).ConfigureAwait(false)
+                : null;
 
             bool dead = cached.AverageMilliseconds is null
                 && uncached.AverageMilliseconds is null
@@ -272,16 +276,18 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
             // identical, so a correctly signed control domain must still resolve before the result
             // counts as validating. Judging on the single broken-signature probe is what previously
             // reported the same provider inconsistently across its addresses.
-            bool servedBrokenSignature = dnssecProbe.FirstResponseCode == ResponseCodeNoError
+            bool servedBrokenSignature = dnssecProbe is not null
+                && dnssecProbe.FirstResponseCode == ResponseCodeNoError
                 && dnssecProbe.FirstHasAnswers;
-            bool rejectedBrokenSignature = dnssecProbe.FirstResponseCode == ResponseCodeServFail;
+            bool rejectedBrokenSignature = dnssecProbe is not null
+                && dnssecProbe.FirstResponseCode == ResponseCodeServFail;
 
             // No answer at all is not evidence of anything. This probe runs last, so on a busy run
             // it is the one most likely to be squeezed out by a slow or rate-limiting resolver, and
             // treating that silence as "no DNSSEC" is what made a provider look inconsistent across
             // its own addresses. Ask once more, on a fresh connection with a longer timeout, before
             // drawing any conclusion.
-            if (!servedBrokenSignature && !rejectedBrokenSignature)
+            if (options.EnableDnssecProbe && !servedBrokenSignature && !rejectedBrokenSignature)
             {
                 var dnssecRetryOptions = new DnsBenchmarkOptions
                 {
@@ -354,21 +360,21 @@ public sealed class DnsBenchmarkService : IDnsBenchmarkService
                     + uncached.SuccessfulAttempts
                     + dotCom.SuccessfulAttempts
                     + redirectAnalysis.SuccessfulAttempts
-                    + dnssecProbe.SuccessfulAttempts,
+                    + (dnssecProbe?.SuccessfulAttempts ?? 0),
                 FailedQueries = cached.FailedAttempts
                     + uncached.FailedAttempts
                     + dotCom.FailedAttempts
                     + redirectAnalysis.FailedAttempts
-                    + dnssecProbe.FailedAttempts,
+                    + (dnssecProbe?.FailedAttempts ?? 0),
                 LastError = cached.LastError
                     ?? uncached.LastError
                     ?? dotCom.LastError
                     ?? redirectAnalysis.LastError
-                    ?? dnssecProbe.LastError,
+                    ?? dnssecProbe?.LastError,
             };
 
             string summary =
-                $"{server.Provider} {server.EndpointDisplay} => status={result.Status}, avg={result.AverageMilliseconds?.ToString("0.###") ?? "n/a"}ms, dnssec={(supportsDnssec ? "yes" : servedBrokenSignature ? "no (served broken signature)" : "no")}, ecs={(supportsEcs ? "yes" : "no")}, poisoning={result.PoisoningConfidence:0.##}, evidence={result.PoisoningEvidence ?? "none"}";
+                $"{server.Provider} {server.EndpointDisplay} => status={result.Status}, avg={result.AverageMilliseconds?.ToString("0.###") ?? "n/a"}ms, dnssec={(!options.EnableDnssecProbe ? "skipped" : supportsDnssec ? "yes" : servedBrokenSignature ? "no (served broken signature)" : "no")}, ecs={(supportsEcs ? "yes" : "no")}, poisoning={result.PoisoningConfidence:0.##}, evidence={result.PoisoningEvidence ?? "none"}";
 
             if (result.Status is DnsServerStatus.Dead or DnsServerStatus.Redirecting
                 || result.PoisoningConfidence >= SuspiciousConfidenceLogThreshold

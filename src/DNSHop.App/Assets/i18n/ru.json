@@ -50,6 +50,8 @@
   "Benchmark.Options.Concurrency": "Параллельность",
   "Benchmark.Options.Attempts": "Попыток на пробу",
   "Benchmark.Options.AutoUpdate": "Обновлять публичный список при запуске",
+  "Benchmark.Options.IpVersion": "Версия IP",
+  "Benchmark.Options.Dnssec": "Проверять поддержку DNSSEC",
   "Benchmark.Probes.Cached": "Кешированная проба",
   "Benchmark.Probes.Cached.Description": "Запрос google.com для оценки отклика из кеша.",
   "Benchmark.Probes.Uncached": "Некешированная проба",

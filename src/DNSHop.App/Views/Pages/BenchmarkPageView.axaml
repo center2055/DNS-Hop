@@ -74,6 +74,20 @@
         </ui:SettingsExpander.Footer>
       </ui:SettingsExpander>
 
+      <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.IpVersion}" IconSource="Globe">
+        <ui:SettingsExpander.Footer>
+          <ComboBox MinWidth="140"
+                    ItemsSource="{Binding AvailableIpVersions}"
+                    SelectedItem="{Binding IpVersionFilter, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
+      <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.Dnssec}" IconSource="Shield">
+        <ui:SettingsExpander.Footer>
+          <ToggleSwitch IsChecked="{Binding EnableDnssecProbe, Mode=TwoWay}" />
+        </ui:SettingsExpander.Footer>
+      </ui:SettingsExpander>
+
       <ui:SettingsExpander Header="{l10n:Localize Key=Benchmark.Options.AutoUpdate}" IconSource="Download">
         <ui:SettingsExpander.Footer>
           <ToggleSwitch IsChecked="{Binding AutoUpdateListOnStartup, Mode=TwoWay}" />
