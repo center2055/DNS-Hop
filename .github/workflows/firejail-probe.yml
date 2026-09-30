@@ -1,0 +1,36 @@
+name: firejail probe (temporary)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install firejail
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends firejail libfuse2 wget
+          firejail --version | head -3
+
+      - name: Fetch a known good third party AppImage as a control
+        run: |
+          wget -q -O appimagetool.AppImage \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool.AppImage
+          ls -l appimagetool.AppImage
+
+      - name: Control - third party AppImage under firejail
+        continue-on-error: true
+        run: |
+          echo "--- direct ---"
+          ./appimagetool.AppImage --version || echo "direct exit=$?"
+          echo "--- firejail ---"
+          firejail --quiet --noprofile --net=none --appimage ./appimagetool.AppImage --version
+          echo "firejail exit=$?"
+
+      - name: Inspect what firejail mounts
+        continue-on-error: true
+        run: |
+          firejail --debug --noprofile --net=none --appimage ./appimagetool.AppImage --version 2>&1 \
+            | grep -iE "mount|appimage|noexec|loop" | head -40
