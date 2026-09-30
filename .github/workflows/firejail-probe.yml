@@ -44,6 +44,16 @@ jobs:
           done
           ls -l varA.AppImage varB.AppImage varC.AppImage
 
+      - name: Compare what is actually stored in each squashfs
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y --no-install-recommends squashfs-tools >/dev/null
+          for v in orig varA; do
+            echo "===== $v ====="
+            OFF=$(./"$v.AppImage" --appimage-offset)
+            unsquashfs -o "$OFF" -ll "$v.AppImage" 2>/dev/null | sed -n '4,12p'
+          done
+
       - name: Run each variant under the AppImageHub firejail sandbox
         continue-on-error: true
         run: |
