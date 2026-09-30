@@ -47,10 +47,14 @@ jobs:
       - name: Run each variant under the AppImageHub firejail sandbox
         continue-on-error: true
         run: |
+          set +e
           for v in orig varA varB varC; do
             echo "===== $v ====="
-            ls -l "$v.AppImage" | awk '{print "size:", $5}'
-            head -c 12 "$v.AppImage" | od -An -tx1 | tr -s ' '
+            OFF=$(./"$v.AppImage" --appimage-offset 2>/dev/null)
+            echo "size=$(stat -c%s "$v.AppImage") runtime_offset=${OFF:-unknown}"
+            if [ -n "$OFF" ]; then
+              echo "runtime sha256: $(head -c "$OFF" "$v.AppImage" | sha256sum | cut -c1-32)"
+            fi
             firejail --quiet --noprofile --net=none --appimage "./$v.AppImage" --smoke-test
             echo "$v firejail exit=$?"
           done
