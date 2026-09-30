@@ -47,8 +47,10 @@ jobs:
       - name: Run each variant under the AppImageHub firejail sandbox
         continue-on-error: true
         run: |
-          for v in varA varB varC; do
+          for v in orig varA varB varC; do
             echo "===== $v ====="
+            ls -l "$v.AppImage" | awk '{print "size:", $5}'
+            head -c 12 "$v.AppImage" | od -An -tx1 | tr -s ' '
             firejail --quiet --noprofile --net=none --appimage "./$v.AppImage" --smoke-test
             echo "$v firejail exit=$?"
           done
