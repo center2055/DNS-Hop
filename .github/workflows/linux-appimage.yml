@@ -170,17 +170,9 @@ jobs:
           DISPLAY: ':99'
         run: bash scripts/gui-window-test.sh "${{ steps.pick.outputs.appimage }}" direct
 
-      # AppImageHub sandboxes the app with firejail before listing it. That sandbox is
-      # its own environment and can fail for reasons outside this app, so a failure here
-      # is reported but does not fail the build.
+      # AppImageHub sandboxes the app with firejail before deciding whether to list it.
+      # Packaging once was silently failing that check, so it is enforced here.
       - name: Window appears under the AppImageHub sandbox
-        id: sandboxed
-        continue-on-error: true
         env:
           DISPLAY: ':99'
         run: bash scripts/gui-window-test.sh "${{ steps.pick.outputs.appimage }}" firejail
-
-      - name: Note sandbox result
-        if: steps.sandboxed.outcome != 'success'
-        run: |
-          echo "::warning::The AppImage did not show a window under the firejail sandbox that AppImageHub uses. This does not affect normal use, but it can block the catalogue listing."
