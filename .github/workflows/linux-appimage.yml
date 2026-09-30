@@ -126,3 +126,61 @@ jobs:
               chmod +x /${APPIMAGE_FILE}
               /${APPIMAGE_FILE} --smoke-test
             "
+
+  gui-test:
+    name: GUI window test
+    needs: build-appimage
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dns-hop-linux-appimage
+          path: artifacts
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb x11-utils firejail libfuse2
+
+      - name: Pick AppImage filename
+        id: pick
+        run: |
+          APPIMAGE="$(ls artifacts/DNS-Hop-AppImage-*-x86_64.AppImage artifacts/DNSHop-linux-x86_64.AppImage 2>/dev/null | head -1)"
+          if [ -z "$APPIMAGE" ]; then
+            echo "No AppImage found in artifacts/" >&2
+            exit 1
+          fi
+          echo "appimage=${APPIMAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 >/dev/null 2>&1 &
+          for _ in $(seq 1 10); do
+            xdpyinfo -display :99 >/dev/null 2>&1 && break
+            sleep 1
+          done
+
+      - name: Window appears when the AppImage is run directly
+        env:
+          DISPLAY: ':99'
+        run: bash scripts/gui-window-test.sh "${{ steps.pick.outputs.appimage }}" direct
+
+      # AppImageHub sandboxes the app with firejail before listing it. That sandbox is
+      # its own environment and can fail for reasons outside this app, so a failure here
+      # is reported but does not fail the build.
+      - name: Window appears under the AppImageHub sandbox
+        id: sandboxed
+        continue-on-error: true
+        env:
+          DISPLAY: ':99'
+        run: bash scripts/gui-window-test.sh "${{ steps.pick.outputs.appimage }}" firejail
+
+      - name: Note sandbox result
+        if: steps.sandboxed.outcome != 'success'
+        run: |
+          echo "::warning::The AppImage did not show a window under the firejail sandbox that AppImageHub uses. This does not affect normal use, but it can block the catalogue listing."
