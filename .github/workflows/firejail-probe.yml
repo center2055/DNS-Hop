@@ -7,30 +7,48 @@ jobs:
   probe:
     runs-on: ubuntu-22.04
     steps:
-      - name: Install firejail
+      - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends firejail libfuse2 wget
-          firejail --version | head -3
+          sudo apt-get install -y --no-install-recommends firejail libfuse2 wget file
+          firejail --version | head -1
 
-      - name: Fetch a known good third party AppImage as a control
+      - name: Fetch the released AppImage and AppImageKit tooling
         run: |
-          wget -q -O appimagetool.AppImage \
-            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool.AppImage
-          ls -l appimagetool.AppImage
+          wget -q -O orig.AppImage https://github.com/center2055/DNS-Hop/releases/download/v2.4.8/DNS-Hop-AppImage-v2.4.8-x86_64.AppImage
+          wget -q -O appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          wget -q -O AppRun-x86_64 https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64
+          chmod +x orig.AppImage appimagetool AppRun-x86_64
+          file AppRun-x86_64 | cut -c1-90
 
-      - name: Control - third party AppImage under firejail
+      - name: Extract and show the current AppRun
+        run: |
+          ./orig.AppImage --appimage-extract >/dev/null
+          echo "--- current AppRun ---"
+          file squashfs-root/AppRun
+          cat squashfs-root/AppRun
+
+      - name: Build variants
+        run: |
+          cp -a squashfs-root varA
+          cp -a squashfs-root varB
+          cp -a squashfs-root varC
+          printf '#!/bin/sh\nHERE="$(dirname "$(readlink -f "$0")")"\nexec "$HERE/usr/bin/DNSHop.App" "$@"\n' > varB/AppRun
+          chmod +x varB/AppRun
+          rm -f varC/AppRun
+          cp AppRun-x86_64 varC/AppRun
+          chmod +x varC/AppRun
+          for v in varA varB varC; do
+            ARCH=x86_64 ./appimagetool --appimage-extract-and-run "$v" "$v.AppImage" >/dev/null 2>&1
+            chmod +x "$v.AppImage"
+          done
+          ls -l varA.AppImage varB.AppImage varC.AppImage
+
+      - name: Run each variant under the AppImageHub firejail sandbox
         continue-on-error: true
         run: |
-          echo "--- direct ---"
-          ./appimagetool.AppImage --version || echo "direct exit=$?"
-          echo "--- firejail ---"
-          firejail --quiet --noprofile --net=none --appimage ./appimagetool.AppImage --version
-          echo "firejail exit=$?"
-
-      - name: Inspect what firejail mounts
-        continue-on-error: true
-        run: |
-          firejail --debug --noprofile --net=none --appimage ./appimagetool.AppImage --version 2>&1 \
-            | grep -iE "mount|appimage|noexec|loop" | head -40
+          for v in varA varB varC; do
+            echo "===== $v ====="
+            firejail --quiet --noprofile --net=none --appimage "./$v.AppImage" --smoke-test
+            echo "$v firejail exit=$?"
+          done
