@@ -16,8 +16,11 @@ APPDIR="$(mktemp -d "${TMPDIR:-/tmp}/dnshop-appdir.XXXXXX")"
 DESKTOP_ID="io.github.center2055.dnshop"
 APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
 
+REPACK_DIR=""
+
 cleanup() {
   rm -rf "$APPDIR"
+  [[ -n "$REPACK_DIR" ]] && rm -rf "$REPACK_DIR"
 }
 
 trap cleanup EXIT
@@ -114,5 +117,20 @@ cat > "$APPDIR/usr/share/metainfo/$DESKTOP_ID.appdata.xml" <<EOF
 EOF
 
 ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGETOOL" "$APPDIR" "$OUTPUT_APPIMAGE"
+
+# Unpack what was just built and pack it again. The contents are identical either way
+# (same permissions, ownership, compression and offset), but the image straight out of
+# the first pass is refused by the firejail sandbox that AppImageHub runs before listing
+# an app: it fails with "AppRun: Permission denied" before any of our code executes,
+# while the repacked image runs normally. The underlying reason is not understood, so
+# gui-window-test.sh exercises that sandbox on every build to catch it regressing.
+REPACK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dnshop-repack.XXXXXX")"
+(
+  cd "$REPACK_DIR"
+  "$OUTPUT_APPIMAGE" --appimage-extract >/dev/null
+  ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGETOOL" squashfs-root "$REPACK_DIR/repacked.AppImage"
+)
+mv "$REPACK_DIR/repacked.AppImage" "$OUTPUT_APPIMAGE"
+chmod +x "$OUTPUT_APPIMAGE"
 
 echo "Built $OUTPUT_APPIMAGE"
