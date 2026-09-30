@@ -51,7 +51,8 @@ jobs:
           for v in orig varA; do
             echo "===== $v ====="
             OFF=$(./"$v.AppImage" --appimage-offset)
-            unsquashfs -o "$OFF" -ll "$v.AppImage" 2>/dev/null | sed -n '4,12p'
+            unsquashfs -o "$OFF" -s "$v.AppImage" 2>/dev/null | grep -iE "compression|version|Filesystem size" | head -5
+            unsquashfs -o "$OFF" -ll "$v.AppImage" 2>/dev/null | grep -E "AppRun|squashfs-root$" | head -3
           done
 
       - name: Run each variant under the AppImageHub firejail sandbox
